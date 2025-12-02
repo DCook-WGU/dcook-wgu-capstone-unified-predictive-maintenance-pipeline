@@ -1,0 +1,85 @@
+name: capstone
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  # --- Core Python ---
+  - python=3.10
+  - pip=24.2
+  - r-base=4.3.2
+
+  # --- R Packages --- 
+  - r-irkernel
+  - r-tidyverse
+
+
+  # --- Data Science Core ---
+  - pandas=2.2.3
+  - numpy
+  - scikit-learn=1.5.1
+  - matplotlib=3.9.2
+  - pyarrow        # parquet/arrow support
+  - polars         # fast dataframe engine
+  - seaborn=0.13.2
+
+  # --- Database / SQL / ETL ---
+  - sqlalchemy
+  - psycopg2       # PostgreSQL driver (psycopg2-binary is pip-only)
+  - pyodbc=5.1.0   # SQL Server / ODBC
+  - sqlite         # lightweight local DB
+  - openpyxl       # Excel read/write
+
+  # --- Distributed / Big Data ---
+  - dask
+  - pyspark
+
+  # --- APIs / Scripting ---
+  - requests=2.32.3
+  - pyyaml=6.0.2
+  - typing_extensions=4.12.2
+
+  # --- Visualization / Notebooks ---
+  - jupyterlab
+  - ipykernel
+
+  # --- Testing ---
+  - pytest=8.3.2
+
+  # --- FastAPI / Deployment ---
+  - fastapi=0.112.0
+  - uvicorn>=0.32.0
+  - gunicorn=22.0.0
+
+  # --- GPU / PyTorch Stack ---
+  - pytorch=2.4.0
+  - torchvision=0.19.0
+  - torchaudio=2.4.0
+  - pytorch-cuda=11.8   # matches GTX 1070 capability
+
+  # --- Extra useful DE libraries ---
+  - tqdm
+  - rich
+  - lxml
+  - beautifulsoup4
+
+  # --- ML Ops / PIP Dependencies ---
+  - pip:
+      - mlflow==2.17.0
+      - hydra-core==1.3.2
+      - hydra-joblib-launcher
+      - wandb==0.18.7
+      - psycopg2-binary     # needed for many psycopg2 builds
+      - python-dotenv       # env config support
+      - httpx               # async HTTP client for FastAPI  
+      - black               # formatter
+      - isort               # import sorter
+      - mypy                # optional: typing-checking
+      - pydantic==1.10.18   # stable version for generic data pipelines
+      - dvc[all]
+      
+      # --- Kafka / Streaming ---
+      - confluent-kafka     # recommended; high-performance
+      - kafka-python        # optional alt client

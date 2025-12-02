@@ -1,0 +1,452 @@
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# Services
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+services:
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # PostgreSQL Database Server
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  postgres:
+    image: postgres:16
+    container_name: dcook_capstone_postgres
+    environment:
+      POSTGRES_USER: "dcook_admin"
+      POSTGRES_PASSWORD: "V9m!pQ4z@H2eS7wK"
+      POSTGRES_DB: "dcook_capstone_postgres_db"
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persistent Database Data
+      - postgres_data:/var/lib/postgresql/data
+      # Make Data folder visible
+      - ./data:/data
+      # Optional: Initialization Scripts
+      # - ./infastructure/postgres/initdb:/docker-entrypoint-initdb.d
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # PostgreSQL PGAdmin GUI
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -----
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dcook_capstone_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@dantydcook.com"
+      PGADMIN_DEFAULT_PASSWORD: "AdminPass123!"
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # KAFKA / KRaft
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: dcook_capstone_kafka
+    depends_on: []
+    ports:
+      - "9092:9092"
+    environment:
+      # --- KRaft core settings ---
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@dcook_capstone_kafka:9093"
+
+      # --- Listeners (broker & controller) ---
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://dcook_capstone_kafka:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+
+      # --- Cluster ID ---
+      KAFKA_CLUSTER_ID: "OwmNBsyETGWymnP2IRTEWA"
+      CLUSTER_ID: "OwmNBsyETGWymnP2IRTEWA"
+      # Generated with 'docker run --rm confluentinc/cp-kafka:7.6.1 kafka-storage random-uuid'
+
+      # --- Broker configs ---
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3
+      # KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+    networks:
+      - capstone_net
+    volumes:
+    # For presistence
+      - kafka_data:/var/lib/kafka/data
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # APP
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        ENV_NAME: capstone
+        ENV_FILE: /app/environment.yml
+    # Important to allow producers can reuse this service for scaling
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_app
+    depends_on:
+      - postgres
+      - kafka
+    volumes:
+      - .
+      # main code for the container
+      - ./app:/app
+      # mount data directory for streaming / EDA / etc.
+      - ./data:/data
+      # mount docs folder for easier assess to resource documentation
+      - ./docs:/docs
+      # mount models folder
+      - ./models:/models
+      # mount notebooks folder
+      - ./notebooks:/notebooks    
+    environment:
+      # Database Connection for my producers/consumers
+      DB_HOST: dcook_capstone_postgres
+      DB_PORT: 5432
+      DB_NAME: dcook_capstone_postgres_db
+      DB_USER: dcook_admin
+      DB_PASSWORD: V9m!pQ4z@H2eS7wK
+
+      # Kafka bootstrap (Needs to match the advertised listener hostname)
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+
+      # conda env name from Dockerfile
+      ENV_NAME: capstone
+    networks:
+      - capstone_net
+    command: ["bash", "-lc", "sleep infinity"]
+    # ---- ---- ---- ---- ---- ---- ---- ----  
+    # GPU 
+    # ---- ---- ---- ---- ---- ---- ---- ----  
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # PRODUCERS: 
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+
+  # Water Pump
+  # Water Pump Producer - Normal Data
+  producer_water_pump_normal:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_wp_normal
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: WATER_PUMP
+      STREAM_MODE: normal
+      ANOMALY_RATE: "0.0"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: water_pump_stream
+    command: ["python", "-m", "src.streaming.producers.water_pump_producer"]
+    networks:
+      - capstone_net
+  
+  # ---- ---- ---- ---- 
+
+  # Water Pump Producer - Abnormal/Mixed Data
+  producer_water_pump_mixed:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_wp_mixed
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: WATER_PUMP
+      STREAM_MODE: mixed
+      # Currently set to 10% of rows will contain anomalies
+      ANOMALY_RATE: "0.1"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: water_pump_stream
+    command: ["python", "-m", "src.streaming.producers.water_pump_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- ---- ---- ---- ----
+
+  # Tennessee Eastman Process
+
+  # TEP Producer - Normal Data
+  producer_tep_normal:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_tep_normal
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: TEP
+      STREAM_MODE: normal
+      ANOMALY_RATE: "0.0"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: tep_stream
+    command: ["python", "-m", "src.streaming.producers.tep_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- 
+
+  # TEP Producer - Abnormal/Mixed Data
+  producer_tep_mixed:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_tep_mixed
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: TEP
+      STREAM_MODE: mixed
+      # Currently set to 10% of rows will contain anomalies
+      ANOMALY_RATE: "0.1"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: tep_stream
+    command: ["python", "-m", "src.streaming.producers.tep_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- ---- ---- ---- ----
+
+  # AZURE PDM
+
+  # Azure PDM Producer - Normal Data
+  producer_azure_pdm_normal:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_apdm_normal
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: AZURE_PDM
+      STREAM_MODE: normal
+      ANOMALY_RATE: "0.0"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: azure_pdm_stream
+    command: ["python", "-m", "src.streaming.producers.azure_pdm_producer"]
+    networks:
+      - capstone_net
+  
+  # ---- ---- ---- ---- 
+
+  # Azure PDM Producer - Abnormal/Mixed Data
+  producer_azure_pdm_mixed:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_apdm_mixed
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: AZURE_PDM
+      STREAM_MODE: mixed
+      # Currently set to 10% of rows will contain anomalies
+      ANOMALY_RATE: "0.1"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: azure_pdm_stream
+    command: ["python", "-m", "src.streaming.producers.azure_pdm_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- ---- ---- ---- ----
+
+  # NASA Turbofan
+
+  # NASA Turbofan Producer - Normal Data
+  producer_turbofan_normal:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_tf_normal
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: TURBOFAN
+      STREAM_MODE: normal
+      ANOMALY_RATE: "0.0"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: turbofan_stream
+    command: ["python", "-m", "src.streaming.producers.turbofan_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- 
+
+  # NASA Turbofan Producer - Abnormal/Mixed Data
+  producer_turbofan_mixed:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_tf_mixed
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: TURBOFAN
+      STREAM_MODE: mixed
+      # Currently set to 10% of rows will contain anomalies
+      ANOMALY_RATE: "0.1"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: turbofan_stream
+    command: ["python", "-m", "src.streaming.producers.turbofan_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- ---- ---- ---- ----
+
+  # AI4I Predictive Maintenance
+
+  # AI41 Producer - Normal Data
+  producer_ai4i_normal:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_ai4i_normal
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: AI4I
+      STREAM_MODE: normal
+      ANOMALY_RATE: "0.0"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: ai4i_stream
+    command: ["python", "-m", "src.streaming.producers.ai4i_producer"]
+    networks:
+      - capstone_net
+
+  # ---- ---- ---- ---- 
+
+  # AI41 Producer - Abnormal/Mixed Data
+  producer_ai4i_mixed:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_producer_ai4i_mixed
+    depends_on:
+      - kafka
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./data/stream:/stream
+    environment:
+      ENV_NAME: capstone
+      DATASET_NAME: AI4I
+      STREAM_MODE: mixed
+      # Currently set to 10% of rows will contain anomalies
+      ANOMALY_RATE: "0.1"
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_TOPIC: ai4i_stream
+    command: ["python", "-m", "src.streaming.producers.ai4i_producer"]
+    networks:
+      - capstone_net
+
+  # Kafka resources:
+    # https://kafka.apache.org/quickstart
+    # https://www.datacamp.com/tutorial/kafka-docker-explained
+    # https://medium.com/@wiraizkandar/kafka-producer-consumer-in-local-docker-with-go-02759d20fde6
+    # https://needablackcoffee.medium.com/learn-apache-kafka-with-these-python-examples-454b5275109e
+    # https://dev.to/boyu1997/intro-to-kafka-4hn2
+    # https://medium.com/@erkndmrl/kafka-cluster-with-docker-compose-5864d50f677e
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # Consumer
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  db_consumer:
+    image: dcook_capstone_app:latest
+    container_name: dcook_capstone_db_consumer
+    depends_on:
+      - kafka
+      - postgres
+    volumes:
+      - ./app:/app
+      - ./data:/data
+    environment:
+      # Kafka connection
+      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      # Comma-separated list of topics this consumer group will read from
+      CONSUMER_TOPICS: "water_pump_stream,tep_stream,azure_pdm_stream,turbofan_stream,ai4i_stream"
+      # Consumer group id (so you can scale db_consumer if you want)
+      CONSUMER_GROUP_ID: "capstone_db_consumer"
+
+      # Database connection (same as app)
+      DB_HOST: dcook_capstone_postgres
+      DB_PORT: 5432
+      DB_NAME: dcook_capstone_postgres_db
+      DB_USER: kafka_ingest
+      DB_PASSWORD: F9tX3qL8vW2pR7mC
+
+      # Conda env name used inside the container
+      ENV_NAME: capstone
+    command: ["python", "-m", "src.streaming.consumers.db_consumer"]
+    networks:
+      - capstone_net
+    # Uncomment to add GPU support for real-time ML inference, Stretch-goal or later addition
+    #deploy:
+    #resources:
+    #  reservations:
+    #    devices:
+    #      - driver: nvidia
+    #        count: 1
+    #        capabilities: ["gpu"]
+
+
+
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# Volumes
+#---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+volumes:
+  postgres_data:
+  pgadmin_data:
+  kafka_data:
+
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# Networks 
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+networks:
+  capstone_net:
+    driver: bridge
+

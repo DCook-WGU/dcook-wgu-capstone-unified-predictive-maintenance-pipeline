@@ -1,0 +1,15 @@
+This directory contains the trained machine learning models and their metadata.
+
+Artifacts may include:
+- Unsupervised baseline model (Isolation Forest)
+- Supervised models per dataset family
+- Feature scaler objects
+- Training configurations
+- Exported model files (.pkl)
+- MLflow metadata (params, metrics)
+
+These models are used for:
+- Real-time anomaly detection
+- Diagnostics
+- Historical analysis
+- Batch inference
