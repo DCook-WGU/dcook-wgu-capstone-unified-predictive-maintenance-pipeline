@@ -1,3 +1,10 @@
+1) NASA Turbofan
+2) Pump Sensor
+3) AI4I
+4) Azure PDM
+5) TEP
+
+
 # Unified Metrics Framework (12 Categories)
 
 1. Temperature  
@@ -16,28 +23,26 @@
 
 # Master Unified Conversion Table (All Datasets)
 
-| Unified Metric          | Included Sensors (Datasets)                                                                     | Unified Unit | Conversion                                  |
-|-------------------------|-------------------------------------------------------------------------------------------------|--------------|---------------------------------------------|
-| Temperature             | Pump, Azure, AI4I, Turbofan, TEP,                                                               | °C           | K→°C: x - 273.15; °F→°C: (x-32)*(5/9)       |
-| Pressure                | Pump, Azure, Turbofan, TEP                                                                      | kPa          | psi→kPa: x * 6.89476; bar→kPa: x * 100      |
-| Flow                    | Pump, Azure, TEP, Turbofan                                                                      | L/min        | m³/h → L/min: (x * 1000) / 60               |
-| Vibration               | Pump, ,                                                                                         | g            | m/s² → g: x / 9.80665                       |
-| Current                 | Pump, Azure                                                                                     | A            | mA → A: x / 1000                            |
-| Voltage                 | Pump                                                                                            | V            | mV → V: x / 1000                            |
-| Speed (RPM)             | Pump, Azure, AI4I, Turbofan,                                                                    | RPM          | Hz → RPM: x * 60                            |
-| Torque                  | Azure, AI4I                                                                                     | N·m          | lb-ft → N·m: x * 1.35582                    |
-| Displacement            | AI4I,                                                                                           | mm/min/etc   | n/a                                         |
-| Acoustic                | Pump                                                                                            | dB           | n/a                                         |
-| Chemical Concentration  | TEP                                                                                             | ppm          | fraction → ppm: x * 1,000,000               |
-| Misc Process Variables  | TEP, Azure, (levels, valves, setpoints, categorical flags, operation modes)                     | N/A          | n/a                                         |
-
-
+| Unified Metric          | Included Sensors (Datasets)                                                                 | Unified Unit | Conversion                                |
+|-------------------------|----------------------------------------------------------------------------------------------|--------------|---------------------------------------------|
+| Temperature             | Pump, Azure, AI4I, Turbofan, TEP, Bearing, PRONOSTIA                                        | °C           | K→°C: x - 273.15; °F→°C: (x-32)*(5/9)       |
+| Pressure                | Pump, Azure, Turbofan, TEP                                                                   | kPa          | psi→kPa: x * 6.89476; bar→kPa: x * 100       |
+| Flow                    | Pump, Azure, TEP, Turbofan                                                                   | L/min        | m³/h → L/min: (x * 1000) / 60               |
+| Vibration               | Pump, Bearings, PRONOSTIA                                                                    | g            | m/s² → g: x / 9.80665                        |
+| Current                 | Pump, Azure                                                                                  | A            | mA → A: x / 1000                             |
+| Voltage                 | Pump                                                                                         | V            | mV → V: x / 1000                             |
+| Speed (RPM)             | Pump, Azure, AI4I, Turbofan, PRONOSTIA                                                      | RPM          | Hz → RPM: x * 60                             |
+| Torque                  | Azure, AI4I                                                                                  | N·m          | lb-ft → N·m: x * 1.35582                     |
+| Displacement            | AI4I, PRONOSTIA                                                                              | mm/min/etc   | n/a                                         |
+| Acoustic                | Pump                                                                                         | dB           | n/a                                         |
+| Chemical Concentration  | TEP                                                                                          | ppm          | fraction → ppm: x * 1,000,000                |
+| Misc Process Variables  | TEP, Azure, PRONOSTIA (levels, valves, setpoints, categorical flags, operation modes)       | N/A          | n/a                                         |
 
 # Dataset-by-Dataset Conversion Maps
 
 ## 1. Pump Sensor Dataset
 
-| Column         | Description              | Raw Units | Unified Metric | Unified Units | Conversion                        |
+| Column         | Description              | Raw Units | Unified Metric | Unified Units | Conversion                       |
 |----------------|--------------------------|-----------|----------------|---------------|-----------------------------------|
 | pump_temp      | Pump temperature         | °C        | Temperature    | °C            | none                              |
 | pump_pressure  | Internal pressure        | kPa/psi   | Pressure       | kPa           | psi→kPa: x * 6.89476              |
@@ -51,7 +56,7 @@
 
 ## 2. Microsoft Azure Predictive Maintenance Dataset
 
-| Column             | Description                | Raw Units | Unified Metric | Unified Units | Conversion                       |
+| Column             | Description                | Raw Units | Unified Metric | Unified Units | Conversion                     |
 |--------------------|----------------------------|-----------|----------------|---------------|----------------------------------|
 | hydraulic_pressure | System pressure            | psi       | Pressure       | kPa           | psi→kPa                          |
 | hydraulic_temp     | Hydraulic temperature      | °C        | Temperature    | °C            | none                             |
@@ -78,28 +83,48 @@
 
 ## 4. NASA Turbofan Jet Engine (C-MAPSS)
 
-| Sensor       | Description                      | Raw Units | Unified Metric | Unified Units | Conversion              |
-|--------------|----------------------------------|-----------|----------------|---------------|-------------------------|
-| T2,T24,T30   | Turbine temperatures             | K/°R      | Temperature    | °C            | convert to °C           |
-| P2,P15,P30   | Pressures                        | psi       | Pressure       | kPa           | psi→kPa                 |
-| Nf           | Fan speed                        | RPM       | Speed          | RPM           | none                    |
-| Nc           | Core speed                       | RPM       | Speed          | RPM           | none                    |
-| EGT          | Exhaust gas temperature          | K         | Temperature    | °C            | K→°C                    |
-| Fuel_flow    | Fuel flow rate                   | lb/s      | Flow           | standard unit | convert for uniformity  |
-| HPC_speed    | Compressor speed                 | RPM       | Speed          | RPM           | none                    |
-| Vibration    | (if included in variant)         | g         | Vibration      | g             | none                    |
+| Sensor       | Description                     | Raw Units | Unified Metric | Unified Units | Conversion          |
+|--------------|----------------------------------|-----------|----------------|---------------|----------------------|
+| T2,T24,T30   | Turbine temperatures             | K/°R      | Temperature    | °C            | convert to °C        |
+| P2,P15,P30   | Pressures                        | psi       | Pressure       | kPa           | psi→kPa              |
+| Nf           | Fan speed                        | RPM       | Speed          | RPM           | none                 |
+| Nc           | Core speed                       | RPM       | Speed          | RPM           | none                 |
+| EGT          | Exhaust gas temperature          | K         | Temperature    | °C            | K→°C                 |
+| Fuel_flow    | Fuel flow rate                   | lb/s      | Flow           | standard unit | convert for uniformity|
+| HPC_speed    | Compressor speed                 | RPM       | Speed          | RPM           | none                 |
+| Vibration    | (if included in variant)         | g         | Vibration      | g             | none                 |
 
 ## 5. TEP (Tennessee Eastman Process)
 
-| Variable Group    | Example Variables        | Unified Metric         | Units    | Conversion        |
-|-------------------|--------------------------|------------------------|----------|-------------------|
-| Temperatures      | ReactorTemp, SepTemp     | Temperature            | °C       | none              |
-| Pressures         | ReactorPressure, SepP    | Pressure               | kPa/Pa   | Pa→kPa: x/1000    |
-| Flows             | FeedFlow, ProductFlow    | Flow                   | various  | normalize→L/min   |
-| Concentrations    | C1, C2, CompositionVars  | Chemical Concentration | fraction | fraction→ppm      |
-| Levels            | Level1, Level2           | Misc Process           | % or 0-1 | %→fraction        |
-| Valve positions   | Valve1,Valve2            | Misc Process           | %        | %→fraction        |
-| Setpoints         | SP_Temp, SP_Pressure     | Misc Process           | various  | leave as-is       |
+| Variable Group    | Example Variables       | Unified Metric         | Units   | Conversion        |
+|-------------------|--------------------------|------------------------|---------|--------------------|
+| Temperatures      | ReactorTemp, SepTemp     | Temperature            | °C      | none              |
+| Pressures         | ReactorPressure, SepP    | Pressure               | kPa/Pa  | Pa→kPa: x/1000    |
+| Flows             | FeedFlow, ProductFlow    | Flow                   | various | normalize→L/min   |
+| Concentrations    | C1, C2, CompositionVars  | Chemical Concentration | fraction| fraction→ppm       |
+| Levels            | Level1, Level2           | Misc Process           | % or 0-1 | %→fraction       |
+| Valve positions   | Valve1,Valve2            | Misc Process           | %       | %→fraction        |
+| Setpoints         | SP_Temp, SP_Pressure     | Misc Process           | various | leave as-is        |
+
+## 6. NASA Bearing Dataset (IMS/Case Western)
+
+| Column           | Description               | Raw Units | Unified Metric | Unified Units | Conversion              |
+|------------------|----------------------------|-----------|----------------|---------------|--------------------------|
+| accel_x          | Vibration (X-axis)         | m/s²/g/V  | Vibration      | g             | m/s²→g: x/9.80665        |
+| accel_y          | Vibration (Y-axis)         | m/s²/g/V  | Vibration      | g             | m/s²→g                   |
+| bearing_temp     | Bearing temperature        | °C        | Temperature    | °C            | none                     |
+| rpm              | Shaft speed                | RPM       | Speed          | RPM           | none                     |
+| load             | Applied load               | N/lb      | Misc Process   | N             | lb→N: x*4.44822          |
+
+## 7. PRONOSTIA Ball Bearing Run-to-Failure Dataset
+
+| Column          | Description                 | Raw Units | Unified Metric | Unified Units | Conversion              |
+|-----------------|------------------------------|-----------|----------------|---------------|--------------------------|
+| acc_x           | Vibration (X-axis)           | m/s²/g    | Vibration      | g             | m/s²→g: x/9.80665        |
+| acc_y           | Vibration (Y-axis)           | m/s²/g    | Vibration      | g             | m/s²→g                   |
+| rotation_speed  | Rotational speed             | RPM       | Speed          | RPM           | none                     |
+| load            | Bearing load                 | N         | Misc Process   | N             | none                     |
+| temperature     | Bearing temperature          | °C        | Temperature    | °C            | none                     |
 
 
 # Unified Conversion Calculations
@@ -369,16 +394,16 @@ Below are the official conversion formulas for each metric type.
 ## 1. Pump Sensor Dataset → EML Mapping
 
 ### Pump Dataset → Unified Metrics → EML Groups
-| Column         | Unified Metric | EML Group                   |
-|----------------|----------------|-----------------------------|
-| pump_temp      | Temperature    | temp                        |
-| pump_pressure  | Pressure       | pressure                    |
-| flow_rate      | Flow           | flow                        |
-| vibration_x    | Vibration      | vib_x                       |
-| vibration_y    | Vibration      | vib_y                       |
-| sound_db       | Acoustic       | acoustic                    |
-| pump_current   | Current        | current                     |
-| pump_voltage   | Voltage        | voltage                     |
+| Column         | Unified Metric | EML Group |
+|----------------|----------------|-----------|
+| pump_temp      | Temperature    | temp      |
+| pump_pressure  | Pressure       | pressure  |
+| flow_rate      | Flow           | flow      |
+| vibration_x    | Vibration      | vib_x     |
+| vibration_y    | Vibration      | vib_y     |
+| sound_db       | Acoustic       | acoustic  |
+| pump_current   | Current        | current   |
+| pump_voltage   | Voltage        | voltage   |
 | status_flag    | Misc           | EXCLUDED (categorical flag) |
 
 ## 2. Microsoft Azure Predictive Maintenance Dataset → EML Mapping
@@ -409,19 +434,19 @@ Below are the official conversion formulas for each metric type.
 
 ## 4. NASA Turbofan Jet Engine Dataset → EML Mapping
 ### Turbofan (C-MAPSS) → Unified Metrics → EML Groups
-| Sensor               | Unified Metric | EML Group |
-|----------------------|----------------|-----------|
-| T2,T24,T30,T50,EGT   | Temperature    | temp      |
-| P2,P15,P30           | Pressure       | pressure  |
-| Nf, Nc               | Speed/RPM      | rpm       |
-| Fuel_flow            | Flow           | flow      |
-| HPC_speed            | Speed/RPM      | rpm       |
-| Vibration*           | Vibration      | vibration |
-| Operational Settings | EXCLUDED       | metadata  |
+| Sensor | Unified Metric | EML Group |
+|--------|----------------|-----------|
+| T2,T24,T30,T50,EGT | Temperature | temp |
+| P2,P15,P30         | Pressure    | pressure |
+| Nf, Nc             | Speed/RPM   | rpm |
+| Fuel_flow          | Flow        | flow |
+| HPC_speed          | Speed/RPM   | rpm |
+| Vibration*         | Vibration   | vibration |
+| Operational Settings| EXCLUDED   | metadata |
 
 ## 5. Tennessee Eastman Process (TEP) → EML Mapping
 ### TEP → Unified Metrics → EML Groups
-| Variable Type      | Example Columns           | Unified Metric         | EML Group |
+| Variable Type      | Example Columns          | Unified Metric         | EML Group |
 |--------------------|---------------------------|------------------------|-----------|
 | Temperatures       | ReactorTemp, SepTemp      | Temperature            | temp      |
 | Pressures          | ReactorPressure, FeedP    | Pressure               | pressure  |
@@ -431,3 +456,29 @@ Below are the official conversion formulas for each metric type.
 | Valve Positions    | Valve1, Valve2            | Misc Process           | misc      |
 | Setpoints          | SP_Temp, SP_Pressure      | Misc Process           | misc_set  |
 | Fault Labels       | FaultNum                  | EXCLUDED (label)       | label     |
+
+
+## 6. NASA Bearing Dataset (IMS / Case Western) → EML Mapping
+
+### Bearing Dataset → Unified Metrics → EML Groups
+| Column           | Unified Metric | EML Group |
+|------------------|----------------|-----------|
+| accel_x          | Vibration      | vib_x     |
+| accel_y          | Vibration      | vib_y     |
+| bearing_temp     | Temperature    | temp      |
+| rpm              | Speed/RPM      | rpm       |
+| load             | Misc Process   | misc      |
+
+
+## 7. PRONOSTIA Ball Bearing Run-to-Failure → EML Mapping
+
+### PRONOSTIA → Unified Metrics → EML Groups
+| Column          | Unified Metric | EML Group |
+|-----------------|----------------|-----------|
+| acc_x           | Vibration      | vib_x     |
+| acc_y           | Vibration      | vib_y     |
+| rotation_speed  | Speed/RPM      | rpm       |
+| load            | Misc Process   | misc      |
+| temperature     | Temperature    | temp      |
+
+

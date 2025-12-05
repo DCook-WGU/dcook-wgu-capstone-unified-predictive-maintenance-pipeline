@@ -1,0 +1,14 @@
+# Force LF for all shell scripts, Python, Docker, YAML, Markdown
+*.sh text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+
+# Don’t modify binaries
+*.png binary
+*.jpg binary
+*.gz binary
+*.zip binary
+*.tar binary
