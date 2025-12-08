@@ -99,7 +99,7 @@ services:
       - postgres
       - kafka
     volumes:
-      - .
+      - ./:/workspace
       # main code for the container
       - ./app:/app
       # mount data directory for streaming / EDA / etc.
