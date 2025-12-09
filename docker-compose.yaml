@@ -98,6 +98,8 @@ services:
     depends_on:
       - postgres
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./:/workspace
       # main code for the container
@@ -109,7 +111,13 @@ services:
       # mount models folder
       - ./models:/models
       # mount notebooks folder
-      - ./notebooks:/notebooks    
+      - ./notebooks:/notebooks
+      # mount sql folder
+      - ./sql:/sql
+      # mount utility folder
+      - ./utils:/utils
+      # Mount W&B Folder
+      - ./wandb:/app/wandb
     environment:
       # Database Connection for my producers/consumers
       DB_HOST: dcook_capstone_postgres
@@ -123,6 +131,13 @@ services:
 
       # conda env name from Dockerfile
       ENV_NAME: capstone
+
+      # Adding Utility Folder to the Environmental PythonPath to allow for easy import
+      PYTHONPATH: "/app:/utils"
+
+      # W&B writes run data from inside container
+      WANDB_DIR: /app/wandb
+
     networks:
       - capstone_net
     command: ["bash", "-lc", "sleep infinity"]
