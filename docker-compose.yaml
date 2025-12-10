@@ -138,6 +138,8 @@ services:
       # W&B writes run data from inside container
       WANDB_DIR: /app/wandb
 
+    working_dir: /workspace
+
     networks:
       - capstone_net
     command: ["bash", "-lc", "sleep infinity"]
@@ -164,6 +166,8 @@ services:
     container_name: dcook_capstone_producer_wp_normal
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -187,6 +191,8 @@ services:
     container_name: dcook_capstone_producer_wp_mixed
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -213,6 +219,8 @@ services:
     container_name: dcook_capstone_producer_tep_normal
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -236,6 +244,8 @@ services:
     container_name: dcook_capstone_producer_tep_mixed
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -262,6 +272,8 @@ services:
     container_name: dcook_capstone_producer_apdm_normal
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -285,6 +297,8 @@ services:
     container_name: dcook_capstone_producer_apdm_mixed
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -311,6 +325,8 @@ services:
     container_name: dcook_capstone_producer_tf_normal
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -334,6 +350,8 @@ services:
     container_name: dcook_capstone_producer_tf_mixed
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -360,6 +378,8 @@ services:
     container_name: dcook_capstone_producer_ai4i_normal
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -383,6 +403,8 @@ services:
     container_name: dcook_capstone_producer_ai4i_mixed
     depends_on:
       - kafka
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
@@ -416,6 +438,8 @@ services:
     depends_on:
       - kafka
       - postgres
+    env_file:
+      - .env
     volumes:
       - ./app:/app
       - ./data:/data
