@@ -8,7 +8,7 @@
       "ENV_FILE": "/app/environment.yml"
     }
   },
-  "workspaceFolder": "/app",
+  "workspaceFolder": "/workspace",
 
   "runArgs": [
     "--init",

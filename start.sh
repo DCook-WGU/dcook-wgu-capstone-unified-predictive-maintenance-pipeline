@@ -5,10 +5,18 @@ set -euo pipefail
 
 echo "[START] Bringing up entire capstone pipeline…"
 
+# Check that .env exists and has WANDB_API_KEY defined.
 # Warn (but don't fail) if WANDB_API_KEY isn't set
-if [[ -z "${WANDB_API_KEY:-}" ]]; then
-  echo "WANDB_API_KEY is not set. Set it in ~/.bashrc or export it before running."
+if [[ ! -f ".env" ]]; then
+  echo "[WARN] .env file not found in project root."
+  echo "       W&B variables (WANDB_API_KEY / PROJECT / ENTITY) will not be loaded into containers."
+else
+  if ! grep -q '^WANDB_API_KEY=' .env; then
+    echo "[WARN] WANDB_API_KEY is not set in .env."
+    echo "       W&B runs may not be authenticated."
+  fi
 fi
+
 
 docker compose up -d
 
