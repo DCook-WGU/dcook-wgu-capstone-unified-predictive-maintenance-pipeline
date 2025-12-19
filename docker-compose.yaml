@@ -133,7 +133,7 @@ services:
       ENV_NAME: capstone
 
       # Adding Utility Folder to the Environmental PythonPath to allow for easy import
-      PYTHONPATH: "/app:/utils"
+      PYTHONPATH: "/workspace:/workspace/app"
 
       # W&B writes run data from inside container
       WANDB_DIR: /app/wandb

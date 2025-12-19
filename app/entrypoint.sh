@@ -25,7 +25,7 @@ conda activate "$ENV_NAME"
 set -u
 
 # Ensure /app,  /utils, and /workspace is on PYTHONPATH (for imports like src.*)
-export PYTHONPATH="/app:/utils:/workspace:${PYTHONPATH:-}"
+export PYTHONPATH="/workspace:/workspace/app:/workspace/utils:${PYTHONPATH:-}"
 
 # Optional: quick diagnostics
 echo "[entrypoint] Conda env: ${ENV_NAME}"
