@@ -35,10 +35,37 @@ def _resolve_path(file_path, file_name):
 
 
 # Creating Compact Hash ID - May not end up using 
-def _create_record_id(dataframe):
+
+
+
+def _create_record_id(
+        dataframe,
+        source_file_column = "meta__source_file",
+        source_row_column = "meta__sourse_row_id",
+        out_column = "meta__record_id"
     
-    dataframe["record_id"] = pd.util.hash_pandas_object(
-        dataframe[["_source_file", "_source_row_id"]], index=False
+    ):
+
+    """
+    Create a deterministic record identifier from source lineage fields.
+
+    The record ID is derived from (meta__source_file, meta__source_row_id). This provides
+    a stable, compact key that remains consistent for a given input artifact, which is
+    useful for deduplication and reproducible joins across pipeline stages.
+
+    Note: if `meta__source_file` values are environment-dependent (e.g., absolute paths),
+    normalize to a stable identifier (e.g., basename or a source file ID) before hashing.
+    """
+
+    dataframe = dataframe.copy() 
+
+    dataframe[source_file_column] = dataframe[source_file_column].astype("string").fillna("")
+
+    dataframe[source_row_column] = pd.to_numeric(dataframe[source_row_column], errors="coerce").fillna(-1).astype("int64")
+    
+    dataframe[out_column] = pd.util.hash_pandas_object(
+        dataframe[[source_file_column, source_row_column]], 
+        index=False
     ).astype("uint64")
 
     return dataframe 
@@ -54,33 +81,50 @@ def ingest_data(
         file_path, 
         file_name=None, 
         dataset_name=None, 
-        split=pd.NA, 
-        is_labeled=pd.NA, 
+        split="unsplit", 
         label_type=pd.NA,
-        run_id=pd.NA,
+        run_id="run_000",
         add_record_id: bool = False,
+        validate: bool = True,
         **read_kwargs
     ):
     """
-    Load a CSV file from a base data directory and file name.
+    Ingest a raw dataset into the Bronze layer.
+
+    Design intent
+    ------------
+    Bronze ingestion establishes a consistent schema contract across datasets so that
+    downstream stages (EDA, validation, feature selection, windowing, and modeling)
+    can be implemented once and reused without dataset-specific branching.
+
+    The function adds a small set of `meta__*` fields that support:
+    - Lineage: trace each record back to its source file and row position
+    - Reproducibility: preserve when the Bronze artifact was created (UTC)
+    - Dataset context: standard hooks for dataset identity, split, and run grouping
+    - Optional stable record keys: deterministic IDs for deduplication and joins
 
     Parameters
     ----------
-    file_path : str or Path or tuple
-        - If `file_name` is None:
-            - can be a full path: "/data/raw/pump_sensor/sensor.csv"
-            - OR a (dir, filename) tuple: ("/data/raw/pump_sensor", "sensor.csv")
-        - If `file_name` is not None:
-            - `file_path` is treated as a directory, and combined with `file_name`.
-    file_name : str or Path, optional
-        Optional file name to join with `file_path` when you pass directory + name.
-    **read_csv_kwargs :
-        Additional keyword arguments passed to pandas.read_csv().
+    file_path, file_name:
+        Locate a raw file (CSV/Parquet).
+    dataset_name:
+        Logical dataset identifier used for multi-source pipelines and reporting.
+    split:
+        Dataset split label (e.g., train/test/val). Use "unsplit" when the dataset
+        is not pre-partitioned or when partitioning is done downstream.
+    run_id:
+        Group identifier for sequential/related observations (e.g., unit/run/simulation).
+        For single-run datasets, a constant value (e.g., "run_000") is sufficient.
+    label_type:
+        Optional descriptor of label semantics (e.g., "fault_number", "anomaly_flag").
+        Labels themselves remain separate columns if present.
+    add_record_id:
+        If True, compute a deterministic record key from source lineage fields.
 
-    Returns
-    -------
-    pd.DataFrame
-        Loaded DataFrame.
+    Notes
+    -----
+    - This function does not perform dataset-specific cleaning; that belongs in Silver.
+    - Metadata columns are prefixed with `meta__` to prevent accidental inclusion as features.
     """
 
     path = _resolve_path(file_path, file_name)
@@ -88,7 +132,7 @@ def ingest_data(
     
     rk = dict(read_kwargs)
     
-    logger.info(f"Loading CSV file: {path }")
+    logger.info(f"Loading Data file: {path }")
 
     try:
         if suffix == ".csv":
@@ -109,33 +153,101 @@ def ingest_data(
         list(dataframe.columns),
     )
 
-    dataframe["_source_file"] = path.name
-    dataframe["dataset_name"] = dataset_name if dataset_name is not None else pd.NA
-    dataframe["bronze_ingested_at"] = pd.Timestamp.utcnow().isoformat()
-    dataframe["_source_row_id"] = np.arange(len(dataframe), dtype=np.int64)
+    # --- Bronze metadata contract ---
+    # `meta__*` fields are reserved for lineage/audit/context. Downstream feature selection
+    # can safely exclude these columns without maintaining dataset-specific exclusion lists.
+
+    dataframe["meta__dataset"] = dataset_name if dataset_name is not None else pd.NA
+    dataframe["meta__split"] = split
+    dataframe["meta__run_id"] = run_id
+    dataframe["meta__label_type"] = label_type
+    dataframe["meta__ingested_at_utc"] = pd.Timestamp.now(tz="UTC")
+    dataframe["meta__source_file"] = path.name
+    dataframe["meta__source_row_id"] = np.arange(len(dataframe), dtype=np.int64)
     
-    dataframe["split"] = split
-    dataframe["is_labeled"] = is_labeled
-    dataframe["label_type"] = label_type
-    dataframe["run_id"] = run_id
+
+    # Optional deterministic record key.
+    # For multi-file ingestion or reprocessing scenarios, a stable record ID enables:
+    # - deduplication checks
+    # - reproducible joins across intermediate artifacts
+    # - straightforward traceability in diagnostics
+    #
+    # For single-file/single-run datasets, (meta__source_file, meta__source_row_id) is already unique.
+    # We keep `meta__record_id` optional so the same utility can be reused across datasets
 
     if add_record_id:
-        required = {"_source_file", "_source_row_id"}
+
+        required = {"meta__source_file", "meta__source_row_id"}
         missing = required - set(dataframe.columns)
         if missing:
             raise ValueError(f"Cannot create record_id; missing columns: {missing}")
-        dataframe = _create_record_id(dataframe)
+        
+        dataframe = _create_record_id(
+            dataframe,
+            source_file_column = "meta__source_file",
+            source_row_column = "meta__source_row_id",
+            out_column = "meta__record_id"
+        )
+    
 
-    for column in ["_source_file", "dataset_name", "split", "is_labeled", "label_type", "run_id"]:
+    # Cast Low-Cardinality Meta Columns into category type
+    for column in ["meta__dataset", "meta__split", "meta__label_type"]:
         if column in dataframe.columns:
             dataframe[column] = dataframe[column].astype("category")
 
+    # Manual Casting: 
+    # run_id and source_id are not included in the above category casting
+    # This is because many unique run_ids or many files, category can cause
+    # category casting to become counterproductive.
+    
+    # dataframe["meta__run_id"] = dataframe["meta__run_id"].astype("category")
+    # dataframe["meta__source_file"] = dataframe["meta__source_file"].astype("category")
+
+
     columns_to_front = [
-        "_source_file", "dataset_name", "bronze_ingested_at", "_source_row_id", 
-        "run_id", "split", "is_labeled", "label_type" 
-    ] + (["record_id"] if add_record_id else [])
+        "meta__dataset", "meta__split", "meta__run_id", "meta__label_type",
+        "meta__ingested_at_utc", "meta__source_file", "meta__source_row_id"
+        ] + (["meta__record_id"] if add_record_id else [])
 
     dataframe = dataframe[columns_to_front + [column for column in dataframe.columns if column not in columns_to_front]]
+
+    if validate:
+
+        # --- Integrity checks (Bronze contract) ---
+        # These are lightweight guards that help catch accidental reindexing, duplication,
+        # or unexpected row expansion during ingestion.
+       
+        #assert dataframe["meta__source_row_id"].is_unique, "meta__source_row_id must be unique within the ingest."
+        
+        if not dataframe["meta__source_row_id"].is_unique:
+            raise ValueError("meta__source_row_id must be unique within the ingest.")
+
+        #assert dataframe["meta__source_row_id"].iloc[0] == 0, "meta__source_row_id must start at 0."
+
+        if not dataframe["meta__source_row_id"].iloc[0] == 0:
+            raise ValueError("meta__source_row_id must start at 0.")
+
+
+        #assert dataframe["meta__source_row_id"].iloc[-1] == len(dataframe) - 1, "meta__source_row_id must be contiguous 0..n-1."
+
+        if not dataframe["meta__source_row_id"].iloc[-1] == len(dataframe) - 1:
+            raise ValueError("meta__source_row_id must be contiguous 0..n-1.")
+
+        # Linage Key Explicity
+        #assert not dataframe.duplicated(["meta__source_file", "meta__source_row_id"]).any(), \
+        #    "Duplicate (meta__source_file, meta__source_row_id) lineage keys detected."
+        
+        if dataframe.duplicated(["meta__source_file", "meta__source_row_id"]).any():
+                raise ValueError("Duplicate (meta__source_file, meta__source_row_id) lineage keys detected.")
+
+        #if add_record_id:
+        #    assert dataframe["meta__record_id"].is_unique, "meta__record_id must be unique for this ingest."
+
+        if add_record_id and (not dataframe["meta__record_id"].is_unique):
+                raise ValueError("meta__record_id must be unique within the ingest.")
+        
+        if validate and len(dataframe) == 0:
+            raise ValueError("Ingest produced an empty dataframe")
 
     return dataframe
 
@@ -219,3 +331,4 @@ def save_data(
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+

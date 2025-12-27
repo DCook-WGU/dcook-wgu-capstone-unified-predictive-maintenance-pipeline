@@ -82,6 +82,6 @@ def get_paths() -> ProjectPaths:
         notebooks=project_root / "notebooks",
         models=project_root / "models",
         utils=project_root / "utils",
-        #logs=project_root / "logs",
+        logs=project_root / "logs",
     )
    
