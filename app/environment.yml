@@ -9,11 +9,11 @@ dependencies:
   # --- Core Python ---
   - python=3.10
   - pip=24.2
-  - r-base=4.3.2
+  #- r-base=4.3.2
 
   # --- R Packages --- 
-  - r-irkernel
-  - r-tidyverse
+  #- r-irkernel
+  #- r-tidyverse
 
 
   # --- Data Science Core ---
