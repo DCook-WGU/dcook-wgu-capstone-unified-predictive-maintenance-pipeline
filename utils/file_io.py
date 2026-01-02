@@ -6,15 +6,16 @@ import numpy as np
 import logging
 
 # Initiate Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("capstone.file_io")
 
 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
 
 # Helper Function to check file_path and resolve
 
-def _resolve_path(file_path, file_name):
+def _resolve_path(file_path, file_name=None):
 
     if file_name is not None:
         return Path(file_path) / file_name
@@ -41,7 +42,7 @@ def _resolve_path(file_path, file_name):
 def _create_record_id(
         dataframe,
         source_file_column = "meta__source_file",
-        source_row_column = "meta__sourse_row_id",
+        source_row_column = "meta__source_row_id",
         out_column = "meta__record_id"
     
     ):
@@ -83,7 +84,9 @@ def ingest_data(
         dataset_name=None, 
         split="unsplit", 
         label_type=pd.NA,
-        run_id="run_000",
+        label_source=pd.NA,
+        run_id="run__001",
+        asset_id="asset__001",
         add_record_id: bool = False,
         validate: bool = True,
         **read_kwargs
@@ -132,7 +135,7 @@ def ingest_data(
     
     rk = dict(read_kwargs)
     
-    logger.info(f"Loading Data file: {path }")
+    logger.info("Loading Data file: %s", path)
 
     try:
         if suffix == ".csv":
@@ -143,11 +146,11 @@ def ingest_data(
         else:
             raise ValueError(f"Unsupported file type: {suffix}")
     except Exception:
-        logger.exception(f"Error reading CSV file: {path}")
+        logger.exception("Error reading file: %s", path)
         raise
 
     logger.info(
-        "Loaded CSV: %s | shape=%s | columns=%s",
+        "Loaded Data File: %s | shape=%s | columns=%s",
         path.name,
         dataframe.shape,
         list(dataframe.columns),
@@ -160,7 +163,9 @@ def ingest_data(
     dataframe["meta__dataset"] = dataset_name if dataset_name is not None else pd.NA
     dataframe["meta__split"] = split
     dataframe["meta__run_id"] = run_id
+    dataframe["meta__asset_id"] = asset_id
     dataframe["meta__label_type"] = label_type
+    dataframe["meta__label_source"] = label_source
     dataframe["meta__ingested_at_utc"] = pd.Timestamp.now(tz="UTC")
     dataframe["meta__source_file"] = path.name
     dataframe["meta__source_row_id"] = np.arange(len(dataframe), dtype=np.int64)
@@ -191,7 +196,7 @@ def ingest_data(
     
 
     # Cast Low-Cardinality Meta Columns into category type
-    for column in ["meta__dataset", "meta__split", "meta__label_type"]:
+    for column in ["meta__dataset", "meta__split", "meta__label_type", "meta__label_source"]:
         if column in dataframe.columns:
             dataframe[column] = dataframe[column].astype("category")
 
@@ -205,8 +210,11 @@ def ingest_data(
 
 
     columns_to_front = [
-        "meta__dataset", "meta__split", "meta__run_id", "meta__label_type",
-        "meta__ingested_at_utc", "meta__source_file", "meta__source_row_id"
+        "meta__dataset", "meta__split", 
+        "meta__run_id", "meta__asset_id", 
+        "meta__label_type",  "meta__label_source",
+        "meta__ingested_at_utc", 
+        "meta__source_file", "meta__source_row_id"
         ] + (["meta__record_id"] if add_record_id else [])
 
     dataframe = dataframe[columns_to_front + [column for column in dataframe.columns if column not in columns_to_front]]
@@ -246,7 +254,7 @@ def ingest_data(
         if add_record_id and (not dataframe["meta__record_id"].is_unique):
                 raise ValueError("meta__record_id must be unique within the ingest.")
         
-        if validate and len(dataframe) == 0:
+        if len(dataframe) == 0:
             raise ValueError("Ingest produced an empty dataframe")
 
     return dataframe
@@ -269,18 +277,18 @@ def load_data(
 
     try:
         if suffix == ".csv":
-            logger.info(f"Loading CSV: {path}")
+            logger.info("Loading CSV: %s", path)
             return pd.read_csv(path, **read_kwargs)
 
         elif suffix in {".parquet", ".pq"}:
-            logger.info(f"Loading Parquet: {path}")
+            logger.info("Loading Parquet: %s", path)
             return pd.read_parquet(path, engine=engine, **read_kwargs)
 
         else:
             raise ValueError(f"Unsupported file type: {suffix}")
 
     except Exception:
-        logger.exception(f"Error reading file: {path}")
+        logger.exception("Error reading file: %s", path)
         raise
 
 
@@ -309,11 +317,11 @@ def save_data(
 
     try:
         if suffix == ".csv":
-            logger.info(f"Saving DataFrame to CSV: {path}")
+            logger.info("Saving DataFrame to CSV: %s", path)
             dataframe.to_csv(path, index=index, **write_kwargs)
 
         elif suffix in {".parquet", ".pq"}:
-            logger.info(f"Saving DataFrame to Parquet: {path}")
+            logger.info("Saving DataFrame to Parquet: %s", path)
             compression = write_kwargs.pop("compression", "snappy")
             engine = write_kwargs.pop("engine", "pyarrow")
             dataframe.to_parquet(path, index=index, engine=engine, compression=compression, **write_kwargs)
@@ -322,7 +330,7 @@ def save_data(
             raise ValueError(f"Unsupported file type: {suffix}")
 
     except Exception:
-        logger.exception(f"Error writing file: {path}")
+        logger.exception("Error writing file: %s", path)
         raise
 
     logger.info("Saved: %s | shape=%s | columns=%s", path.name, dataframe.shape, list(dataframe.columns))

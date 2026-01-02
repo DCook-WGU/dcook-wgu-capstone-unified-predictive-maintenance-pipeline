@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import os
+import logging
+
+
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-import logging
 
 # Initiate Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("capstone.paths")
 
 
 @dataclass(frozen=True)
@@ -27,13 +28,13 @@ class ProjectPaths:
     data_silver_test: Path
     data_gold: Path
     notebooks: Path
+    artifacts: Path
     models: Path
     utils: Path
-    # logs: Path
+    logs: Path
 
 
 @lru_cache(maxsize=1)
-
 def get_paths() -> ProjectPaths:
     """
     Resolve project root and main directories.
@@ -51,22 +52,26 @@ def get_paths() -> ProjectPaths:
 
     if env_root:
         project_root = Path(env_root).resolve()
+        source = "env:PROJECT_ROOT"
     else:
         try:
             # Script Path
             project_root = Path(__file__).resolve().parents[1]
+            source = "__file__"
         except NameError:
             # Jupyter notebook path
             # If you normally open notebooks in <root>/notebooks,
             # then cwd.parent should be the project root.
             project_root = cwd.parent
+            source = "cwd.parent (jupyter fallback)"
 
     # Define data directory
     data_dir = project_root / "data"
 
-    logger.debug(f"CWD:          {cwd}")
-    logger.debug(f"PROJECT_ROOT: {project_root}")
-    logger.debug(f"DATA DIR:     {data_dir}")
+    logger.debug("Resolved paths source=%s", source)
+    logger.debug("CWD=%s", cwd)
+    logger.debug("PROJECT_ROOT=%s", project_root)
+    logger.debug("DATA_DIR=%s", data_dir)
 
     return ProjectPaths(
         root=project_root,
@@ -80,6 +85,7 @@ def get_paths() -> ProjectPaths:
         data_silver_test=data_dir / "silver/test",
         data_gold=data_dir / "gold",
         notebooks=project_root / "notebooks",
+        artifacts=project_root / "artifacts",
         models=project_root / "models",
         utils=project_root / "utils",
         logs=project_root / "logs",
