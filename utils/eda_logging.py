@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def profile_dataframe(
-        df: pd.DataFrame, 
+        dataframe: pd.DataFrame, 
         logger: logging.Logger, 
         artifacts_dir: Path | None = None, 
         head: int = 15
@@ -15,15 +15,15 @@ def profile_dataframe(
 
 
     metrics = {
-        "rows": int(df.shape[0]),
-        "cols": int(df.shape[1]),
-        "memory_mb": float(df.memory_usage(deep=True).sum() / (1024**2)),
+        "rows": int(dataframe.shape[0]),
+        "cols": int(dataframe.shape[1]),
+        "memory_mb": float(dataframe.memory_usage(deep=True).sum() / (1024**2)),
     }
 
-    logger.info("Shape: %s", df.shape)
+    logger.info("Shape: %s", dataframe.shape)
     logger.info("Memory (MB): %.2f", metrics["memory_mb"])
-    logger.info("Dtypes:\n%s", df.dtypes.to_string())
-    logger.info("Head(%d):\n%s", head, df.head(head).to_string(max_cols=40, max_rows=head))
+    logger.info("Dtypes:\n%s", dataframe.dtypes.to_string())
+    logger.info("Head(%d):\n%s", head, dataframe.head(head).to_string(max_cols=40, max_rows=head))
 
     saved = {}
 
@@ -33,13 +33,27 @@ def profile_dataframe(
 
         num_path = artifacts_dir / "describe_numeric.csv"
         obj_path = artifacts_dir / "describe_object.csv"
+        bool_path = artifacts_dir / "describe_boolean.csv"
 
-        df.describe().T.to_csv(num_path)
-        df.describe(include=["object", "category"]).T.to_csv(obj_path)
+        dataframe.describe().T.to_csv(num_path)
+        dataframe.describe(include=["object", "category", "string"]).T.to_csv(obj_path)
+        dataframe.describe(include=["bool", "boolean"]).T.to_csv(bool_path)
 
         saved["describe_numeric_csv"] = num_path
         saved["describe_object_csv"] = obj_path
+        saved["describe_boolean_csv"] = bool_path
 
         logger.info("Saved describe artifacts to: %s", artifacts_dir)
 
     return metrics, saved
+
+
+
+
+#bool_df = df.select_dtypes(include=["bool", "boolean"])
+#if bool_df.shape[1] > 0:
+#    bool_path = artifacts_dir / "describe_bool.csv"
+#    bool_df.describe().T.to_csv(bool_path)
+#    logger.info("Saved boolean describe to %s", bool_path)
+#else:
+#    logger.info("No boolean columns; skipping boolean describe.")

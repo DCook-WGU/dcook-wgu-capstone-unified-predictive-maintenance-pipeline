@@ -27,6 +27,23 @@ def _require_wandb():
             "Install it (pip install wandb) and ensure your kernel/container uses that environment."
         ) from e
 
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+def _sanitize_dataframe_for_wandb_table(frame: pd.DataFrame) -> pd.DataFrame:
+    sanitized = frame.copy()
+
+    # Convert datetime/tz-aware datetime columns to strings 
+    for column in sanitized.columns:
+        if pd.api.types.is_datetime64_any_dtype(sanitized[column]) or pd.api.types.is_datetime64tz_dtype(sanitized[column]):
+            sanitized[column] = sanitized[column].astype("string")
+
+    # Convert pd.NA / NaN -> None (JSON serializable)
+    sanitized = sanitized.astype(object).where(pd.notna(sanitized), None)
+
+    return sanitized
+
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -48,7 +65,7 @@ def log_metrics(run: Any, metrics: Dict[str, Any], step: Optional[int] = None, c
 
 def log_dataframe_head(
     run: Any,
-    df: pd.DataFrame,
+    dataframe: pd.DataFrame,
     key: str = "head",
     n: int = 15,
     *,
@@ -62,9 +79,12 @@ def log_dataframe_head(
     if run is None:
         raise ValueError("run is None. Call wandb.init(...) in your notebook/entry point first.")
 
-    sample = df.head(n)
+    sample = dataframe.head(n)
+
     if len(sample) > max_rows:
         sample = sample.head(max_rows)
+
+    sample = _sanitize_dataframe_for_wandb_table(sample)
 
     table = wandb.Table(dataframe=sample)
     wandb.log({key: table})
@@ -111,23 +131,23 @@ def log_files_as_artifact(
     if run is None:
         raise ValueError("run is None. Call wandb.init(...) in your notebook/entry point first.")
 
-    art = wandb.Artifact(name=artifact_name, type=artifact_type, metadata=metadata or {})
+    artifact = wandb.Artifact(name=artifact_name, type=artifact_type, metadata=metadata or {})
 
     added_any = False
-    for f in files:
-        p = Path(f)
-        if p.exists() and p.is_file():
-            art.add_file(str(p))
+    for file in files:
+        file_path = Path(file)
+        if file_path.exists() and file_path.is_file():
+            artifact.add_file(str(file_path))
             added_any = True
 
     if not added_any:
         raise FileNotFoundError(
             f"No valid files found to add to artifact '{artifact_name}'. "
-            f"Checked: {[str(Path(f)) for f in files]}"
+            f"Checked: {[str(Path(file)) for file in files]}"
         )
 
-    run.log_artifact(art, aliases=list(aliases) if aliases else None)
-    return art
+    run.log_artifact(artifact, aliases=list(aliases) if aliases else None)
+    return artifact
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -157,29 +177,29 @@ def log_dir_as_artifact(
     if run is None:
         raise ValueError("run is None. Call wandb.init(...) in your notebook/entry point first.")
 
-    d = Path(dir_path)
-    if not d.exists() or not d.is_dir():
-        raise NotADirectoryError(f"dir_path is not a directory: {d}")
+    directory_path = Path(dir_path)
+    if not directory_path.exists() or not directory_path.is_dir():
+        raise NotADirectoryError(f"dir_path is not a directory: {directory_path}")
 
-    art = wandb.Artifact(name=artifact_name, type=artifact_type, metadata=metadata or {})
+    artifact = wandb.Artifact(name=artifact_name, type=artifact_type, metadata=metadata or {})
 
     matches: list[Path] = []
-    for pat in patterns:
+    for pattern in patterns:
         if recursive:
-            matches.extend(d.rglob(pat))
+            matches.extend(directory_path.rglob(pattern))
         else:
-            matches.extend(d.glob(pat))
+            matches.extend(directory_path.glob(pattern))
 
-    matches = [p for p in matches if p.is_file()]
+    matches = [file_path for file_path in matches if file_path.is_file()]
 
     if not matches:
-        raise FileNotFoundError(f"No files matched patterns {patterns} in {d}")
+        raise FileNotFoundError(f"No files matched patterns {patterns} in {directory_path}")
 
-    for p in matches:
-        art.add_file(str(p))
+    for file_path in matches:
+        artifact.add_file(str(file_path))
 
-    run.log_artifact(art, aliases=list(aliases) if aliases else None)
-    return art
+    run.log_artifact(artifact, aliases=list(aliases) if aliases else None)
+    return artifact
 
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -192,7 +212,7 @@ def finalize_wandb_stage(
     run: Any,
     *,
     stage: str,
-    df: pd.DataFrame,
+    dataframe: pd.DataFrame,
     project_root: Union[str, Path],
     logs_dir: Union[str, Path],
     dataset_dirs: Sequence[Union[str, Path]],
@@ -230,9 +250,9 @@ def finalize_wandb_stage(
 
     # --- compute + (optionally) export profiling artifacts ---
     metrics: Dict[str, Any] = {
-        "rows": int(df.shape[0]),
-        "cols": int(df.shape[1]),
-        "memory_mb": float(df.memory_usage(deep=True).sum() / (1024**2)),
+        "rows": int(dataframe.shape[0]),
+        "cols": int(dataframe.shape[1]),
+        "memory_mb": float(dataframe.memory_usage(deep=True).sum() / (1024**2)),
     }
     saved: Dict[str, Path] = {}
 
@@ -240,7 +260,7 @@ def finalize_wandb_stage(
         try:
             
             prof_metrics, prof_saved = profile_dataframe(
-                df=df,
+                dataframe=dataframe,
                 logger=logger,
                 artifacts_dir=artifacts_stage_dir,
                 head=table_n,
@@ -257,7 +277,7 @@ def finalize_wandb_stage(
 
     if table_key is None:
         table_key = f"{stage}_head{table_n}"
-    log_dataframe_head(run, df, key=table_key, n=table_n)
+    log_dataframe_head(run, dataframe, key=table_key, n=table_n)
 
     # --- upload stage log file ---
     stage_log = logs_dir / f"{stage}.log"
@@ -276,21 +296,21 @@ def finalize_wandb_stage(
     # --- upload parquet outputs (one artifact that can include multiple dirs) ---
     # To avoid over-uploading, we upload only parquet patterns from each dataset_dir.
     # We attach each dir via log_dir_as_artifact separately, or combine by calling multiple times.
-    for d in dataset_dirs:
-        d = Path(d)
-        if d.exists():
+    for directory_path in dataset_dirs:
+        directory_path = Path(directory_path)
+        if directory_path.exists():
             log_dir_as_artifact(
                 run,
                 artifact_name=dataset_artifact_name,
                 artifact_type="dataset",
-                dir_path=d,
+                dir_path=directory_path,
                 patterns=parquet_patterns,
                 aliases=aliases,
-                metadata={"stage": stage, "dir": str(d)},
+                metadata={"stage": stage, "dir": str(directory_path)},
                 recursive=True,
             )
         else:
-            logger.warning("Dataset dir not found at %s; skipping dataset upload.", d)
+            logger.warning("Dataset dir not found at %s; skipping dataset upload.", directory_path)
 
     # --- upload diagnostics exports from artifacts/<stage>/ ---
     # (This will include your describe CSVs if profile=True)
@@ -308,25 +328,25 @@ def finalize_wandb_stage(
 
     # --- optional notebook upload ---
     if notebook_path is not None:
-        nb = Path(notebook_path)
-        if nb.exists():
+        notebook_file_path = Path(notebook_path)
+        if notebook_file_path.exists():
             log_files_as_artifact(
                 run,
                 artifact_name="capstone-notebooks",
                 artifact_type="notebook",
-                files=[nb],
+                files=[notebook_file_path],
                 aliases=aliases,
                 metadata={"stage": stage},
             )
         else:
-            logger.warning("Notebook not found at %s; skipping notebook upload.", nb)
+            logger.warning("Notebook not found at %s; skipping notebook upload.", notebook_file_path)
 
     return {
         "metrics": metrics,
         "saved": saved,
         "artifacts_stage_dir": artifacts_stage_dir,
         "stage_log": stage_log,
-        "dataset_dirs": [Path(d) for d in dataset_dirs],
+        "dataset_dirs": [Path(directory_path) for directory_path in dataset_dirs],
     }
 
 
