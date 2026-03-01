@@ -1,7 +1,10 @@
 from pathlib import Path
 
+from datetime import datetime
 import pandas as pd
 import numpy as np
+
+import json
 
 import logging
 
@@ -17,9 +20,6 @@ logger = logging.getLogger("capstone.file_io")
 
 def _resolve_path(file_path, file_name=None):
 
-    if file_name is not None:
-        return Path(file_path) / file_name
-    
     if isinstance(file_path, tuple):
         if len(file_path) != 2:
             raise ValueError(
@@ -27,6 +27,9 @@ def _resolve_path(file_path, file_name=None):
             )
         dir_part, name_part = file_path
         return Path(dir_part) / name_part
+
+    if file_name is not None:
+        return Path(file_path) / file_name
     
     return Path(file_path)
 
@@ -166,7 +169,11 @@ def ingest_data(
     dataframe["meta__asset_id"] = asset_id
     dataframe["meta__label_type"] = label_type
     dataframe["meta__label_source"] = label_source
-    dataframe["meta__ingested_at_utc"] = pd.Timestamp.now(tz="UTC")
+    
+    ingested_at_utc = pd.Timestamp.now(tz="UTC")
+    dataframe["meta__ingested_at_utc"] = ingested_at_utc
+
+    #dataframe["meta__ingested_at_utc"] = pd.Timestamp.now(tz="UTC")
     dataframe["meta__source_file"] = path.name
     dataframe["meta__source_row_id"] = np.arange(len(dataframe), dtype=np.int64)
     
@@ -340,3 +347,91 @@ def save_data(
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
+def _json_default(value):
+
+    if isinstance(value, (pd.Timestamp, datetime)):
+        return value.isoformat()
+
+    if isinstance(value, (np.integer,)):
+        return int(value)
+
+    if isinstance(value, (np.floating,)):
+        return float(value)
+
+    if isinstance(value, (np.ndarray,)):
+        return value.tolist()
+
+    return str(value)
+
+def save_json(
+        data, 
+        file_path, 
+        file_name=None, 
+        create_dirs=True, 
+        indent=2
+    ):
+
+    path = _resolve_path(file_path, file_name)
+
+    if not path.suffix:
+        path = path.with_suffix(".json")
+
+    if create_dirs:
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, "w", encoding="utf-8") as file_handle:
+        json.dump(data, file_handle, indent=indent, default=_json_default)
+
+    logger.info("Saved JSON: %s", path)
+    return path
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+
+def load_json(
+    file_path,
+    file_name=None,
+    *,
+    encoding: str = "utf-8",
+    default=None,
+    raise_if_missing: bool = True,
+):
+    """
+    Load a JSON file and return the parsed Python object (dict/list/etc.).
+
+    Parameters
+    ----------
+    file_path, file_name:
+        Path to the JSON file (same patterns as load_data/save_data).
+    default:
+        Value to return if the file is missing and raise_if_missing=False.
+    raise_if_missing:
+        If True, raise FileNotFoundError when the file does not exist.
+        If False, return `default` when missing.
+    """
+
+    path = _resolve_path(file_path, file_name)
+
+    # If no suffix, assume it's json
+    if not path.suffix:
+        path = path.with_suffix(".json")
+
+    if not path.exists():
+        if raise_if_missing:
+            raise FileNotFoundError(f"JSON file not found: {path}")
+        logger.info("JSON file not found (returning default): %s", path)
+        return default
+
+    logger.info("Loading JSON: %s", path)
+
+    try:
+        with open(path, "r", encoding=encoding) as file_handle:
+            return json.load(file_handle)
+    except Exception:
+        logger.exception("Error reading JSON file: %s", path)
+        raise
+
+
+    #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 

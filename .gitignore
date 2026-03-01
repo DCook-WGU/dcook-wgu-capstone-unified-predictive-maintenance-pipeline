@@ -81,4 +81,10 @@ kafka_data/
 # ============================
 *.env
 .env.*
-secrets/
+secrets/wandb/
+**/wandb/
+*.tmp.driveupload
+**/.tmp.driveupload
+.tmp.driveupload
+*.tmp.driveupload
+**/.tmp.driveupload

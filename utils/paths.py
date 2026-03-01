@@ -40,30 +40,56 @@ def get_paths() -> ProjectPaths:
     Resolve project root and main directories.
 
     Priority:
-    1. PROJECT_ROOT environment variable
-    2. Python script location (__file__)
-    3. Jupyter / other: current working directory's parent
+    1) PROJECT_ROOT environment variable
+    2) Python module location (__file__) if it looks like project root
+    3) Jupyter/interactive fallback:
+       - if cwd is <root>/notebooks, use cwd.parent
+       - otherwise use cwd
     """
-     # Get Current Working Directory
-    cwd = Path().resolve()
+    # Get Current Working Directory
+    cwd = Path.cwd().resolve()
 
     # Priority: ENV → script → Jupyter fallback
     env_root = os.getenv("PROJECT_ROOT")
 
     if env_root:
         project_root = Path(env_root).resolve()
+        if not project_root.exists():
+            raise ValueError(f"PROJECT_ROOT does not exist: {project_root}")
+        if not (project_root / "data").exists():
+            raise ValueError("PROJECT_ROOT does not look like project root (missing data/)")
         source = "env:PROJECT_ROOT"
+
     else:
         try:
-            # Script Path
-            project_root = Path(__file__).resolve().parents[1]
-            source = "__file__"
+            # Script Pathing
+            # Get Project Root From the file location
+
+            project_root_from_file  = Path(__file__).resolve().parents[1]
+
+            if (project_root_from_file  / "data").exists():
+                project_root = project_root_from_file 
+                source = "__file__"
+
+            else:
+                if cwd.name == "notebooks":
+                    project_root = cwd.parent
+                    source = "cwd.parent (jupyter fallback)"
+                else:
+                    project_root = cwd
+                    source = "cwd (jupyter fallback)"
+
         except NameError:
             # Jupyter notebook path
-            # If you normally open notebooks in <root>/notebooks,
-            # then cwd.parent should be the project root.
-            project_root = cwd.parent
-            source = "cwd.parent (jupyter fallback)"
+            # Notebooks should always be run from <root>/notebooks,
+            # Thus cwd.parent should be the project root, else we will get the cwd
+            if cwd.name == "notebooks":
+                project_root = cwd.parent
+                source = "cwd.parent (jupyter fallback)"
+            else:
+                project_root = cwd
+                source = "cwd (jupyter fallback)"
+
 
     # Define data directory
     data_dir = project_root / "data"

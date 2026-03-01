@@ -31,17 +31,34 @@ def profile_dataframe(
         artifacts_dir = Path(artifacts_dir)
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        num_path = artifacts_dir / "describe_numeric.csv"
-        obj_path = artifacts_dir / "describe_object.csv"
-        bool_path = artifacts_dir / "describe_boolean.csv"
+        numeric_path = artifacts_dir / "describe_numeric.csv"
+        object_path = artifacts_dir / "describe_object.csv"
+        boolean_path = artifacts_dir / "describe_boolean.csv"
 
-        dataframe.describe().T.to_csv(num_path)
-        dataframe.describe(include=["object", "category", "string"]).T.to_csv(obj_path)
-        dataframe.describe(include=["bool", "boolean"]).T.to_csv(bool_path)
+        numeric_columns = dataframe.select_dtypes(include=["number"]).columns.tolist()
+        if len(numeric_columns) > 0:
+            numeric_path = artifacts_dir / "describe_numeric.csv"
+            dataframe[numeric_columns].describe().T.to_csv(numeric_path)
+            saved["describe_numeric_csv"] = str(numeric_path)
+        else:
+            logger.info("No numeric columns to describe; skipping numeric describe.")
 
-        saved["describe_numeric_csv"] = num_path
-        saved["describe_object_csv"] = obj_path
-        saved["describe_boolean_csv"] = bool_path
+
+        object_category_columns = dataframe.select_dtypes(include=["object", "category", "string"]).columns.tolist()
+        if len(object_category_columns) > 0:
+            object_path = artifacts_dir / "describe_object.csv"
+            dataframe[object_category_columns].describe().T.to_csv(object_path)
+            saved["describe_object_csv"] = str(object_path)
+        else:
+            logger.info("No object/category/string columns to describe; skipping.")
+
+        boolean_columns = dataframe.select_dtypes(include=["bool", "boolean"]).columns.tolist()
+        if len(boolean_columns) > 0:
+            boolean_path = artifacts_dir / "describe_boolean.csv"
+            dataframe[boolean_columns].describe().T.to_csv(boolean_path)
+            saved["describe_boolean_csv"] = str(boolean_path)
+        else:
+            logger.info("No boolean columns to describe; skipping.")
 
         logger.info("Saved describe artifacts to: %s", artifacts_dir)
 
