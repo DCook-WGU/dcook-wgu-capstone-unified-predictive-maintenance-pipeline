@@ -1,0 +1,449 @@
+2026-03-01 03:45:56,811 | INFO | capstone.bronze | Bronze stage starting
+2026-03-01 03:45:56,814 | INFO | capstone.bronze | Project Root Path Loaded: /workspace
+2026-03-01 03:45:56,816 | INFO | capstone.bronze | Project Logging Path Loaded: /workspace/logs
+2026-03-01 03:45:56,818 | INFO | capstone.bronze | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-01 03:45:56,819 | INFO | capstone.bronze | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-01 03:45:56,821 | INFO | capstone.bronze | Project Raw Path Loaded: /workspace/data/raw
+2026-03-01 03:45:56,822 | INFO | capstone.bronze | Project Data Path Loaded: /workspace/data
+2026-03-01 03:45:56,823 | INFO | capstone.bronze | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-01 03:45:56,824 | INFO | capstone.bronze | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-01 03:45:56,825 | INFO | capstone.bronze | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-01 03:52:07,780 | INFO | capstone.bronze | Bronze stage starting
+2026-03-01 03:52:07,782 | INFO | capstone.bronze | Project Root Path Loaded: /workspace
+2026-03-01 03:52:07,784 | INFO | capstone.bronze | Project Logging Path Loaded: /workspace/logs
+2026-03-01 03:52:07,785 | INFO | capstone.bronze | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-01 03:52:07,787 | INFO | capstone.bronze | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-01 03:52:07,788 | INFO | capstone.bronze | Project Raw Path Loaded: /workspace/data/raw
+2026-03-01 03:52:07,789 | INFO | capstone.bronze | Project Data Path Loaded: /workspace/data
+2026-03-01 03:52:07,790 | INFO | capstone.bronze | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-01 03:52:07,793 | INFO | capstone.bronze | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-01 03:52:07,797 | INFO | capstone.bronze | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-01 03:54:40,904 | INFO | capstone.bronze | Bronze stage starting
+2026-03-01 03:54:40,906 | INFO | capstone.bronze | Project Root Path Loaded: /workspace
+2026-03-01 03:54:40,908 | INFO | capstone.bronze | Project Logging Path Loaded: /workspace/logs
+2026-03-01 03:54:40,909 | INFO | capstone.bronze | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-01 03:54:40,911 | INFO | capstone.bronze | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-01 03:54:40,913 | INFO | capstone.bronze | Project Raw Path Loaded: /workspace/data/raw
+2026-03-01 03:54:40,915 | INFO | capstone.bronze | Project Data Path Loaded: /workspace/data
+2026-03-01 03:54:40,916 | INFO | capstone.bronze | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-01 03:54:40,918 | INFO | capstone.bronze | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-01 03:54:40,920 | INFO | capstone.bronze | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-01 03:54:47,550 | INFO | capstone.bronze | W&B initialized: bronze__001
+2026-03-01 03:54:48,164 | INFO | capstone.file_io | Loading Data file: /workspace/data/raw/pump_sensor_data/sensor.csv
+2026-03-01 03:54:51,295 | INFO | capstone.file_io | Loaded Data File: sensor.csv | shape=(220320, 55) | columns=['Unnamed: 0', 'timestamp', 'sensor_00', 'sensor_01', 'sensor_02', 'sensor_03', 'sensor_04', 'sensor_05', 'sensor_06', 'sensor_07', 'sensor_08', 'sensor_09', 'sensor_10', 'sensor_11', 'sensor_12', 'sensor_13', 'sensor_14', 'sensor_15', 'sensor_16', 'sensor_17', 'sensor_18', 'sensor_19', 'sensor_20', 'sensor_21', 'sensor_22', 'sensor_23', 'sensor_24', 'sensor_25', 'sensor_26', 'sensor_27', 'sensor_28', 'sensor_29', 'sensor_30', 'sensor_31', 'sensor_32', 'sensor_33', 'sensor_34', 'sensor_35', 'sensor_36', 'sensor_37', 'sensor_38', 'sensor_39', 'sensor_40', 'sensor_41', 'sensor_42', 'sensor_43', 'sensor_44', 'sensor_45', 'sensor_46', 'sensor_47', 'sensor_48', 'sensor_49', 'sensor_50', 'sensor_51', 'machine_status']
+2026-03-01 03:54:52,272 | INFO | capstone.bronze | Shape: (220320, 65)
+2026-03-01 03:54:52,279 | INFO | capstone.bronze | Dtypes:
+meta__dataset                       category
+meta__split                         category
+meta__run_id                          object
+meta__asset_id                        object
+meta__label_type                    category
+meta__label_source                  category
+meta__ingested_at_utc    datetime64[us, UTC]
+meta__source_file             string[python]
+meta__source_row_id                    int64
+meta__record_id                       uint64
+Unnamed: 0                             int64
+timestamp                             object
+sensor_00                            float64
+sensor_01                            float64
+sensor_02                            float64
+sensor_03                            float64
+sensor_04                            float64
+sensor_05                            float64
+sensor_06                            float64
+sensor_07                            float64
+sensor_08                            float64
+sensor_09                            float64
+sensor_10                            float64
+sensor_11                            float64
+sensor_12                            float64
+sensor_13                            float64
+sensor_14                            float64
+sensor_15                            float64
+sensor_16                            float64
+sensor_17                            float64
+sensor_18                            float64
+sensor_19                            float64
+sensor_20                            float64
+sensor_21                            float64
+sensor_22                            float64
+sensor_23                            float64
+sensor_24                            float64
+sensor_25                            float64
+sensor_26                            float64
+sensor_27                            float64
+sensor_28                            float64
+sensor_29                            float64
+sensor_30                            float64
+sensor_31                            float64
+sensor_32                            float64
+sensor_33                            float64
+sensor_34                            float64
+sensor_35                            float64
+sensor_36                            float64
+sensor_37                            float64
+sensor_38                            float64
+sensor_39                            float64
+sensor_40                            float64
+sensor_41                            float64
+sensor_42                            float64
+sensor_43                            float64
+sensor_44                            float64
+sensor_45                            float64
+sensor_46                            float64
+sensor_47                            float64
+sensor_48                            float64
+sensor_49                            float64
+sensor_50                            float64
+sensor_51                            float64
+machine_status                        object
+2026-03-01 03:54:52,647 | INFO | capstone.bronze | Memory usage (MB): 166.05
+2026-03-01 03:54:52,725 | INFO | capstone.bronze | Head(15):
+   meta__dataset meta__split meta__run_id meta__asset_id meta__label_type meta__label_source            meta__ingested_at_utc meta__source_file  meta__source_row_id       meta__record_id  Unnamed: 0            timestamp  sensor_00  sensor_01  sensor_02  sensor_03  sensor_04  sensor_05  sensor_06  sensor_07  ...  sensor_33  sensor_34  sensor_35  sensor_36  sensor_37  sensor_38  sensor_39  sensor_40  sensor_41  sensor_42  sensor_43  sensor_44  sensor_45  sensor_46  sensor_47  sensor_48  sensor_49  sensor_50  sensor_51  machine_status
+0           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    0  14598431322315673869           0  2018-04-01 00:00:00   2.465394   47.09201    53.2118  46.310760   634.3750   76.45975   13.41146   16.13136  ...   433.7037   171.9375   341.9039   195.0655   90.32386   40.36458   31.51042   70.57291  30.989580  31.770832   41.92708  39.641200   65.68287   50.92593  38.194440   157.9861   67.70834   243.0556   201.3889          NORMAL
+1           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    1  15954729095895098000           1  2018-04-01 00:01:00   2.465394   47.09201    53.2118  46.310760   634.3750   76.45975   13.41146   16.13136  ...   433.7037   171.9375   341.9039   195.0655   90.32386   40.36458   31.51042   70.57291  30.989580  31.770832   41.92708  39.641200   65.68287   50.92593  38.194440   157.9861   67.70834   243.0556   201.3889          NORMAL
+2           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    2  10041703297090838359           2  2018-04-01 00:02:00   2.444734   47.35243    53.2118  46.397570   638.8889   73.54598   13.32465   16.03733  ...   441.2635   169.9820   343.1955   200.9694   93.90508   41.40625   31.25000   69.53125  30.468750  31.770830   41.66666  39.351852   65.39352   51.21528  38.194443   155.9606   67.12963   241.3194   203.7037          NORMAL
+3           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    3   2072036352569063261           3  2018-04-01 00:03:00   2.460474   47.09201    53.1684  46.397568   628.1250   76.98898   13.31742   16.24711  ...   446.2493   166.4987   343.9586   193.1689  101.04060   41.92708   31.51042   72.13541  30.468750  31.510420   40.88541  39.062500   64.81481   51.21528  38.194440   155.9606   66.84028   240.4514   203.1250          NORMAL
+4           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    4   4365040424004714369           4  2018-04-01 00:04:00   2.445718   47.13541    53.2118  46.397568   636.4583   76.58897   13.35359   16.21094  ...   433.9081   164.7498   339.9630   193.8770  101.70380   42.70833   31.51042   76.82291  30.989580  31.510420   41.40625  38.773150   65.10416   51.79398  38.773150   158.2755   66.55093   242.1875   201.3889          NORMAL
+5           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    5  13731207034657248969           5  2018-04-01 00:05:00   2.453588   47.09201    53.1684  46.397568   637.6157   78.18568   13.41146   16.16753  ...   438.6517   162.8758   333.7975   196.4579   90.84048   42.70833   31.77083   79.94791  30.989580  31.250000   42.70833  38.773150   63.65741   51.79398  38.773150   164.6412   66.55093   241.6088   201.6782          NORMAL
+6           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    6   7206199315957152377           6  2018-04-01 00:06:00   2.455556   47.04861    53.1684  46.397568   633.3333   75.81614   13.43316   16.13136  ...   433.5065   161.9678   330.3747   194.0652   89.23161   42.70833   32.29166   79.94791  31.250000  31.510420   43.22916  38.194440   61.92130   51.79398  39.062500   171.8750   67.70834   240.1620   200.2315          NORMAL
+7           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    7  11632940467161475457           7  2018-04-01 00:07:00   2.449653   47.13541    53.1684  46.397568   630.6713   75.77331   13.25231   16.12413  ...   451.6564   162.8504   327.9788   196.9991   87.68256   42.96875   32.55208   78.38541  30.989580  31.510416   42.96875  38.194443   59.60648   50.92593  39.351850   178.5301   68.57639   241.3194   201.0995          NORMAL
+8           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    8   4003627476009805685           8  2018-04-01 00:08:00   2.463426   47.09201    53.1684  46.397568   631.9444   74.58916   13.28848   16.13136  ...   439.8698   155.7845   316.8784   197.1554   89.55923   42.70833   32.55208   75.52083  30.989582  31.510416   42.18750  38.194440   57.87037   50.63657  39.351850   182.0023   69.44444   243.0556   201.6782          NORMAL
+9           pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                    9  12843418223340544546           9  2018-04-01 00:09:00   2.445718   47.17882    53.1684  46.397568   641.7823   74.57428   13.38252   16.24711  ...   445.2378   153.0564   313.2721   195.0570   98.83604   42.70833   32.55208   73.43750  30.989582  31.510416   41.66666  39.062500   56.42361   50.63657  39.062500   186.6319   69.73380   246.5278   200.8102          NORMAL
+10          pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                   10  12764708609319381380          10  2018-04-01 00:10:00   2.464410   47.48264    53.1250  46.397568   637.7314   76.05148   13.41146   16.16753  ...   460.4902   154.8265   320.0443   192.2992   89.76776   42.70833   32.55208   75.52083  30.989580  31.510416   41.40625  39.351850   54.97685   50.92593  39.351850   190.9722   71.18056   250.8681   199.9421          NORMAL
+11          pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                   11  17692035958682023704          11  2018-04-01 00:11:00   2.444734   47.91666    53.1684  46.397568   635.6482   74.58654   13.41146   16.16753  ...   455.9620   159.5647   322.6265   192.3656   94.38536   42.96875   32.29166   78.12500  30.468750  31.510416   41.66666  39.351852   53.81944   51.21528  39.062500   193.5764   72.33796   253.1829   200.2315          NORMAL
+12          pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                   12   9921446699215930665          12  2018-04-01 00:12:00   2.460474   48.26389    53.1250  46.397568   630.0926   76.95988   13.34635   16.16753  ...   453.1859   161.3954   326.8734   190.6639   95.85509   42.18750   31.77083   78.64583  30.468748  31.510416   42.70833  39.351850   53.24074   50.92593  39.062500   195.6019   72.33796   253.1829   202.2569          NORMAL
+13          pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                   13   9345101619896030940          13  2018-04-01 00:13:00   2.448669   48.43750    53.1684  46.397568   638.6574   75.67310   13.31742   16.16753  ...   461.3610   163.0176   329.4678   193.9231   85.18916   42.70833   30.98958   77.08333  30.468748  31.510416   42.70833  40.509260   53.81944   50.63657  39.062500   196.4699   72.91666   252.8935   202.8356          NORMAL
+14          pump     unsplit     run__001     asset__001              NaN                NaN 2026-03-01 03:54:51.311816+00:00        sensor.csv                   14  12574828447392710356          14  2018-04-01 00:14:00   2.453588   48.56771    53.1684  46.397568   632.4074   80.65949   13.38976   16.13136  ...   454.1698   165.0171   332.3613   198.3440   81.58781   44.01041   30.46875   74.47916  30.468750  31.510416   42.18750  41.666670   53.53009   50.34722  39.062500   205.4398   72.91666   252.0255   201.0995          NORMAL
+2026-03-01 03:54:53,774 | INFO | capstone.bronze | Numeric describe (truncated):
+                        count          mean           std           min           25%           50%           75%           max
+meta__source_row_id  220320.0  1.101595e+05  6.360105e+04  0.000000e+00  5.507975e+04  1.101595e+05  1.652392e+05  2.203190e+05
+meta__record_id      220320.0  9.224243e+18  5.322367e+18  1.873763e+14  4.610703e+18  9.220552e+18  1.381850e+19  1.844674e+19
+Unnamed: 0           220320.0  1.101595e+05  6.360105e+04  0.000000e+00  5.507975e+04  1.101595e+05  1.652392e+05  2.203190e+05
+sensor_00            210112.0  2.372221e+00  4.122274e-01  0.000000e+00  2.438831e+00  2.456539e+00  2.499826e+00  2.549016e+00
+sensor_01            219951.0  4.759161e+01  3.296666e+00  0.000000e+00  4.631076e+01  4.813368e+01  4.947916e+01  5.672743e+01
+sensor_02            220301.0  5.086739e+01  3.666820e+00  3.315972e+01  5.039062e+01  5.164930e+01  5.277777e+01  5.603299e+01
+sensor_03            220301.0  4.375248e+01  2.418887e+00  3.164062e+01  4.283854e+01  4.422743e+01  4.531250e+01  4.822049e+01
+sensor_04            220301.0  5.906739e+02  1.440239e+02  2.798032e+00  6.266204e+02  6.326389e+02  6.376157e+02  8.000000e+02
+sensor_05            220301.0  7.339641e+01  1.729825e+01  0.000000e+00  6.997626e+01  7.557679e+01  8.091215e+01  9.999988e+01
+sensor_06            215522.0  1.350154e+01  2.163736e+00  1.446759e-02  1.334635e+01  1.364294e+01  1.453993e+01  2.225116e+01
+sensor_07            214869.0  1.584315e+01  2.201155e+00  0.000000e+00  1.590712e+01  1.616753e+01  1.642795e+01  2.359664e+01
+sensor_08            215213.0  1.520072e+01  2.037390e+00  2.893518e-02  1.518374e+01  1.549479e+01  1.569734e+01  2.434896e+01
+sensor_09            215725.0  1.479921e+01  2.091963e+00  0.000000e+00  1.505353e+01  1.508247e+01  1.511863e+01  2.500000e+01
+sensor_10            220301.0  4.147034e+01  1.209352e+01  0.000000e+00  4.070526e+01  4.429134e+01  4.746376e+01  7.610686e+01
+sensor_11            220301.0  4.191832e+01  1.305643e+01  0.000000e+00  3.885642e+01  4.536314e+01  4.965654e+01  6.000000e+01
+sensor_12            220301.0  2.913697e+01  1.011394e+01  0.000000e+00  2.868681e+01  3.251583e+01  3.493973e+01  4.500000e+01
+sensor_13            220301.0  7.078858e+00  6.901755e+00  0.000000e+00  1.538516e+00  2.929809e+00  1.285952e+01  3.118755e+01
+sensor_14            220299.0  3.768600e+02  1.132064e+02  3.240955e+01  4.181033e+02  4.201062e+02  4.209971e+02  5.000000e+02
+sensor_15                 0.0           NaN           NaN           NaN           NaN           NaN           NaN           NaN
+sensor_16            220289.0  4.164729e+02  1.260726e+02  0.000000e+00  4.594534e+02  4.628561e+02  4.643027e+02  7.397415e+02
+sensor_17            220274.0  4.211275e+02  1.291562e+02  0.000000e+00  4.541388e+02  4.620203e+02  4.668571e+02  5.999999e+02
+sensor_18            220274.0  2.303785e+00  7.658831e-01  0.000000e+00  2.447542e+00  2.533704e+00  2.587682e+00  4.873250e+00
+sensor_19            220304.0  5.908298e+02  1.993458e+02  0.000000e+00  6.627690e+02  6.656724e+02  6.671467e+02  8.789179e+02
+sensor_20            220304.0  3.608052e+02  1.019741e+02  0.000000e+00  3.980215e+02  3.993670e+02  4.000884e+02  4.489079e+02
+sensor_21            220304.0  7.962259e+02  2.266793e+02  9.552766e+01  8.754644e+02  8.796976e+02  8.821299e+02  1.107526e+03
+sensor_22            220279.0  4.597928e+02  1.545283e+02  0.000000e+00  4.789626e+02  5.318559e+02  5.342549e+02  5.940611e+02
+sensor_23            220304.0  9.226093e+02  2.918353e+02  0.000000e+00  9.509224e+02  9.819250e+02  1.090808e+03  1.227564e+03
+sensor_24            220304.0  5.562354e+02  1.822980e+02  0.000000e+00  6.011511e+02  6.258735e+02  6.286077e+02  1.000000e+03
+sensor_25            220284.0  6.491448e+02  2.208652e+02  0.000000e+00  6.939578e+02  7.402035e+02  7.503571e+02  8.395750e+02
+sensor_26            220300.0  7.864118e+02  2.466636e+02  4.315479e+01  7.904896e+02  8.618696e+02  9.191048e+02  1.214420e+03
+sensor_27            220304.0  5.015066e+02  1.698232e+02  0.000000e+00  4.482980e+02  4.944684e+02  5.362745e+02  2.000000e+03
+sensor_28            220304.0  8.516903e+02  3.130740e+02  4.319347e+00  7.826826e+02  9.672799e+02  1.043977e+03  1.841146e+03
+sensor_29            220248.0  5.761953e+02  2.257641e+02  6.365742e-01  5.189472e+02  5.648725e+02  7.440215e+02  1.466281e+03
+sensor_30            220059.0  6.145964e+02  1.957269e+02  0.000000e+00  6.277778e+02  6.689814e+02  6.972222e+02  1.600000e+03
+sensor_31            220304.0  8.633231e+02  2.835448e+02  2.395833e+01  8.390624e+02  9.177083e+02  9.812499e+02  1.800000e+03
+sensor_32            220252.0  8.042839e+02  2.606024e+02  2.407161e-01  7.606075e+02  8.788508e+02  9.438776e+02  1.839211e+03
+sensor_33            220304.0  4.864060e+02  1.507518e+02  6.460602e+00  4.897611e+02  5.122717e+02  5.551632e+02  1.578600e+03
+sensor_34            220304.0  2.349718e+02  8.837606e+01  5.488237e+01  1.724863e+02  2.263560e+02  3.168449e+02  4.255498e+02
+sensor_35            220304.0  4.271298e+02  1.417725e+02  0.000000e+00  3.531766e+02  4.733493e+02  5.288910e+02  6.944791e+02
+sensor_36            220304.0  5.930339e+02  2.893855e+02  2.260970e+00  2.885476e+02  7.096680e+02  8.373330e+02  9.840607e+02
+sensor_37            220304.0  6.078736e+01  3.760488e+01  0.000000e+00  2.879922e+01  6.429548e+01  9.082193e+01  1.749012e+02
+sensor_38            220293.0  4.965595e+01  1.054040e+01  2.447917e+01  4.557291e+01  4.947916e+01  5.364583e+01  4.177083e+02
+sensor_39            220293.0  3.661044e+01  1.561372e+01  1.927083e+01  3.255208e+01  3.541666e+01  3.906250e+01  5.479166e+02
+sensor_40            220293.0  6.884453e+01  2.137114e+01  2.343750e+01  5.781250e+01  6.640625e+01  7.786458e+01  5.127604e+02
+sensor_41            220293.0  3.536513e+01  7.898665e+00  2.083333e+01  3.255208e+01  3.489583e+01  3.776041e+01  4.203125e+02
+sensor_42            220293.0  3.545346e+01  1.025952e+01  2.213542e+01  3.281250e+01  3.515625e+01  3.697916e+01  3.742188e+02
+sensor_43            220293.0  4.387959e+01  1.104440e+01  2.447917e+01  3.958333e+01  4.296875e+01  4.661458e+01  4.085937e+02
+sensor_44            220293.0  4.265688e+01  1.157636e+01  2.575232e+01  3.674768e+01  4.050926e+01  4.513889e+01  1.000000e+03
+sensor_45            220293.0  4.309498e+01  1.283752e+01  2.633102e+01  3.674768e+01  4.021991e+01  4.484954e+01  3.203125e+02
+sensor_46            220293.0  4.801859e+01  1.564128e+01  2.633102e+01  4.050926e+01  4.484954e+01  5.121528e+01  3.703704e+02
+sensor_47            220293.0  4.434090e+01  1.044244e+01  2.719907e+01  3.906250e+01  4.253472e+01  4.658565e+01  3.035301e+02
+sensor_48            220293.0  1.508890e+02  8.224496e+01  2.633102e+01  8.391203e+01  1.380208e+02  2.083333e+02  5.616320e+02
+sensor_49            220293.0  5.711997e+01  1.914360e+01  2.662037e+01  4.774306e+01  5.266204e+01  6.076389e+01  4.644097e+02
+sensor_50            143303.0  1.830493e+02  6.525865e+01  2.748843e+01  1.675347e+02  1.938657e+02  2.199074e+02  1.000000e+03
+sensor_51            204937.0  2.026997e+02  1.095886e+02  2.777778e+01  1.791088e+02  1.973380e+02  2.167245e+02  1.000000e+03
+2026-03-01 03:54:54,090 | INFO | capstone.bronze | Object/categorical describe (truncated):
+                     count  unique                  top    freq
+meta__dataset       220320       1                 pump  220320
+meta__split         220320       1              unsplit  220320
+meta__run_id        220320       1             run__001  220320
+meta__asset_id      220320       1           asset__001  220320
+meta__label_type         0       0                  NaN     NaN
+meta__label_source       0       0                  NaN     NaN
+meta__source_file   220320       1           sensor.csv  220320
+timestamp           220320  220320  2018-08-31 23:43:00       1
+machine_status      220320       3               NORMAL  205836
+2026-03-01 03:54:54,105 | INFO | capstone.bronze | Meta Columns: (10): meta__dataset
+meta__split
+meta__run_id
+meta__asset_id
+meta__label_type
+meta__label_source
+meta__ingested_at_utc
+meta__source_file
+meta__source_row_id
+meta__record_id
+2026-03-01 03:54:54,142 | INFO | capstone.bronze | All Other Columns: (55): Unnamed: 0
+timestamp
+sensor_00
+sensor_01
+sensor_02
+sensor_03
+sensor_04
+sensor_05
+sensor_06
+sensor_07
+sensor_08
+sensor_09
+sensor_10
+sensor_11
+sensor_12
+sensor_13
+sensor_14
+sensor_15
+sensor_16
+sensor_17
+sensor_18
+sensor_19
+sensor_20
+sensor_21
+sensor_22
+sensor_23
+sensor_24
+sensor_25
+sensor_26
+sensor_27
+sensor_28
+sensor_29
+sensor_30
+sensor_31
+sensor_32
+sensor_33
+sensor_34
+sensor_35
+sensor_36
+sensor_37
+sensor_38
+sensor_39
+sensor_40
+sensor_41
+sensor_42
+sensor_43
+sensor_44
+sensor_45
+sensor_46
+sensor_47
+sensor_48
+sensor_49
+sensor_50
+sensor_51
+machine_status
+2026-03-01 03:54:54,214 | INFO | capstone.bronze | Top missingness (%):
+sensor_15    100.000000
+sensor_50     34.956881
+sensor_51      6.982117
+sensor_00      4.633261
+sensor_07      2.474129
+sensor_08      2.317992
+sensor_06      2.177741
+sensor_09      2.085603
+sensor_01      0.167484
+sensor_30      0.118464
+sensor_29      0.032680
+sensor_32      0.030864
+sensor_18      0.020879
+sensor_17      0.020879
+sensor_22      0.018609
+sensor_25      0.016340
+sensor_16      0.014070
+sensor_45      0.012255
+sensor_39      0.012255
+sensor_43      0.012255
+2026-03-01 03:54:55,157 | INFO | capstone.file_io | Saving DataFrame to Parquet: /workspace/data/bronze/train/pump__bronze__train.parquet
+2026-03-01 03:54:56,839 | INFO | capstone.file_io | Saved: pump__bronze__train.parquet | shape=(220320, 65) | columns=['meta__dataset', 'meta__split', 'meta__run_id', 'meta__asset_id', 'meta__label_type', 'meta__label_source', 'meta__ingested_at_utc', 'meta__source_file', 'meta__source_row_id', 'meta__record_id', 'Unnamed: 0', 'timestamp', 'sensor_00', 'sensor_01', 'sensor_02', 'sensor_03', 'sensor_04', 'sensor_05', 'sensor_06', 'sensor_07', 'sensor_08', 'sensor_09', 'sensor_10', 'sensor_11', 'sensor_12', 'sensor_13', 'sensor_14', 'sensor_15', 'sensor_16', 'sensor_17', 'sensor_18', 'sensor_19', 'sensor_20', 'sensor_21', 'sensor_22', 'sensor_23', 'sensor_24', 'sensor_25', 'sensor_26', 'sensor_27', 'sensor_28', 'sensor_29', 'sensor_30', 'sensor_31', 'sensor_32', 'sensor_33', 'sensor_34', 'sensor_35', 'sensor_36', 'sensor_37', 'sensor_38', 'sensor_39', 'sensor_40', 'sensor_41', 'sensor_42', 'sensor_43', 'sensor_44', 'sensor_45', 'sensor_46', 'sensor_47', 'sensor_48', 'sensor_49', 'sensor_50', 'sensor_51', 'machine_status']
+2026-03-01 03:54:57,816 | INFO | capstone.bronze | Shape: (220320, 65)
+2026-03-01 03:54:57,818 | INFO | capstone.bronze | Memory (MB): 189.16
+2026-03-01 03:54:57,823 | INFO | capstone.bronze | Dtypes:
+meta__dataset                       category
+meta__split                         category
+meta__run_id                          object
+meta__asset_id                        object
+meta__label_type              string[python]
+meta__label_source            string[python]
+meta__ingested_at_utc    datetime64[us, UTC]
+meta__source_file             string[python]
+meta__source_row_id                    int64
+meta__record_id                       uint64
+Unnamed: 0                             int64
+timestamp                             object
+sensor_00                            float64
+sensor_01                            float64
+sensor_02                            float64
+sensor_03                            float64
+sensor_04                            float64
+sensor_05                            float64
+sensor_06                            float64
+sensor_07                            float64
+sensor_08                            float64
+sensor_09                            float64
+sensor_10                            float64
+sensor_11                            float64
+sensor_12                            float64
+sensor_13                            float64
+sensor_14                            float64
+sensor_15                            float64
+sensor_16                            float64
+sensor_17                            float64
+sensor_18                            float64
+sensor_19                            float64
+sensor_20                            float64
+sensor_21                            float64
+sensor_22                            float64
+sensor_23                            float64
+sensor_24                            float64
+sensor_25                            float64
+sensor_26                            float64
+sensor_27                            float64
+sensor_28                            float64
+sensor_29                            float64
+sensor_30                            float64
+sensor_31                            float64
+sensor_32                            float64
+sensor_33                            float64
+sensor_34                            float64
+sensor_35                            float64
+sensor_36                            float64
+sensor_37                            float64
+sensor_38                            float64
+sensor_39                            float64
+sensor_40                            float64
+sensor_41                            float64
+sensor_42                            float64
+sensor_43                            float64
+sensor_44                            float64
+sensor_45                            float64
+sensor_46                            float64
+sensor_47                            float64
+sensor_48                            float64
+sensor_49                            float64
+sensor_50                            float64
+sensor_51                            float64
+machine_status                        object
+2026-03-01 03:54:57,842 | INFO | capstone.bronze | Head(15):
+   meta__dataset meta__split meta__run_id meta__asset_id meta__label_type meta__label_source            meta__ingested_at_utc meta__source_file  meta__source_row_id       meta__record_id  Unnamed: 0            timestamp  sensor_00  sensor_01  sensor_02  sensor_03  sensor_04  sensor_05  sensor_06  sensor_07  ...  sensor_33  sensor_34  sensor_35  sensor_36  sensor_37  sensor_38  sensor_39  sensor_40  sensor_41  sensor_42  sensor_43  sensor_44  sensor_45  sensor_46  sensor_47  sensor_48  sensor_49  sensor_50  sensor_51  machine_status
+0           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    0  14598431322315673869           0  2018-04-01 00:00:00   2.465394   47.09201    53.2118  46.310760   634.3750   76.45975   13.41146   16.13136  ...   433.7037   171.9375   341.9039   195.0655   90.32386   40.36458   31.51042   70.57291  30.989580  31.770832   41.92708  39.641200   65.68287   50.92593  38.194440   157.9861   67.70834   243.0556   201.3889          NORMAL
+1           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    1  15954729095895098000           1  2018-04-01 00:01:00   2.465394   47.09201    53.2118  46.310760   634.3750   76.45975   13.41146   16.13136  ...   433.7037   171.9375   341.9039   195.0655   90.32386   40.36458   31.51042   70.57291  30.989580  31.770832   41.92708  39.641200   65.68287   50.92593  38.194440   157.9861   67.70834   243.0556   201.3889          NORMAL
+2           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    2  10041703297090838359           2  2018-04-01 00:02:00   2.444734   47.35243    53.2118  46.397570   638.8889   73.54598   13.32465   16.03733  ...   441.2635   169.9820   343.1955   200.9694   93.90508   41.40625   31.25000   69.53125  30.468750  31.770830   41.66666  39.351852   65.39352   51.21528  38.194443   155.9606   67.12963   241.3194   203.7037          NORMAL
+3           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    3   2072036352569063261           3  2018-04-01 00:03:00   2.460474   47.09201    53.1684  46.397568   628.1250   76.98898   13.31742   16.24711  ...   446.2493   166.4987   343.9586   193.1689  101.04060   41.92708   31.51042   72.13541  30.468750  31.510420   40.88541  39.062500   64.81481   51.21528  38.194440   155.9606   66.84028   240.4514   203.1250          NORMAL
+4           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    4   4365040424004714369           4  2018-04-01 00:04:00   2.445718   47.13541    53.2118  46.397568   636.4583   76.58897   13.35359   16.21094  ...   433.9081   164.7498   339.9630   193.8770  101.70380   42.70833   31.51042   76.82291  30.989580  31.510420   41.40625  38.773150   65.10416   51.79398  38.773150   158.2755   66.55093   242.1875   201.3889          NORMAL
+5           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    5  13731207034657248969           5  2018-04-01 00:05:00   2.453588   47.09201    53.1684  46.397568   637.6157   78.18568   13.41146   16.16753  ...   438.6517   162.8758   333.7975   196.4579   90.84048   42.70833   31.77083   79.94791  30.989580  31.250000   42.70833  38.773150   63.65741   51.79398  38.773150   164.6412   66.55093   241.6088   201.6782          NORMAL
+6           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    6   7206199315957152377           6  2018-04-01 00:06:00   2.455556   47.04861    53.1684  46.397568   633.3333   75.81614   13.43316   16.13136  ...   433.5065   161.9678   330.3747   194.0652   89.23161   42.70833   32.29166   79.94791  31.250000  31.510420   43.22916  38.194440   61.92130   51.79398  39.062500   171.8750   67.70834   240.1620   200.2315          NORMAL
+7           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    7  11632940467161475457           7  2018-04-01 00:07:00   2.449653   47.13541    53.1684  46.397568   630.6713   75.77331   13.25231   16.12413  ...   451.6564   162.8504   327.9788   196.9991   87.68256   42.96875   32.55208   78.38541  30.989580  31.510416   42.96875  38.194443   59.60648   50.92593  39.351850   178.5301   68.57639   241.3194   201.0995          NORMAL
+8           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    8   4003627476009805685           8  2018-04-01 00:08:00   2.463426   47.09201    53.1684  46.397568   631.9444   74.58916   13.28848   16.13136  ...   439.8698   155.7845   316.8784   197.1554   89.55923   42.70833   32.55208   75.52083  30.989582  31.510416   42.18750  38.194440   57.87037   50.63657  39.351850   182.0023   69.44444   243.0556   201.6782          NORMAL
+9           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    9  12843418223340544546           9  2018-04-01 00:09:00   2.445718   47.17882    53.1684  46.397568   641.7823   74.57428   13.38252   16.24711  ...   445.2378   153.0564   313.2721   195.0570   98.83604   42.70833   32.55208   73.43750  30.989582  31.510416   41.66666  39.062500   56.42361   50.63657  39.062500   186.6319   69.73380   246.5278   200.8102          NORMAL
+10          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   10  12764708609319381380          10  2018-04-01 00:10:00   2.464410   47.48264    53.1250  46.397568   637.7314   76.05148   13.41146   16.16753  ...   460.4902   154.8265   320.0443   192.2992   89.76776   42.70833   32.55208   75.52083  30.989580  31.510416   41.40625  39.351850   54.97685   50.92593  39.351850   190.9722   71.18056   250.8681   199.9421          NORMAL
+11          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   11  17692035958682023704          11  2018-04-01 00:11:00   2.444734   47.91666    53.1684  46.397568   635.6482   74.58654   13.41146   16.16753  ...   455.9620   159.5647   322.6265   192.3656   94.38536   42.96875   32.29166   78.12500  30.468750  31.510416   41.66666  39.351852   53.81944   51.21528  39.062500   193.5764   72.33796   253.1829   200.2315          NORMAL
+12          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   12   9921446699215930665          12  2018-04-01 00:12:00   2.460474   48.26389    53.1250  46.397568   630.0926   76.95988   13.34635   16.16753  ...   453.1859   161.3954   326.8734   190.6639   95.85509   42.18750   31.77083   78.64583  30.468748  31.510416   42.70833  39.351850   53.24074   50.92593  39.062500   195.6019   72.33796   253.1829   202.2569          NORMAL
+13          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   13   9345101619896030940          13  2018-04-01 00:13:00   2.448669   48.43750    53.1684  46.397568   638.6574   75.67310   13.31742   16.16753  ...   461.3610   163.0176   329.4678   193.9231   85.18916   42.70833   30.98958   77.08333  30.468748  31.510416   42.70833  40.509260   53.81944   50.63657  39.062500   196.4699   72.91666   252.8935   202.8356          NORMAL
+14          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   14  12574828447392710356          14  2018-04-01 00:14:00   2.453588   48.56771    53.1684  46.397568   632.4074   80.65949   13.38976   16.13136  ...   454.1698   165.0171   332.3613   198.3440   81.58781   44.01041   30.46875   74.47916  30.468750  31.510416   42.18750  41.666670   53.53009   50.34722  39.062500   205.4398   72.91666   252.0255   201.0995          NORMAL
+2026-03-01 03:54:58,872 | INFO | capstone.bronze | No boolean columns to describe; skipping.
+2026-03-01 03:54:58,874 | INFO | capstone.bronze | Saved describe artifacts to: /workspace/artifacts/bronze
+2026-03-01 03:54:59,647 | INFO | capstone.bronze | Shape: (220320, 65)
+2026-03-01 03:54:59,649 | INFO | capstone.bronze | Memory (MB): 189.16
+2026-03-01 03:54:59,654 | INFO | capstone.bronze | Dtypes:
+meta__dataset                       category
+meta__split                         category
+meta__run_id                          object
+meta__asset_id                        object
+meta__label_type              string[python]
+meta__label_source            string[python]
+meta__ingested_at_utc    datetime64[us, UTC]
+meta__source_file             string[python]
+meta__source_row_id                    int64
+meta__record_id                       uint64
+Unnamed: 0                             int64
+timestamp                             object
+sensor_00                            float64
+sensor_01                            float64
+sensor_02                            float64
+sensor_03                            float64
+sensor_04                            float64
+sensor_05                            float64
+sensor_06                            float64
+sensor_07                            float64
+sensor_08                            float64
+sensor_09                            float64
+sensor_10                            float64
+sensor_11                            float64
+sensor_12                            float64
+sensor_13                            float64
+sensor_14                            float64
+sensor_15                            float64
+sensor_16                            float64
+sensor_17                            float64
+sensor_18                            float64
+sensor_19                            float64
+sensor_20                            float64
+sensor_21                            float64
+sensor_22                            float64
+sensor_23                            float64
+sensor_24                            float64
+sensor_25                            float64
+sensor_26                            float64
+sensor_27                            float64
+sensor_28                            float64
+sensor_29                            float64
+sensor_30                            float64
+sensor_31                            float64
+sensor_32                            float64
+sensor_33                            float64
+sensor_34                            float64
+sensor_35                            float64
+sensor_36                            float64
+sensor_37                            float64
+sensor_38                            float64
+sensor_39                            float64
+sensor_40                            float64
+sensor_41                            float64
+sensor_42                            float64
+sensor_43                            float64
+sensor_44                            float64
+sensor_45                            float64
+sensor_46                            float64
+sensor_47                            float64
+sensor_48                            float64
+sensor_49                            float64
+sensor_50                            float64
+sensor_51                            float64
+machine_status                        object
+2026-03-01 03:54:59,681 | INFO | capstone.bronze | Head(15):
+   meta__dataset meta__split meta__run_id meta__asset_id meta__label_type meta__label_source            meta__ingested_at_utc meta__source_file  meta__source_row_id       meta__record_id  Unnamed: 0            timestamp  sensor_00  sensor_01  sensor_02  sensor_03  sensor_04  sensor_05  sensor_06  sensor_07  ...  sensor_33  sensor_34  sensor_35  sensor_36  sensor_37  sensor_38  sensor_39  sensor_40  sensor_41  sensor_42  sensor_43  sensor_44  sensor_45  sensor_46  sensor_47  sensor_48  sensor_49  sensor_50  sensor_51  machine_status
+0           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    0  14598431322315673869           0  2018-04-01 00:00:00   2.465394   47.09201    53.2118  46.310760   634.3750   76.45975   13.41146   16.13136  ...   433.7037   171.9375   341.9039   195.0655   90.32386   40.36458   31.51042   70.57291  30.989580  31.770832   41.92708  39.641200   65.68287   50.92593  38.194440   157.9861   67.70834   243.0556   201.3889          NORMAL
+1           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    1  15954729095895098000           1  2018-04-01 00:01:00   2.465394   47.09201    53.2118  46.310760   634.3750   76.45975   13.41146   16.13136  ...   433.7037   171.9375   341.9039   195.0655   90.32386   40.36458   31.51042   70.57291  30.989580  31.770832   41.92708  39.641200   65.68287   50.92593  38.194440   157.9861   67.70834   243.0556   201.3889          NORMAL
+2           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    2  10041703297090838359           2  2018-04-01 00:02:00   2.444734   47.35243    53.2118  46.397570   638.8889   73.54598   13.32465   16.03733  ...   441.2635   169.9820   343.1955   200.9694   93.90508   41.40625   31.25000   69.53125  30.468750  31.770830   41.66666  39.351852   65.39352   51.21528  38.194443   155.9606   67.12963   241.3194   203.7037          NORMAL
+3           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    3   2072036352569063261           3  2018-04-01 00:03:00   2.460474   47.09201    53.1684  46.397568   628.1250   76.98898   13.31742   16.24711  ...   446.2493   166.4987   343.9586   193.1689  101.04060   41.92708   31.51042   72.13541  30.468750  31.510420   40.88541  39.062500   64.81481   51.21528  38.194440   155.9606   66.84028   240.4514   203.1250          NORMAL
+4           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    4   4365040424004714369           4  2018-04-01 00:04:00   2.445718   47.13541    53.2118  46.397568   636.4583   76.58897   13.35359   16.21094  ...   433.9081   164.7498   339.9630   193.8770  101.70380   42.70833   31.51042   76.82291  30.989580  31.510420   41.40625  38.773150   65.10416   51.79398  38.773150   158.2755   66.55093   242.1875   201.3889          NORMAL
+5           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    5  13731207034657248969           5  2018-04-01 00:05:00   2.453588   47.09201    53.1684  46.397568   637.6157   78.18568   13.41146   16.16753  ...   438.6517   162.8758   333.7975   196.4579   90.84048   42.70833   31.77083   79.94791  30.989580  31.250000   42.70833  38.773150   63.65741   51.79398  38.773150   164.6412   66.55093   241.6088   201.6782          NORMAL
+6           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    6   7206199315957152377           6  2018-04-01 00:06:00   2.455556   47.04861    53.1684  46.397568   633.3333   75.81614   13.43316   16.13136  ...   433.5065   161.9678   330.3747   194.0652   89.23161   42.70833   32.29166   79.94791  31.250000  31.510420   43.22916  38.194440   61.92130   51.79398  39.062500   171.8750   67.70834   240.1620   200.2315          NORMAL
+7           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    7  11632940467161475457           7  2018-04-01 00:07:00   2.449653   47.13541    53.1684  46.397568   630.6713   75.77331   13.25231   16.12413  ...   451.6564   162.8504   327.9788   196.9991   87.68256   42.96875   32.55208   78.38541  30.989580  31.510416   42.96875  38.194443   59.60648   50.92593  39.351850   178.5301   68.57639   241.3194   201.0995          NORMAL
+8           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    8   4003627476009805685           8  2018-04-01 00:08:00   2.463426   47.09201    53.1684  46.397568   631.9444   74.58916   13.28848   16.13136  ...   439.8698   155.7845   316.8784   197.1554   89.55923   42.70833   32.55208   75.52083  30.989582  31.510416   42.18750  38.194440   57.87037   50.63657  39.351850   182.0023   69.44444   243.0556   201.6782          NORMAL
+9           pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                    9  12843418223340544546           9  2018-04-01 00:09:00   2.445718   47.17882    53.1684  46.397568   641.7823   74.57428   13.38252   16.24711  ...   445.2378   153.0564   313.2721   195.0570   98.83604   42.70833   32.55208   73.43750  30.989582  31.510416   41.66666  39.062500   56.42361   50.63657  39.062500   186.6319   69.73380   246.5278   200.8102          NORMAL
+10          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   10  12764708609319381380          10  2018-04-01 00:10:00   2.464410   47.48264    53.1250  46.397568   637.7314   76.05148   13.41146   16.16753  ...   460.4902   154.8265   320.0443   192.2992   89.76776   42.70833   32.55208   75.52083  30.989580  31.510416   41.40625  39.351850   54.97685   50.92593  39.351850   190.9722   71.18056   250.8681   199.9421          NORMAL
+11          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   11  17692035958682023704          11  2018-04-01 00:11:00   2.444734   47.91666    53.1684  46.397568   635.6482   74.58654   13.41146   16.16753  ...   455.9620   159.5647   322.6265   192.3656   94.38536   42.96875   32.29166   78.12500  30.468750  31.510416   41.66666  39.351852   53.81944   51.21528  39.062500   193.5764   72.33796   253.1829   200.2315          NORMAL
+12          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   12   9921446699215930665          12  2018-04-01 00:12:00   2.460474   48.26389    53.1250  46.397568   630.0926   76.95988   13.34635   16.16753  ...   453.1859   161.3954   326.8734   190.6639   95.85509   42.18750   31.77083   78.64583  30.468748  31.510416   42.70833  39.351850   53.24074   50.92593  39.062500   195.6019   72.33796   253.1829   202.2569          NORMAL
+13          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   13   9345101619896030940          13  2018-04-01 00:13:00   2.448669   48.43750    53.1684  46.397568   638.6574   75.67310   13.31742   16.16753  ...   461.3610   163.0176   329.4678   193.9231   85.18916   42.70833   30.98958   77.08333  30.468748  31.510416   42.70833  40.509260   53.81944   50.63657  39.062500   196.4699   72.91666   252.8935   202.8356          NORMAL
+14          pump     unsplit     run__001     asset__001             <NA>               <NA> 2026-03-01 03:54:51.311816+00:00        sensor.csv                   14  12574828447392710356          14  2018-04-01 00:14:00   2.453588   48.56771    53.1684  46.397568   632.4074   80.65949   13.38976   16.13136  ...   454.1698   165.0171   332.3613   198.3440   81.58781   44.01041   30.46875   74.47916  30.468750  31.510416   42.18750  41.666670   53.53009   50.34722  39.062500   205.4398   72.91666   252.0255   201.0995          NORMAL
+2026-03-01 03:55:00,593 | INFO | capstone.bronze | No boolean columns to describe; skipping.
+2026-03-01 03:55:00,595 | INFO | capstone.bronze | Saved describe artifacts to: /workspace/artifacts/bronze
+2026-03-01 03:55:03,001 | WARNING | capstone.bronze | Notebook not found at /workspace/notebooks/Bronze_Preprocessing_Pump.ipynb; skipping notebook upload.

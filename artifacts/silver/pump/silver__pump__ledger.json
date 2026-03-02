@@ -1,0 +1,520 @@
+[
+  {
+    "ts_utc": "2026-03-01T04:18:18.718540+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:20.036050+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "load_bronze",
+    "message": "Loaded Bronze Parquet",
+    "why": "Silver must be derived from reprodicible Bronze Artifact",
+    "consequence": "All silver outputs trace back to this file",
+    "data": {
+      "bronze_path": "/workspace/data/bronze/train/pump__bronze__train.parquet",
+      "shape": [
+        220320,
+        65
+      ],
+      "cols": 65
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:22.551843+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "remove_junk_import_columns",
+    "message": "Dropped junk columns via candidates and/or regex pattern",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "dropped": [
+        "Unnamed: 0"
+      ],
+      "pattern": "^unnamed:\\s*\\d+(\\.\\d+)?$"
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:23.465003+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "deduplicate_columns",
+    "message": "Removed duplicate column names (kept first occurrence).",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "duplicates": [],
+      "count": 0
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:23.787427+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "silver_meta_contract",
+    "message": "Stamped Silver-owned meta columns and ensured required Bronze meta columns exist.",
+    "why": "Silver needs consistent lineage + processing timestamps before canonical ordering, labels, and features.",
+    "consequence": "Downstream steps can rely on meta__ fields without overwriting Bronze meaning.",
+    "data": {
+      "layer": "silver",
+      "processed_at_utc": "2026-03-01T04:18:23.781532+00:00",
+      "required_meta_columns": [
+        "meta__dataset",
+        "meta__split",
+        "meta__run_id",
+        "meta__asset_id",
+        "meta__source_file",
+        "meta__source_row_id"
+      ],
+      "added_meta_columns": [
+        "meta__layer",
+        "meta__processed_at_utc",
+        "meta__dataset_name",
+        "meta__dataset_source",
+        "meta__feature_set_id",
+        "meta__feature_count",
+        "meta__label_source_column",
+        "meta__label_source_kind"
+      ],
+      "shape": {
+        "rows": 220320,
+        "cols": 68
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:24.721435+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "resolve_dataset_name",
+    "message": "Resolved dataset name for Silver (Bronze preferred; fallback otherwise).",
+    "why": "Silver uses Bronze-stamped dataset identifier as source of truth to preserve lineage.",
+    "consequence": "All artifacts and feature_set IDs will be consistent across layers.",
+    "data": {
+      "dataset_name": "pump",
+      "dataset_source_col": "meta__dataset",
+      "dataset_method": "unique",
+      "candidates": [
+        "meta__dataset_name",
+        "meta__source_dataset"
+      ]
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:25.350613+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "create dataset specific artifcats folder",
+    "message": "Creating a dataset specific artificats folder now that the dataset name has been resolved",
+    "why": "To allow for artifacts to be stored properly. ",
+    "consequence": "All artifacts will intermingle and create the need for organization/decluttering. .",
+    "data": {
+      "dataset_name": "pump",
+      "silver_artifacts_folder": "/workspace/artifacts/silver/pump"
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:26.515925+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "resolve_label_or_status_source",
+    "message": "Resolved label/status source column for Silver.",
+    "why": "Silver needs one consistent source to build anomaly_flag and state flags.",
+    "consequence": "Downstream label building uses this source consistently. we also record all detected candidates for traceability.",
+    "data": {
+      "label_source_col": "machine_status",
+      "label_source_type": "status",
+      "chosen_from": "status_candidates",
+      "label_candidates": [
+        "anomaly_flag",
+        "fault_flag",
+        "target",
+        "label",
+        "y"
+      ],
+      "status_candidates": [
+        "machine_status",
+        "status",
+        "state",
+        "condition"
+      ],
+      "found_label_columns": [],
+      "found_status_columns": [
+        "machine_status"
+      ],
+      "found_counts": {
+        "labels_found": 0,
+        "status_found": 1
+      },
+      "chosen_column_stats": {
+        "top_values": {
+          "NORMAL": 205836,
+          "RECOVERING": 14477,
+          "BROKEN": 7
+        },
+        "unique_count": 3,
+        "non_null_count": 220320,
+        "total_row_count": 220320,
+        "coverage_pct": 100.0
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:27.691082+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "canonical_name_collision_protection",
+    "message": "No canonical-name collisions found (Policy A).",
+    "why": "Confirm input does not contain columns that conflict with canonical outputs.",
+    "consequence": "Canonical outputs can be created without renaming any source columns.",
+    "data": {
+      "policy": "A",
+      "canonical_outputs": [
+        "event_time",
+        "event_step",
+        "time_index"
+      ],
+      "collisions": 0,
+      "shape": {
+        "rows": 220320,
+        "cols": 74
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:29.487263+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "build_canonical_identity_and_order_master",
+    "message": "Built canonical identity + ordering master per (asset, run).",
+    "why": "Silver requires a stable per-(asset,run) event axis for windowing, segmentation, EDA, and consistent downstream modeling across datasets.",
+    "consequence": "Each (asset,run) group has event_step/time_index from 0..N-1; event_time is parsed when available; meta__event_id is deterministic.",
+    "data": {
+      "dataset_name": "pump",
+      "time_candidates": [
+        "timestamp",
+        "event_time",
+        "time",
+        "datetime",
+        "date"
+      ],
+      "step_candidates": [
+        "cycle",
+        "step",
+        "event_step",
+        "sample",
+        "time_index"
+      ],
+      "tie_breaker_candidates": [
+        "meta__source_row_id",
+        "meta__record_id"
+      ],
+      "ordering_mode": "time",
+      "group_columns": [
+        "meta__asset_id",
+        "meta__run_id"
+      ],
+      "group_count": 1,
+      "rows": 220320,
+      "time_column_used": "timestamp",
+      "time_parse_success_percent": 100.0,
+      "step_column_used": null,
+      "step_parse_success_percent": null,
+      "tie_breaker_column_used": "meta__source_row_id",
+      "sorted": true,
+      "sort_columns": [
+        "meta__asset_id",
+        "meta__run_id",
+        "event_time",
+        "meta__source_row_id"
+      ],
+      "shape": {
+        "rows": 220320,
+        "cols": 81
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:30.582372+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "build_anomaly_flag",
+    "message": "Built anomaly_flag from resolved label/status source.",
+    "why": "Silver requires a consistent binary anomaly flag for segmentation, evaluation, and synthetic anomaly generation.",
+    "consequence": "Downstream steps can rely on anomaly_flag (0/1) being present across datasets.",
+    "data": {
+      "label_source_column": "machine_status",
+      "label_source_type": "status",
+      "source_type": "status",
+      "source_column": "machine_status",
+      "method": "status_compare_to_normal_value",
+      "normal_value": "NORMAL",
+      "unique_status_count": 3,
+      "non_null_count": 220320,
+      "anomaly_flag_counts": {
+        "0": 205836,
+        "1": 14484
+      },
+      "anomaly_rate_percent": 6.5740740740740735,
+      "shape": {
+        "rows": 220320,
+        "columns": 85
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:33.142752+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "missingness_quarantine",
+    "message": "Dropped features exceeding missingness threshold (or all-null).",
+    "why": "High-missingness features add noise/instability to EDA + modeling.",
+    "consequence": "Feature set shrinks; downstream stats/imputation/modeling operate on remaining features.",
+    "data": {
+      "threshold_pct": 30.0,
+      "dropped": [
+        "sensor_15",
+        "sensor_50"
+      ],
+      "remaining": 50,
+      "top_missing_pct": {
+        "sensor_15": 100.0,
+        "sensor_50": 34.95688090050835,
+        "sensor_51": 6.982116920842412,
+        "sensor_00": 4.633260711692085,
+        "sensor_07": 2.474128540305011,
+        "sensor_08": 2.3179920116194626,
+        "sensor_06": 2.177741466957153,
+        "sensor_09": 2.0856027596223674,
+        "sensor_01": 0.16748366013071894,
+        "sensor_30": 0.1184640522875817
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:34.088156+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "finalize_feature_set",
+    "message": "Finalized feature set after applying feature filters (e.g., missingness quarantine).",
+    "why": "Feature set identifier must represent the final schema used in downstream EDA/modeling.",
+    "consequence": "Registry + parquet are consistent; Gold can assert schema alignment.",
+    "data": {
+      "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+      "label_source_column": "machine_status",
+      "label_source_type": "status",
+      "exclude_prefixes": [
+        "meta__",
+        "raw__"
+      ],
+      "exclude_columns": [
+        "event_time",
+        "event_step",
+        "time_index",
+        "event_date",
+        "meta__event_id",
+        "meta__event_time_source",
+        "meta__event_step_source",
+        "meta__event_time_parse_success_percent",
+        "meta__event_step_parse_success_percent",
+        "anomaly_flag",
+        "is_anomaly",
+        "is_normal",
+        "status_normal_value",
+        "meta__label_source",
+        "meta__label_type"
+      ],
+      "feature_count": 50,
+      "selected_feature_columns": [
+        "sensor_00",
+        "sensor_01",
+        "sensor_02",
+        "sensor_03",
+        "sensor_04",
+        "sensor_05",
+        "sensor_06",
+        "sensor_07",
+        "sensor_08",
+        "sensor_09",
+        "sensor_10",
+        "sensor_11",
+        "sensor_12",
+        "sensor_13",
+        "sensor_14",
+        "sensor_16",
+        "sensor_17",
+        "sensor_18",
+        "sensor_19",
+        "sensor_20",
+        "sensor_21",
+        "sensor_22",
+        "sensor_23",
+        "sensor_24",
+        "sensor_25",
+        "sensor_26",
+        "sensor_27",
+        "sensor_28",
+        "sensor_29",
+        "sensor_30",
+        "sensor_31",
+        "sensor_32",
+        "sensor_33",
+        "sensor_34",
+        "sensor_35",
+        "sensor_36",
+        "sensor_37",
+        "sensor_38",
+        "sensor_39",
+        "sensor_40",
+        "sensor_41",
+        "sensor_42",
+        "sensor_43",
+        "sensor_44",
+        "sensor_45",
+        "sensor_46",
+        "sensor_47",
+        "sensor_48",
+        "sensor_49",
+        "sensor_51"
+      ],
+      "feature_groups": {
+        "numeric": [
+          "sensor_00",
+          "sensor_01",
+          "sensor_02",
+          "sensor_03",
+          "sensor_04",
+          "sensor_05",
+          "sensor_06",
+          "sensor_07",
+          "sensor_08",
+          "sensor_09",
+          "sensor_10",
+          "sensor_11",
+          "sensor_12",
+          "sensor_13",
+          "sensor_14",
+          "sensor_16",
+          "sensor_17",
+          "sensor_18",
+          "sensor_19",
+          "sensor_20",
+          "sensor_21",
+          "sensor_22",
+          "sensor_23",
+          "sensor_24",
+          "sensor_25",
+          "sensor_26",
+          "sensor_27",
+          "sensor_28",
+          "sensor_29",
+          "sensor_30",
+          "sensor_31",
+          "sensor_32",
+          "sensor_33",
+          "sensor_34",
+          "sensor_35",
+          "sensor_36",
+          "sensor_37",
+          "sensor_38",
+          "sensor_39",
+          "sensor_40",
+          "sensor_41",
+          "sensor_42",
+          "sensor_43",
+          "sensor_44",
+          "sensor_45",
+          "sensor_46",
+          "sensor_47",
+          "sensor_48",
+          "sensor_49",
+          "sensor_51"
+        ]
+      },
+      "shape": {
+        "rows": 220320,
+        "cols": 85
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:18:40.182874+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "silver_finalize_export",
+    "message": "Finalized Silver schema, ran quick quality checks, exported Parquet, and saved feature registry.",
+    "why": "A stable Silver export and feature registry is the foundation for reproducible EDA, modeling, and synthetic anomaly generation.",
+    "consequence": "Downstream steps can load the Parquet and feature registry as the single source of truth for Silver.",
+    "data": {
+      "dataset_name": "pump",
+      "silver_parquet_path": "/workspace/data/silver/train/pump__silver__train.parquet",
+      "feature_registry_path": "/workspace/artifacts/silver/pump/silver__pump__feature_registry.json",
+      "quality_info": {
+        "total_rows": 220320,
+        "total_columns": 85,
+        "duplicate_row_count": 0,
+        "duplicate_event_id_count": 0,
+        "numeric_feature_count": 50,
+        "top_numeric_missingness_percent": {
+          "sensor_51": 6.982116920842412,
+          "sensor_00": 4.633260711692085,
+          "sensor_07": 2.474128540305011,
+          "sensor_08": 2.3179920116194626,
+          "sensor_06": 2.177741466957153,
+          "sensor_09": 2.0856027596223674,
+          "sensor_01": 0.16748366013071894,
+          "sensor_30": 0.1184640522875817,
+          "sensor_29": 0.0326797385620915,
+          "sensor_32": 0.030864197530864196,
+          "sensor_17": 0.020878721859114015,
+          "sensor_18": 0.020878721859114015,
+          "sensor_22": 0.018609295570079884,
+          "sensor_25": 0.01633986928104575,
+          "sensor_16": 0.014070442992011621,
+          "sensor_38": 0.012254901960784314,
+          "sensor_39": 0.012254901960784314,
+          "sensor_40": 0.012254901960784314,
+          "sensor_41": 0.012254901960784314,
+          "sensor_42": 0.012254901960784314,
+          "sensor_43": 0.012254901960784314,
+          "sensor_44": 0.012254901960784314,
+          "sensor_45": 0.012254901960784314,
+          "sensor_46": 0.012254901960784314,
+          "sensor_47": 0.012254901960784314
+        },
+        "anomaly_rate_percent": 6.5740740740740735,
+        "anomaly_counts": {
+          "0": 205836,
+          "1": 14484
+        }
+      },
+      "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+      "feature_count": 50,
+      "shape": {
+        "rows": 220320,
+        "cols": 85
+      }
+    }
+  }
+]

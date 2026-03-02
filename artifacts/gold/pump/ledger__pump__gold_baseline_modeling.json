@@ -1,0 +1,109 @@
+[
+  {
+    "ts_utc": "2026-03-02T02:24:05.955233+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-03-02T02:24:07.392893+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "load_modeling_inputs",
+    "message": "Loaded saved Gold fit/test parquet artifacts and Stage 1 feature list.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+      "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+      "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
+      "gold_fit_shape": [
+        161772,
+        87
+      ],
+      "gold_test_shape": [
+        44064,
+        87
+      ],
+      "stage1_feature_count": 50
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T02:24:12.113371+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "run_baseline_isolation_forest",
+    "message": "Ran baseline Isolation Forest using saved Gold fit data and scored the saved Gold test data.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "estimator_count": 200,
+      "threshold_percentile": 97.0,
+      "threshold": 0.5507766554570627,
+      "training_rows": 161772,
+      "test_rows": 44064,
+      "feature_count": 50,
+      "alert_count_test_rows": 594,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": null,
+      "pr_auc": null
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T02:24:20.108673+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "save_baseline_outputs",
+    "message": "Saved baseline results, trained Isolation Forest model, thresholds, summary, and metadata.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "baseline_results_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv",
+      "baseline_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_isolation_forest.joblib",
+      "baseline_model_path": "/workspace/models/pump/pump__gold__baseline_isolation_forest.joblib",
+      "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
+      "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json",
+      "baseline_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json",
+      "result_row_count": 44064,
+      "alert_count_all_rows": 594,
+      "alert_count_test_rows": 594
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T02:24:20.415783+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "finalize_baseline_modeling",
+    "message": "Gold baseline modeling notebook complete.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "baseline_metrics": {
+        "model": "Baseline IsolationForest",
+        "threshold_percentile": 97.0,
+        "threshold": 0.5507766554570627,
+        "alert_count_all_rows": 594,
+        "alert_count_test_rows": 594,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": null,
+        "pr_auc": null
+      },
+      "baseline_results_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv",
+      "baseline_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_isolation_forest.joblib",
+      "baseline_model_path": "/workspace/models/pump/pump__gold__baseline_isolation_forest.joblib"
+    }
+  }
+]

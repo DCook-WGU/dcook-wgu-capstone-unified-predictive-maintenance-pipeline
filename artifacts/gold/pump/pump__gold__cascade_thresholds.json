@@ -1,0 +1,6 @@
+{
+  "stage1_threshold_percentile": 95.0,
+  "stage1_threshold": 0.532497962842102,
+  "stage2_threshold_percentile": 98.5,
+  "stage2_threshold": 0.6900805433271796
+}

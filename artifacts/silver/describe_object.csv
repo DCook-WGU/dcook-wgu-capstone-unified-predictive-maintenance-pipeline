@@ -1,0 +1,21 @@
+,count,unique,top,freq
+meta__asset_id,220320,1,asset__001,220320
+meta__cleaning_recipe_id,220320,1,silver__clean__dataset__agnostic__v001,220320
+meta__dataset,220320,1,pump,220320
+meta__dataset_name,220320,1,pump,220320
+meta__dataset_source,220320,1,meta__dataset,220320
+meta__event_id,220320,220320,pump:asset__001:run__001:220303,1
+meta__event_time_source,220320,1,timestamp,220320
+meta__feature_set_id,220320,1,feature_set__bea5fdd737ae53fcd80ca84cafcd0c40,220320
+meta__label_source,0,0,,
+meta__label_source_column,220320,1,machine_status,220320
+meta__label_source_kind,220320,1,status,220320
+meta__label_type,0,0,,
+meta__layer,220320,1,silver,220320
+meta__run_id,220320,1,run__001,220320
+meta__silver_version,220320,1,silver__001,220320
+meta__source_file,220320,1,sensor.csv,220320
+meta__split,220320,1,unsplit,220320
+status_normal_value,220320,1,NORMAL,220320
+timestamp,220320,220320,2018-08-31 23:43:00,1
+machine_status,220320,3,NORMAL,205836

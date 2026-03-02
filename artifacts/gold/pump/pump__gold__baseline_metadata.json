@@ -1,0 +1,8 @@
+{
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+  "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+  "baseline_results_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv",
+  "baseline_model_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_isolation_forest.joblib",
+  "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
+  "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json"
+}

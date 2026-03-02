@@ -1,0 +1,26 @@
+{
+  "dataset_name": "pump",
+  "cascade_metrics": {
+    "model": "3-Stage Cascade",
+    "stage1_alert_count_all_rows": 785,
+    "stage2_alert_count_all_rows": 2,
+    "final_alert_count_all_rows": 2,
+    "stage1_alert_count_test_rows": 785,
+    "stage2_alert_count_test_rows": 2,
+    "final_alert_count_test_rows": 2,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "stage1_alert_count_all_rows": 785,
+  "stage2_alert_count_all_rows": 2,
+  "final_cascade_alert_count_all_rows": 2,
+  "stage1_alert_count_test_rows": 785,
+  "stage2_alert_count_test_rows": 2,
+  "final_cascade_alert_count_test_rows": 2,
+  "result_row_count": 44064,
+  "stage1_feature_count": 50,
+  "stage2_feature_count": 12,
+  "stage3_primary_rule_count": 5,
+  "stage3_secondary_rule_count": 7
+}

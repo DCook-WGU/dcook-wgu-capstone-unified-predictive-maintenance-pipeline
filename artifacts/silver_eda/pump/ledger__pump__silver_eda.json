@@ -1,0 +1,96 @@
+[
+  {
+    "ts_utc": "2026-03-01T04:53:33.026275+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-03-01T04:53:33.997286+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "load_silver",
+    "message": "Loaded Silver Parquet",
+    "why": "Silver must be derived from reprodicible Silver Artifact",
+    "consequence": "All silver outputs trace back to this file",
+    "data": {
+      "silver_path": "/workspace/data/silver/train/pump__silver__train.parquet",
+      "shape": [
+        220320,
+        85
+      ],
+      "cols": 85
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:53:35.015711+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "load_silver_feature_registry",
+    "message": "Loaded Silver Feature Registry Json File",
+    "why": "Silver Features Registry must be derived from reprodicible Silver Artifact",
+    "consequence": "All silver outputs trace back to this file",
+    "data": {
+      "feature_registry_path": "/workspace/artifacts/silver/pump/silver__pump__feature_registry.json",
+      "keys": 13
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:54:24.182449+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "pca_2d_projection",
+    "message": "Computed PCA(2) projection for separation check.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "numeric_feature_count": 50,
+      "rows_used": 8000,
+      "scaler": "RobustScaler",
+      "explained_variance_ratio": [
+        0.8520313514930179,
+        0.11306601074922507
+      ],
+      "pca_table_path": "/workspace/artifacts/silver_eda/pump/pca_2d__table.csv",
+      "pca_plot_path": "/workspace/artifacts/silver_eda/pump/pca_2d__scatter.png"
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:54:24.801486+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "decision",
+    "step": "imputation_recommendation",
+    "message": "Compared basic imputation strategies and recorded recommendation for Gold layer.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "recommendation": "forward_fill_within_group_then_median",
+      "reason": "Dataset has (asset,run) grouping and event_step ordering; forward fill preserves short gaps in time series while median handles leading gaps and long missing runs.",
+      "has_grouping_columns": true,
+      "has_event_step": true,
+      "comparison_csv": "/workspace/artifacts/silver_eda/pump/imputation__comparison.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-03-01T04:54:24.832275+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "finalize",
+    "message": "Saved Silver EDA ledger and finalized W&B run.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "ledger_path": "/workspace/artifacts/silver_eda/pump/ledger__pump__silver_eda.json"
+    }
+  }
+]

@@ -1,0 +1,10 @@
+,count,unique,top,freq
+meta__dataset,220320,1,pump,220320
+meta__split,220320,1,unsplit,220320
+meta__run_id,220320,1,run__001,220320
+meta__asset_id,220320,1,asset__001,220320
+meta__label_type,0,0,,
+meta__label_source,0,0,,
+meta__source_file,220320,1,sensor.csv,220320
+timestamp,220320,220320,2018-08-31 23:43:00,1
+machine_status,220320,3,NORMAL,205836

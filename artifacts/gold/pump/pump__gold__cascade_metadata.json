@@ -1,0 +1,10 @@
+{
+  "cascade_results_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+  "stage1_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
+  "stage2_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib",
+  "cascade_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_thresholds.json",
+  "cascade_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_summary.json",
+  "cascade_reference_profile_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_reference_profile.csv",
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+  "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet"
+}

@@ -1,0 +1,11 @@
+{
+  "rows": 220320,
+  "cols": 85,
+  "required_present": {
+    "anomaly_flag": true,
+    "event_step": true,
+    "time_index": true,
+    "meta__asset_id": true,
+    "meta__run_id": true
+  }
+}

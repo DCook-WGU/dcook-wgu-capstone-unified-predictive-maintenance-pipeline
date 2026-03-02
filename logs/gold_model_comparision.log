@@ -1,0 +1,53 @@
+2026-03-02 05:22:32,907 | INFO | capstone.gold | Gold Modeling stage starting
+2026-03-02 05:22:32,909 | INFO | capstone.gold | Project Root Path Loaded: /workspace
+2026-03-02 05:22:32,911 | INFO | capstone.gold | Project Logging Path Loaded: /workspace/logs
+2026-03-02 05:22:32,913 | INFO | capstone.gold | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-02 05:22:32,915 | INFO | capstone.gold | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-02 05:22:32,917 | INFO | capstone.gold | Project Data Path Loaded: /workspace/data
+2026-03-02 05:22:32,919 | INFO | capstone.gold | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-02 05:22:32,920 | INFO | capstone.gold | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-02 05:22:32,922 | INFO | capstone.gold | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-02 05:22:32,924 | INFO | capstone.gold | Data Silver Path Loaded: /workspace/data/silver
+2026-03-02 05:22:32,925 | INFO | capstone.gold | Data Silver Training Path Loaded: /workspace/data/silver/train
+2026-03-02 05:22:32,926 | INFO | capstone.gold | Data Silver Testing Path Loaded: /workspace/data/silver/test
+2026-03-02 05:22:32,927 | INFO | capstone.gold | Data Gold Path Loaded: /workspace/data/gold
+2026-03-02 05:22:36,962 | INFO | capstone.gold | W&B initialized: gold__001
+2026-03-02 05:22:37,545 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:22:37.545783+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'init', 'message': 'Initialized ledger', 'why': None, 'consequence': None, 'data': {}}
+2026-03-02 05:23:09,519 | INFO | capstone.gold | Gold Modeling stage starting
+2026-03-02 05:23:09,523 | INFO | capstone.gold | Project Root Path Loaded: /workspace
+2026-03-02 05:23:09,525 | INFO | capstone.gold | Project Logging Path Loaded: /workspace/logs
+2026-03-02 05:23:09,527 | INFO | capstone.gold | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-02 05:23:09,530 | INFO | capstone.gold | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-02 05:23:09,532 | INFO | capstone.gold | Project Data Path Loaded: /workspace/data
+2026-03-02 05:23:09,535 | INFO | capstone.gold | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-02 05:23:09,539 | INFO | capstone.gold | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-02 05:23:09,542 | INFO | capstone.gold | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-02 05:23:09,544 | INFO | capstone.gold | Data Silver Path Loaded: /workspace/data/silver
+2026-03-02 05:23:09,545 | INFO | capstone.gold | Data Silver Training Path Loaded: /workspace/data/silver/train
+2026-03-02 05:23:09,547 | INFO | capstone.gold | Data Silver Testing Path Loaded: /workspace/data/silver/test
+2026-03-02 05:23:09,549 | INFO | capstone.gold | Data Gold Path Loaded: /workspace/data/gold
+2026-03-02 05:23:17,398 | INFO | capstone.gold | W&B initialized: gold__001
+2026-03-02 05:23:17,421 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:23:17.421666+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'init', 'message': 'Initialized ledger', 'why': None, 'consequence': None, 'data': {}}
+2026-03-02 05:23:18,346 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/gold/pump/pump__gold__baseline_summary.json
+2026-03-02 05:23:19,296 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/gold/pump/pump__gold__cascade_summary.json
+2026-03-02 05:23:19,303 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:23:19.303736+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'load_comparison_inputs', 'message': 'Loaded saved baseline and cascade outputs for final comparison.', 'why': None, 'consequence': None, 'data': {'baseline_results_path': '/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv', 'baseline_summary_path': '/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json', 'cascade_results_path': '/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv', 'cascade_summary_path': '/workspace/artifacts/gold/pump/pump__gold__cascade_summary.json', 'baseline_result_rows': 44064, 'cascade_result_rows': 44064}}
+2026-03-02 05:23:19,386 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:23:19.386034+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'compare_baseline_vs_cascade', 'message': 'Compared baseline and cascade outputs using saved test-set results.', 'why': None, 'consequence': None, 'data': {'baseline_alert_count_test_rows': 594, 'stage1_alert_count_test_rows': 785, 'stage2_alert_count_test_rows': 2, 'final_cascade_alert_count_test_rows': 2, 'alert_reduction_count': 592, 'alert_reduction_ratio': 0.9966329966329966, 'baseline_precision': 0.0, 'baseline_recall': 0.0, 'baseline_f1': 0.0, 'cascade_precision': 0.0, 'cascade_recall': 0.0, 'cascade_f1': 0.0}}
+2026-03-02 05:24:07,981 | INFO | capstone.gold | Gold Modeling stage starting
+2026-03-02 05:24:07,984 | INFO | capstone.gold | Project Root Path Loaded: /workspace
+2026-03-02 05:24:07,985 | INFO | capstone.gold | Project Logging Path Loaded: /workspace/logs
+2026-03-02 05:24:07,988 | INFO | capstone.gold | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-02 05:24:07,989 | INFO | capstone.gold | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-02 05:24:07,991 | INFO | capstone.gold | Project Data Path Loaded: /workspace/data
+2026-03-02 05:24:07,993 | INFO | capstone.gold | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-02 05:24:07,997 | INFO | capstone.gold | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-02 05:24:07,999 | INFO | capstone.gold | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-02 05:24:08,001 | INFO | capstone.gold | Data Silver Path Loaded: /workspace/data/silver
+2026-03-02 05:24:08,002 | INFO | capstone.gold | Data Silver Training Path Loaded: /workspace/data/silver/train
+2026-03-02 05:24:08,004 | INFO | capstone.gold | Data Silver Testing Path Loaded: /workspace/data/silver/test
+2026-03-02 05:24:08,005 | INFO | capstone.gold | Data Gold Path Loaded: /workspace/data/gold
+2026-03-02 05:24:11,348 | INFO | capstone.gold | W&B initialized: gold__001
+2026-03-02 05:24:11,934 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:24:11.934772+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'init', 'message': 'Initialized ledger', 'why': None, 'consequence': None, 'data': {}}
+2026-03-02 05:24:13,488 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/gold/pump/pump__gold__baseline_summary.json
+2026-03-02 05:24:14,468 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/gold/pump/pump__gold__cascade_summary.json
+2026-03-02 05:24:14,482 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:24:14.482752+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'load_comparison_inputs', 'message': 'Loaded saved baseline and cascade outputs for final comparison.', 'why': None, 'consequence': None, 'data': {'baseline_results_path': '/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv', 'baseline_summary_path': '/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json', 'cascade_results_path': '/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv', 'cascade_summary_path': '/workspace/artifacts/gold/pump/pump__gold__cascade_summary.json', 'baseline_result_rows': 44064, 'cascade_result_rows': 44064}}
+2026-03-02 05:24:15,150 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-02T05:24:15.150697+00:00', 'stage': 'gold', 'recipe': 'gold_modeling__v001_model_comparision', 'kind': 'step', 'step': 'compare_baseline_vs_cascade', 'message': 'Compared baseline and cascade outputs using saved test-set results.', 'why': None, 'consequence': None, 'data': {'baseline_alert_count_test_rows': 594, 'stage1_alert_count_test_rows': 785, 'stage2_alert_count_test_rows': 2, 'final_cascade_alert_count_test_rows': 2, 'alert_reduction_count': 592, 'alert_reduction_ratio': 0.9966329966329966, 'baseline_precision': 0.0, 'baseline_recall': 0.0, 'baseline_f1': 0.0, 'cascade_precision': 0.0, 'cascade_recall': 0.0, 'cascade_f1': 0.0}}

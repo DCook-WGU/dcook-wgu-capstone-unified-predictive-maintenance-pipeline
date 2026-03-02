@@ -1,0 +1,26 @@
+{
+  "gold_path": "/workspace/data/gold/pump__gold__preprocessed.parquet",
+  "gold_shape": [
+    220320,
+    87
+  ],
+  "feature_count": 50,
+  "stage1_feature_count": 50,
+  "stage2_feature_count": 12,
+  "stage3_primary_rule_count": 5,
+  "stage3_secondary_rule_count": 7,
+  "imputation_method": "forward_fill_within_group_then_median",
+  "grouping_columns": [
+    "meta__asset_id",
+    "meta__run_id"
+  ],
+  "ordering_column": "event_step",
+  "scaler_used": false,
+  "train_fraction": 0.8,
+  "train_rows": 176256,
+  "test_rows": 44064,
+  "fit_rows_normal_only": 161772,
+  "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
+  "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet"
+}

@@ -1,0 +1,160 @@
+[
+  {
+    "ts_utc": "2026-03-02T05:21:18.298831+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:19.266699+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "load_modeling_inputs",
+    "message": "Loaded saved Gold fit/test parquet artifacts and Stage 1/2/3 feature inputs.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+      "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+      "gold_fit_shape": [
+        161772,
+        87
+      ],
+      "gold_test_shape": [
+        44064,
+        87
+      ],
+      "stage1_feature_count": 50,
+      "stage2_feature_count": 12,
+      "stage3_primary_count": 5,
+      "stage3_secondary_count": 7
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:19.786267+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "build_reference_profile",
+    "message": "Built fit-period reference profile for Stage 3 confirmation logic.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "training_rows": 161772,
+      "reference_feature_count": 50
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:21.898511+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "run_cascade_stage1",
+    "message": "Ran Stage 1 broad Isolation Forest using saved Gold fit data and scored the saved Gold test data.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "estimator_count": 200,
+      "threshold_percentile": 95.0,
+      "threshold": 0.532497962842102,
+      "feature_count": 50,
+      "alert_count_test_rows": 785
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:24.664687+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "run_cascade_stage2",
+    "message": "Ran Stage 2 narrow Isolation Forest on saved Gold fit data and gated test results through Stage 1.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "estimator_count": 300,
+      "threshold_percentile": 98.5,
+      "threshold": 0.6900805433271796,
+      "feature_count": 12,
+      "raw_alert_count_all_rows": 2,
+      "stage2_confirmed_count_test_rows": 2
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:30.827263+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "run_cascade_stage3_confirmation",
+    "message": "Applied Stage 3 confirmation checks to the saved Gold test data.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "primary_rule_sensor_count": 5,
+      "secondary_rule_sensor_count": 7,
+      "profile_breach_rows": 6694,
+      "corroboration_rows": 15609,
+      "persistence_rows": 2,
+      "drift_rows": 6978,
+      "final_alert_count_all_rows": 2,
+      "final_alert_count_test_rows": 2
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:39.181324+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "save_cascade_outputs",
+    "message": "Saved cascade results, trained Stage 1 and Stage 2 models, thresholds, summary, metadata, and reference profile.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "cascade_results_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+      "cascade_reference_profile_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_reference_profile.csv",
+      "stage1_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
+      "stage2_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib",
+      "cascade_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_thresholds.json",
+      "cascade_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_summary.json",
+      "cascade_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_metadata.json",
+      "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+      "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+      "result_row_count": 44064,
+      "stage1_alert_count_all_rows": 785,
+      "stage2_alert_count_all_rows": 2,
+      "final_cascade_alert_count_all_rows": 2
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T05:21:39.204564+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "finalize_cascade_modeling",
+    "message": "Gold cascade modeling notebook complete.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "cascade_metrics": {
+        "model": "3-Stage Cascade",
+        "stage1_alert_count_all_rows": 785,
+        "stage2_alert_count_all_rows": 2,
+        "final_alert_count_all_rows": 2,
+        "stage1_alert_count_test_rows": 785,
+        "stage2_alert_count_test_rows": 2,
+        "final_alert_count_test_rows": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "cascade_results_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+      "stage1_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
+      "stage2_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib"
+    }
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "recipe_id": "gold_preprocessing__v001_cascade",
+  "gold_version": "gold__001",
+  "dataset_name": "pump",
+  "feature_set_source": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
+  "imputation_recommendation_source": "/workspace/artifacts/silver_eda/pump/imputation__recommendation.json",
+  "gold_output_path": "/workspace/data/gold/pump__gold__preprocessed.parquet",
+  "reference_profile_path": "/workspace/artifacts/gold/pump/pump__gold__reference_profile.csv",
+  "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
+  "stage2_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_features.json",
+  "stage3_primary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_primary_rule_sensors.json",
+  "stage3_secondary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json",
+  "preprocessor_scaler_path": null,
+  "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
+  "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet"
+}

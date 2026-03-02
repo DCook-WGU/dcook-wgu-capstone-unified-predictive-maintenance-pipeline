@@ -32,6 +32,7 @@ class ProjectPaths:
     models: Path
     utils: Path
     logs: Path
+    configs: Path
 
 
 @lru_cache(maxsize=1)
@@ -115,5 +116,6 @@ def get_paths() -> ProjectPaths:
         models=project_root / "models",
         utils=project_root / "utils",
         logs=project_root / "logs",
+        configs=project_root / "configs",
     )
    

@@ -1,0 +1,160 @@
+[
+  {
+    "ts_utc": "2026-03-02T01:54:21.471219+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:23.335804+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "load_inputs",
+    "message": "Loaded Silver parquet, feature registry, and imputation recommendation.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "silver_path": "/workspace/data/silver/train/pump__silver__train.parquet",
+      "feature_registry_path": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
+      "impute_recommendation_path": "/workspace/artifacts/silver_eda/pump/imputation__recommendation.json",
+      "feature_count": 50,
+      "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+      "recommended_imputation": "forward_fill_within_group_then_median",
+      "shape": {
+        "rows": 220320,
+        "cols": 85
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:24.547884+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "build_time_ordered_split",
+    "message": "Created time-ordered train/test split for Gold modeling.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "train_fraction": 0.8,
+      "train_rows": 176256,
+      "test_rows": 44064,
+      "ordering_column": "time_index"
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:32.008612+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "build_gold_model_ready_dataframe",
+    "message": "Built Gold model-ready dataframe using Silver feature registry and Silver EDA imputation recommendation.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "numeric_feature_count": 50,
+      "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+      "imputation": "forward_fill_within_group_then_median",
+      "scaler": "none"
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:35.063904+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "save_gold_preprocessed",
+    "message": "Saved full Gold preprocessed dataset.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "gold_preprocessed_path": "/workspace/data/gold/pump__gold__preprocessed.parquet",
+      "gold_shape": [
+        220320,
+        87
+      ]
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:41.544552+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "build_stage_feature_sets",
+    "message": "Built feature sets for baseline, Stage 1, Stage 2, and Stage 3.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage1_feature_count": 50,
+      "stage2_feature_count": 12,
+      "stage3_primary_rule_count": 5,
+      "stage3_secondary_rule_count": 7
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:47.303400+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "save_gold_split_artifacts",
+    "message": "Saved Gold train, test, and normal-only fit parquet artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "train_rows": 176256,
+      "test_rows": 44064,
+      "fit_rows_normal_only": 161772,
+      "train_path": "/workspace/data/gold/pump__gold__train.parquet",
+      "test_path": "/workspace/data/gold/pump__gold__test.parquet",
+      "fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet"
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:47.924612+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "save_preprocessing_outputs",
+    "message": "Saved Gold preprocessing outputs, metadata, and reference profile artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "preprocessing_summary_path": "/workspace/artifacts/gold/pump/pump__gold__preprocessing_summary.json",
+      "preprocessing_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__preprocessing_metadata.json",
+      "reference_profile_path": "/workspace/artifacts/gold/pump/pump__gold__reference_profile.csv",
+      "preprocessor_scaler_path": null
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T01:54:47.928894+00:00",
+    "stage": "gold",
+    "recipe": "gold_preprocessing__v001_cascade",
+    "kind": "step",
+    "step": "finalize_preprocessing",
+    "message": "Gold preprocessing notebook complete.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "gold_path": "/workspace/data/gold/pump__gold__preprocessed.parquet",
+      "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
+      "stage2_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_features.json",
+      "stage3_primary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_primary_rule_sensors.json",
+      "stage3_secondary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json",
+      "gold_shape": [
+        220320,
+        87
+      ],
+      "feature_count": 50,
+      "stage1_feature_count": 50,
+      "stage2_feature_count": 12,
+      "stage3_primary_rule_count": 5,
+      "stage3_secondary_rule_count": 7
+    }
+  }
+]

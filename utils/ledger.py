@@ -49,7 +49,7 @@ class Ledger:
 
     def write_json(self, out_path: Path) -> Path:
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(self.entries, indent=2))
+        out_path.write_text(json.dumps(self.entries, indent=2, default=str))
         return out_path
 
 
