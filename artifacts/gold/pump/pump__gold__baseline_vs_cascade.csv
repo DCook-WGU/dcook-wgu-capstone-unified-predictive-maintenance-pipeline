@@ -1,0 +1,3 @@
+model,alert_count_all_rows,precision,recall,f1
+Baseline IsolationForest,594,0.0,0.0,0.0
+Cascade Final,2,0.0,0.0,0.0

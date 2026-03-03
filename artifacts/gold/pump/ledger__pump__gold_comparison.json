@@ -1,0 +1,102 @@
+[
+  {
+    "ts_utc": "2026-03-02T21:43:35.480399+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_model_comparision",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-03-02T21:43:37.634124+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_model_comparision",
+    "kind": "step",
+    "step": "load_comparison_inputs",
+    "message": "Loaded saved baseline and cascade outputs for final comparison.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "baseline_results_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv",
+      "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json",
+      "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
+      "baseline_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json",
+      "cascade_results_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+      "cascade_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_summary.json",
+      "cascade_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_thresholds.json",
+      "cascade_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_metadata.json",
+      "baseline_result_rows": 44064,
+      "cascade_result_rows": 44064
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T21:43:37.718841+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_model_comparision",
+    "kind": "step",
+    "step": "compare_baseline_vs_cascade",
+    "message": "Compared baseline and cascade outputs using saved test-set results.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "baseline_alert_count_test_rows": 594,
+      "stage1_alert_count_test_rows": 785,
+      "stage2_alert_count_test_rows": 2,
+      "final_cascade_alert_count_test_rows": 2,
+      "alert_reduction_count": 592,
+      "alert_reduction_ratio": 0.9966329966329966,
+      "baseline_precision": 0.0,
+      "baseline_recall": 0.0,
+      "baseline_f1": 0.0,
+      "cascade_precision": 0.0,
+      "cascade_recall": 0.0,
+      "cascade_f1": 0.0
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T21:43:39.017337+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_model_comparision",
+    "kind": "step",
+    "step": "save_comparison_outputs",
+    "message": "Saved final baseline versus cascade comparison outputs.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "comparison_csv": "/workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade.csv",
+      "comparison_summary_json": "/workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade_summary.json",
+      "comparison_rows": 2
+    }
+  },
+  {
+    "ts_utc": "2026-03-02T21:43:39.039180+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_model_comparision",
+    "kind": "step",
+    "step": "finalize_comparison",
+    "message": "Gold comparison notebook complete.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "comparison_csv": "/workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade.csv",
+      "comparison_summary_json": "/workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade_summary.json",
+      "comparison_summary": {
+        "baseline_alert_count_test_rows": 594,
+        "stage1_alert_count_test_rows": 785,
+        "stage2_alert_count_test_rows": 2,
+        "final_cascade_alert_count_test_rows": 2,
+        "alert_reduction_count": 592,
+        "alert_reduction_ratio": 0.9966329966329966,
+        "baseline_precision": 0.0,
+        "baseline_recall": 0.0,
+        "baseline_f1": 0.0,
+        "cascade_precision": 0.0,
+        "cascade_recall": 0.0,
+        "cascade_f1": 0.0
+      }
+    }
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "baseline_alert_count_test_rows": 594,
+  "stage1_alert_count_test_rows": 785,
+  "stage2_alert_count_test_rows": 2,
+  "final_cascade_alert_count_test_rows": 2,
+  "alert_reduction_count": 592,
+  "alert_reduction_ratio": 0.9966329966329966,
+  "baseline_precision": 0.0,
+  "baseline_recall": 0.0,
+  "baseline_f1": 0.0,
+  "cascade_precision": 0.0,
+  "cascade_recall": 0.0,
+  "cascade_f1": 0.0
+}
