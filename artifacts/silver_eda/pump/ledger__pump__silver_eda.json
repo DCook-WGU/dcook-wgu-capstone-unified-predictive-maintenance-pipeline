@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-01T04:53:33.026275+00:00",
+    "ts_utc": "2026-03-04T00:51:42.110212+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-01T04:53:33.997286+00:00",
+    "ts_utc": "2026-03-04T00:51:43.885452+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -23,13 +23,13 @@
       "silver_path": "/workspace/data/silver/train/pump__silver__train.parquet",
       "shape": [
         220320,
-        85
+        86
       ],
-      "cols": 85
+      "cols": 86
     }
   },
   {
-    "ts_utc": "2026-03-01T04:53:35.015711+00:00",
+    "ts_utc": "2026-03-04T00:51:46.390647+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -38,12 +38,12 @@
     "why": "Silver Features Registry must be derived from reprodicible Silver Artifact",
     "consequence": "All silver outputs trace back to this file",
     "data": {
-      "feature_registry_path": "/workspace/artifacts/silver/pump/silver__pump__feature_registry.json",
+      "feature_registry_path": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
       "keys": 13
     }
   },
   {
-    "ts_utc": "2026-03-01T04:54:24.182449+00:00",
+    "ts_utc": "2026-03-04T00:53:45.789966+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -64,7 +64,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-01T04:54:24.801486+00:00",
+    "ts_utc": "2026-03-04T00:53:47.424819+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "decision",
@@ -81,7 +81,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-01T04:54:24.832275+00:00",
+    "ts_utc": "2026-03-04T00:53:48.097605+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",

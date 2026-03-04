@@ -251,3 +251,83 @@
 2026-03-03 20:25:24,489 | INFO | capstone.gold | Feature count=50
 2026-03-03 20:25:24,491 | INFO | capstone.gold | Recommended imputation=forward_fill_within_group_then_median
 2026-03-03 20:25:24,493 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-03T20:25:24.493141+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'load_inputs', 'message': 'Loaded Silver parquet, feature registry, and imputation recommendation.', 'why': None, 'consequence': None, 'data': {'silver_path': '/workspace/data/silver/train/pump__silver__train.parquet', 'feature_registry_path': '/workspace/artifacts/silver/pump/pump__silver__feature_registry.json', 'impute_recommendation_path': '/workspace/artifacts/silver_eda/pump/imputation__recommendation.json', 'feature_count': 50, 'feature_set_id': 'feature_set__bea5fdd737ae53fcd80ca84cafcd0c40', 'recommended_imputation': 'forward_fill_within_group_then_median', 'shape': {'rows': 220320, 'cols': 85}}}
+2026-03-03 22:28:01,207 | INFO | capstone.gold | Gold stage starting
+2026-03-03 22:28:01,209 | INFO | capstone.gold | Project Root Path Loaded: /workspace
+2026-03-03 22:28:01,211 | INFO | capstone.gold | Project Logging Path Loaded: /workspace/logs
+2026-03-03 22:28:01,213 | INFO | capstone.gold | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-03 22:28:01,214 | INFO | capstone.gold | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-03 22:28:01,215 | INFO | capstone.gold | Project Data Path Loaded: /workspace/data
+2026-03-03 22:28:01,217 | INFO | capstone.gold | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-03 22:28:01,219 | INFO | capstone.gold | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-03 22:28:01,220 | INFO | capstone.gold | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-03 22:28:01,222 | INFO | capstone.gold | Data Silver Path Loaded: /workspace/data/silver
+2026-03-03 22:28:01,223 | INFO | capstone.gold | Data Silver Training Path Loaded: /workspace/data/silver/train
+2026-03-03 22:28:01,225 | INFO | capstone.gold | Data Silver Testing Path Loaded: /workspace/data/silver/test
+2026-03-03 22:28:01,227 | INFO | capstone.gold | Data Gold Path Loaded: /workspace/data/gold
+2026-03-03 22:28:05,283 | INFO | capstone.gold | W&B initialized: gold__001
+2026-03-03 22:28:05,972 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-03T22:28:05.972186+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'init', 'message': 'Initialized ledger', 'why': None, 'consequence': None, 'data': {}}
+2026-03-03 22:28:06,691 | INFO | capstone.gold | Loading Silver parquet: /workspace/data/silver/train/pump__silver__train.parquet
+2026-03-03 22:28:06,696 | INFO | capstone.file_io | Loading Parquet: /workspace/data/silver/train/pump__silver__train.parquet
+2026-03-03 22:28:07,570 | INFO | capstone.gold | Loading feature registry: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+2026-03-03 22:28:07,577 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+2026-03-03 22:28:07,585 | INFO | capstone.gold | Loading imputation recommendation: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+2026-03-03 22:28:07,593 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+2026-03-03 22:28:07,603 | INFO | capstone.gold | Silver shape=(220320, 85)
+2026-03-03 22:28:07,606 | INFO | capstone.gold | Feature count=50
+2026-03-03 22:28:07,608 | INFO | capstone.gold | Recommended imputation=forward_fill_within_group_then_median
+2026-03-03 22:28:07,610 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-03T22:28:07.610031+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'load_inputs', 'message': 'Loaded Silver parquet, feature registry, and imputation recommendation.', 'why': None, 'consequence': None, 'data': {'silver_path': '/workspace/data/silver/train/pump__silver__train.parquet', 'feature_registry_path': '/workspace/artifacts/silver/pump/pump__silver__feature_registry.json', 'impute_recommendation_path': '/workspace/artifacts/silver_eda/pump/imputation__recommendation.json', 'feature_count': 50, 'feature_set_id': 'feature_set__bea5fdd737ae53fcd80ca84cafcd0c40', 'recommended_imputation': 'forward_fill_within_group_then_median', 'shape': {'rows': 220320, 'cols': 85}}}
+2026-03-04 00:36:34,072 | INFO | capstone.gold | Gold stage starting
+2026-03-04 00:36:34,074 | INFO | capstone.gold | Project Root Path Loaded: /workspace
+2026-03-04 00:36:34,077 | INFO | capstone.gold | Project Logging Path Loaded: /workspace/logs
+2026-03-04 00:36:34,079 | INFO | capstone.gold | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-04 00:36:34,081 | INFO | capstone.gold | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-04 00:36:34,082 | INFO | capstone.gold | Project Data Path Loaded: /workspace/data
+2026-03-04 00:36:34,084 | INFO | capstone.gold | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-04 00:36:34,085 | INFO | capstone.gold | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-04 00:36:34,086 | INFO | capstone.gold | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-04 00:36:34,088 | INFO | capstone.gold | Data Silver Path Loaded: /workspace/data/silver
+2026-03-04 00:36:34,089 | INFO | capstone.gold | Data Silver Training Path Loaded: /workspace/data/silver/train
+2026-03-04 00:36:34,091 | INFO | capstone.gold | Data Silver Testing Path Loaded: /workspace/data/silver/test
+2026-03-04 00:36:34,093 | INFO | capstone.gold | Data Gold Path Loaded: /workspace/data/gold
+2026-03-04 00:36:41,232 | INFO | capstone.gold | W&B initialized: gold__001
+2026-03-04 00:36:41,258 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:36:41.258427+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'init', 'message': 'Initialized ledger', 'why': None, 'consequence': None, 'data': {}}
+2026-03-04 00:36:41,303 | INFO | capstone.gold | Loading Silver parquet: /workspace/data/silver/train/pump__silver__train.parquet
+2026-03-04 00:36:41,305 | INFO | capstone.file_io | Loading Parquet: /workspace/data/silver/train/pump__silver__train.parquet
+2026-03-04 00:36:42,165 | INFO | capstone.gold | Loading feature registry: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+2026-03-04 00:36:42,172 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+2026-03-04 00:36:42,180 | INFO | capstone.gold | Loading imputation recommendation: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+2026-03-04 00:36:42,187 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+2026-03-04 00:36:42,195 | INFO | capstone.gold | Silver shape=(220320, 85)
+2026-03-04 00:36:42,197 | INFO | capstone.gold | Feature count=50
+2026-03-04 00:36:42,199 | INFO | capstone.gold | Recommended imputation=forward_fill_within_group_then_median
+2026-03-04 00:36:42,201 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:36:42.201386+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'load_inputs', 'message': 'Loaded Silver parquet, feature registry, and imputation recommendation.', 'why': None, 'consequence': None, 'data': {'silver_path': '/workspace/data/silver/train/pump__silver__train.parquet', 'feature_registry_path': '/workspace/artifacts/silver/pump/pump__silver__feature_registry.json', 'impute_recommendation_path': '/workspace/artifacts/silver_eda/pump/imputation__recommendation.json', 'feature_count': 50, 'feature_set_id': 'feature_set__bea5fdd737ae53fcd80ca84cafcd0c40', 'recommended_imputation': 'forward_fill_within_group_then_median', 'shape': {'rows': 220320, 'cols': 85}}}
+2026-03-04 00:56:32,197 | INFO | capstone.gold | Gold stage starting
+2026-03-04 00:56:32,201 | INFO | capstone.gold | Project Root Path Loaded: /workspace
+2026-03-04 00:56:32,203 | INFO | capstone.gold | Project Logging Path Loaded: /workspace/logs
+2026-03-04 00:56:32,206 | INFO | capstone.gold | Project Artifacts Path Loaded: /workspace/artifacts
+2026-03-04 00:56:32,208 | INFO | capstone.gold | Project Notebooks Path Loaded /workspace/notebooks
+2026-03-04 00:56:32,210 | INFO | capstone.gold | Project Data Path Loaded: /workspace/data
+2026-03-04 00:56:32,212 | INFO | capstone.gold | Data Bronze Path Loaded: /workspace/data/bronze
+2026-03-04 00:56:32,213 | INFO | capstone.gold | Data Bronze Training Path Loaded: /workspace/data/bronze/train
+2026-03-04 00:56:32,216 | INFO | capstone.gold | Data Bronze Testing Path Loaded: /workspace/data/bronze/test
+2026-03-04 00:56:32,218 | INFO | capstone.gold | Data Silver Path Loaded: /workspace/data/silver
+2026-03-04 00:56:32,221 | INFO | capstone.gold | Data Silver Training Path Loaded: /workspace/data/silver/train
+2026-03-04 00:56:32,223 | INFO | capstone.gold | Data Silver Testing Path Loaded: /workspace/data/silver/test
+2026-03-04 00:56:32,226 | INFO | capstone.gold | Data Gold Path Loaded: /workspace/data/gold
+2026-03-04 00:56:35,233 | INFO | capstone.gold | W&B initialized: gold__001
+2026-03-04 00:56:35,816 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:56:35.816307+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'init', 'message': 'Initialized ledger', 'why': None, 'consequence': None, 'data': {}}
+2026-03-04 00:56:38,632 | INFO | capstone.gold | Loading Silver parquet: /workspace/data/silver/train/pump__silver__train.parquet
+2026-03-04 00:56:38,635 | INFO | capstone.file_io | Loading Parquet: /workspace/data/silver/train/pump__silver__train.parquet
+2026-03-04 00:56:39,687 | INFO | capstone.gold | Loading feature registry: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+2026-03-04 00:56:39,693 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+2026-03-04 00:56:39,702 | INFO | capstone.gold | Loading imputation recommendation: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+2026-03-04 00:56:39,710 | INFO | capstone.file_io | Loading JSON: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+2026-03-04 00:56:39,720 | INFO | capstone.gold | Silver shape=(220320, 86)
+2026-03-04 00:56:39,722 | INFO | capstone.gold | Feature count=50
+2026-03-04 00:56:39,725 | INFO | capstone.gold | Recommended imputation=forward_fill_within_group_then_median
+2026-03-04 00:56:39,727 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:56:39.727129+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'load_inputs', 'message': 'Loaded Silver parquet, feature registry, and imputation recommendation.', 'why': None, 'consequence': None, 'data': {'silver_path': '/workspace/data/silver/train/pump__silver__train.parquet', 'feature_registry_path': '/workspace/artifacts/silver/pump/pump__silver__feature_registry.json', 'impute_recommendation_path': '/workspace/artifacts/silver_eda/pump/imputation__recommendation.json', 'feature_count': 50, 'feature_set_id': 'feature_set__bea5fdd737ae53fcd80ca84cafcd0c40', 'recommended_imputation': 'forward_fill_within_group_then_median', 'shape': {'rows': 220320, 'cols': 86}}}
+2026-03-04 00:56:42,272 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:56:42.272717+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'build_episode_based_split_mask', 'message': 'Created time-ordered, episodic sorted train/test split for Gold modeling.', 'why': None, 'consequence': None, 'data': {'train_fraction': 0.7, 'episode_column': 'meta__episode_id', 'total_episodes': 8, 'train_episode_count': 5, 'train_episodes': [0, 1, 2, 3, 4], 'train_rows': 136431, 'test_rows': 83889}}
+2026-03-04 00:56:43,264 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:56:43.264802+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'add_meta__train_mask_stamping', 'message': 'Stamping training mask to meta for tracking.', 'why': None, 'consequence': None, 'data': {'train_fraction': 0.7, 'episode_column': 'meta__episode_id', 'total_episodes': 8, 'train_episode_count': 5, 'train_episodes': [0, 1, 2, 3, 4], 'train_rows': 136431, 'test_rows': 83889}}
+2026-03-04 00:56:49,941 | INFO | capstone.file_io | Saving DataFrame to Parquet: /workspace/data/gold/pump__gold__preprocessed_prescaled.parquet
+2026-03-04 00:56:52,202 | INFO | capstone.file_io | Saved: pump__gold__preprocessed_prescaled.parquet | shape=(220320, 92) | columns=['meta__asset_id', 'meta__cleaning_recipe_id', 'meta__dataset', 'meta__dataset_name', 'meta__dataset_source', 'meta__episode_id', 'meta__event_id', 'meta__event_time_parse_success_percent', 'meta__event_time_source', 'meta__feature_count', 'meta__feature_set_id', 'meta__has_label_candidates', 'meta__has_status_candidates', 'meta__ingested_at_utc', 'meta__label_source', 'meta__label_source_column', 'meta__label_source_kind', 'meta__label_type', 'meta__layer', 'meta__processed_at_utc', 'meta__record_id', 'meta__run_id', 'meta__silver_version', 'meta__source_file', 'meta__source_row_id', 'meta__split', 'event_time', 'event_step', 'time_index', 'event_date', 'anomaly_flag', 'is_anomaly', 'is_normal', 'status_normal_value', 'sensor_00', 'sensor_01', 'sensor_02', 'sensor_03', 'sensor_04', 'sensor_05', 'sensor_06', 'sensor_07', 'sensor_08', 'sensor_09', 'sensor_10', 'sensor_11', 'sensor_12', 'sensor_13', 'sensor_14', 'sensor_16', 'sensor_17', 'sensor_18', 'sensor_19', 'sensor_20', 'sensor_21', 'sensor_22', 'sensor_23', 'sensor_24', 'sensor_25', 'sensor_26', 'sensor_27', 'sensor_28', 'sensor_29', 'sensor_30', 'sensor_31', 'sensor_32', 'sensor_33', 'sensor_34', 'sensor_35', 'sensor_36', 'sensor_37', 'sensor_38', 'sensor_39', 'sensor_40', 'sensor_41', 'sensor_42', 'sensor_43', 'sensor_44', 'sensor_45', 'sensor_46', 'sensor_47', 'sensor_48', 'sensor_49', 'sensor_51', 'timestamp', 'machine_status', 'meta__gold__processed_at_utc', 'meta__gold_version', 'meta__preprocessing_recipe_id', 'meta__is_train_flag', 'meta__is_train', 'meta__train_mask']
+2026-03-04 00:56:52,242 | INFO | capstone.gold | LEDGER | {'ts_utc': '2026-03-04T00:56:52.242840+00:00', 'stage': 'gold', 'recipe': 'gold_preprocessing__v001_cascade', 'kind': 'step', 'step': 'save_gold_preprocessed_prescaled', 'message': 'Saved full Gold preprocessed prior to scaling dataset.', 'why': None, 'consequence': None, 'data': {'gold_preprocessed_prescaled_path': '/workspace/data/gold/pump__gold__preprocessed_prescaled.parquet', 'gold_preprocessed_prescale_shape': [220320, 92]}}

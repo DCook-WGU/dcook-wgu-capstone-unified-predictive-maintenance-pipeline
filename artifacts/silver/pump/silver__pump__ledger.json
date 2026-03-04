@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-03T20:28:01.385182+00:00",
+    "ts_utc": "2026-03-04T00:47:58.374401+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-03T20:28:02.748100+00:00",
+    "ts_utc": "2026-03-04T00:47:59.717197+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -29,7 +29,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:05.358850+00:00",
+    "ts_utc": "2026-03-04T00:48:02.573942+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -45,7 +45,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:06.380752+00:00",
+    "ts_utc": "2026-03-04T00:48:03.762696+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -59,7 +59,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:06.758418+00:00",
+    "ts_utc": "2026-03-04T00:48:04.121457+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -69,7 +69,7 @@
     "consequence": "Downstream steps can rely on meta__ fields without overwriting Bronze meaning.",
     "data": {
       "layer": "silver",
-      "processed_at_utc": "2026-03-03T20:28:06.751938+00:00",
+      "processed_at_utc": "2026-03-04T00:48:04.112692+00:00",
       "required_meta_columns": [
         "meta__dataset",
         "meta__split",
@@ -104,7 +104,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:07.807582+00:00",
+    "ts_utc": "2026-03-04T00:48:05.434239+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -123,7 +123,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:08.415571+00:00",
+    "ts_utc": "2026-03-04T00:48:06.022168+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -137,7 +137,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:10.109210+00:00",
+    "ts_utc": "2026-03-04T00:48:07.364245+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -184,7 +184,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:11.354217+00:00",
+    "ts_utc": "2026-03-04T00:48:08.457096+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -207,7 +207,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:13.323288+00:00",
+    "ts_utc": "2026-03-04T00:48:12.470986+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -261,7 +261,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:14.430265+00:00",
+    "ts_utc": "2026-03-04T00:48:14.561641+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -290,7 +290,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:32.266773+00:00",
+    "ts_utc": "2026-03-04T00:48:34.223813+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -304,7 +304,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:34.227749+00:00",
+    "ts_utc": "2026-03-04T00:48:38.373237+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -334,7 +334,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:35.330597+00:00",
+    "ts_utc": "2026-03-04T00:48:39.948386+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -481,7 +481,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-03T20:28:42.653428+00:00",
+    "ts_utc": "2026-03-04T00:48:52.196978+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -491,8 +491,8 @@
     "consequence": "Downstream steps can load the Parquet and feature registry as the single source of truth for Silver.",
     "data": {
       "dataset_name": "pump",
-      "silver_parquet_path": "/workspace/data/silver/train/None__silver__train.parquet",
-      "feature_registry_path": "/workspace/artifacts/silver/pump/silver__pump__feature_registry.json",
+      "silver_parquet_path": "/workspace/data/silver/train/pump__silver__train.parquet",
+      "feature_registry_path": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
       "quality_info": {
         "total_rows": 220320,
         "total_columns": 86,

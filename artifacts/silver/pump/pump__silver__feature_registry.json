@@ -1,7 +1,7 @@
 {
   "dataset_name": "pump",
   "row_count": 220320,
-  "column_count": 85,
+  "column_count": 86,
   "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
   "feature_count": 50,
   "feature_columns": [

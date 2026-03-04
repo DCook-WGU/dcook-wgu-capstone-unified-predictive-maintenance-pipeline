@@ -1,6 +1,6 @@
 {
   "rows": 220320,
-  "cols": 85,
+  "cols": 86,
   "required_present": {
     "anomaly_flag": true,
     "event_step": true,
