@@ -1,0 +1,39 @@
+gold_cascade:
+
+  layer_name: gold
+  process_run_id_prefix: gold_cascade_process
+  recipe_id: gold_modeling__v001_cascade
+  random_seed: 42
+
+  stage1:
+    estimator_count: 200
+    threshold_percentile: 95.0
+
+  stage2:
+    selection_mode: fixed   # fixed | threshold_grid | parameter_search
+    min_recall: 0.50
+    random_state: 42
+
+    fixed:
+      params:
+        n_estimators: 300
+        max_samples: auto
+        contamination: auto
+        max_features: 1.0
+        bootstrap: false
+      threshold_percentile: 98.5
+
+    search:
+      threshold_grid: [95.0, 96.0, 97.0, 97.5, 98.0, 98.5, 99.0]
+      param_grid:
+        n_estimators: [100, 200, 300]
+        max_samples: [auto, 0.6, 0.8, 1.0]
+        contamination: [auto, 0.005, 0.01, 0.02, 0.03, 0.05]
+        max_features: [0.5, 0.75, 1.0]
+        bootstrap: [false]
+
+  stage3:
+    min_primary_sensor_hits: 2
+    min_secondary_sensor_hits: 1
+    rolling_window_size: 3
+    minimum_flags_in_window: 2

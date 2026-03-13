@@ -1,0 +1,11 @@
+runtime:
+  mode: test
+
+execution:
+  fit_models: false
+  score_only: true
+  persist_models: false
+
+lineage:
+  training_truth_hash: REQUIRED_FOR_TEST_MODE
+  load_training_artifacts_from_truth: true

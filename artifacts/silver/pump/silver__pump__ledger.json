@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-04T00:47:58.374401+00:00",
+    "ts_utc": "2026-03-13T06:54:26.402888+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-04T00:47:59.717197+00:00",
+    "ts_utc": "2026-03-13T06:54:27.352300+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -23,13 +23,13 @@
       "bronze_path": "/workspace/data/bronze/train/pump__bronze__train.parquet",
       "shape": [
         220320,
-        65
+        66
       ],
-      "cols": 65
+      "cols": 66
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:02.573942+00:00",
+    "ts_utc": "2026-03-13T06:54:53.352983+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -45,7 +45,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:03.762696+00:00",
+    "ts_utc": "2026-03-13T06:54:59.784597+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -59,17 +59,30 @@
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:04.121457+00:00",
+    "ts_utc": "2026-03-13T06:55:09.135288+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "validate_dataset_name",
+    "message": "Validated Bronze-stamped dataset name for Silver against parent truth and recorded the validation in Truth Store.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "dataset_name": "pump",
+      "dataset_source_col": "meta__dataset",
+      "dataset_method": "unique"
+    }
+  },
+  {
+    "ts_utc": "2026-03-13T06:55:14.776230+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "silver_meta_contract",
-    "message": "Stamped Silver-owned meta columns and ensured required Bronze meta columns exist.",
-    "why": "Silver needs consistent lineage + processing timestamps before canonical ordering, labels, and features.",
-    "consequence": "Downstream steps can rely on meta__ fields without overwriting Bronze meaning.",
+    "message": "Ensured required row-level/source meta exists. Silver runtime metadata is being stored in Truth Store, not row-stamped.",
+    "why": null,
+    "consequence": null,
     "data": {
-      "layer": "silver",
-      "processed_at_utc": "2026-03-04T00:48:04.112692+00:00",
       "required_meta_columns": [
         "meta__dataset",
         "meta__split",
@@ -77,100 +90,35 @@
         "meta__asset_id",
         "meta__source_file",
         "meta__source_row_id",
-        "meta__record_id",
-        "meta__ingested_at_utc"
+        "meta__ingested_at_utc",
+        "meta__record_id"
       ],
-      "added_meta_columns": [
-        "meta__layer",
-        "meta__processed_at_utc",
-        "meta__silver_version",
-        "meta__cleaning_recipe_id",
-        "meta__dataset_name",
-        "meta__dataset_source",
-        "meta__feature_set_id",
-        "meta__feature_count",
-        "meta__label_source_column",
-        "meta__label_source_kind",
-        "meta__episode_idmeta__has_label_candidates",
-        "meta__has_status_candidates",
-        "meta__event_id",
-        "meta__event_time_source",
-        "meta__event_step_source"
-      ],
+      "processed_at_utc": "2026-03-13T06:55:14.775417+00:00",
       "shape": {
         "rows": 220320,
-        "cols": 68
+        "cols": 65
       }
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:05.434239+00:00",
-    "stage": "silver",
-    "recipe": "silver__clean__dataset__agnostic__v001",
-    "kind": "decision",
-    "step": "resolve_dataset_name",
-    "message": "Resolved dataset name for Silver (Bronze preferred; fallback otherwise).",
-    "why": "Silver uses Bronze-stamped dataset identifier as source of truth to preserve lineage.",
-    "consequence": "All artifacts and feature_set IDs will be consistent across layers.",
-    "data": {
-      "dataset_name": "pump",
-      "dataset_source_col": "meta__dataset",
-      "dataset_method": "unique",
-      "candidates": [
-        "meta__dataset_name",
-        "meta__source_dataset"
-      ]
-    }
-  },
-  {
-    "ts_utc": "2026-03-04T00:48:06.022168+00:00",
-    "stage": "silver",
-    "recipe": "silver__clean__dataset__agnostic__v001",
-    "kind": "decision",
-    "step": "create dataset specific artifcats folder",
-    "message": "Creating a dataset specific artificats folder now that the dataset name has been resolved",
-    "why": "To allow for artifacts to be stored properly. ",
-    "consequence": "All artifacts will intermingle and create the need for organization/decluttering. .",
-    "data": {
-      "dataset_name": "pump",
-      "silver_artifacts_folder": "/workspace/artifacts/silver/pump"
-    }
-  },
-  {
-    "ts_utc": "2026-03-04T00:48:07.364245+00:00",
+    "ts_utc": "2026-03-13T06:55:27.220269+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "resolve_label_or_status_source",
-    "message": "Resolved label/status source column for Silver.",
-    "why": "Silver needs one consistent source to build anomaly_flag and state flags.",
-    "consequence": "Downstream label building uses this source consistently. we also record all detected candidates for traceability.",
+    "message": "Resolved label/status source and wrote the resolution to Truth Store.",
+    "why": null,
+    "consequence": null,
     "data": {
       "label_source_col": "machine_status",
       "label_source_type": "status",
-      "chosen_from": "status_candidates",
-      "label_candidates": [
-        "anomaly_flag",
-        "fault_flag",
-        "target",
-        "label",
-        "y"
-      ],
-      "status_candidates": [
-        "machine_status",
-        "status",
-        "state",
-        "condition"
-      ],
       "found_label_columns": [],
       "found_status_columns": [
         "machine_status"
       ],
-      "found_counts": {
-        "labels_found": 0,
-        "status_found": 1
-      },
-      "chosen_column_stats": {
+      "has_label_candidates": 0,
+      "has_status_candidates": 1,
+      "chosen_summary": {
         "top_values": {
           "NORMAL": 205836,
           "RECOVERING": 14477,
@@ -184,7 +132,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:08.457096+00:00",
+    "ts_utc": "2026-03-13T06:55:39.793983+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -202,19 +150,19 @@
       "collisions": 0,
       "shape": {
         "rows": 220320,
-        "cols": 74
+        "cols": 65
       }
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:12.470986+00:00",
+    "ts_utc": "2026-03-13T06:55:53.135308+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "build_canonical_identity_and_order_master",
-    "message": "Built canonical identity + ordering master per (asset, run).",
-    "why": "Silver requires a stable per-(asset,run) event axis for windowing, segmentation, EDA, and consistent downstream modeling across datasets.",
-    "consequence": "Each (asset,run) group has event_step/time_index from 0..N-1; event_time is parsed when available; meta__event_id is deterministic.",
+    "message": "Built canonical identity + ordering master and wrote the resolution to Truth Store.",
+    "why": null,
+    "consequence": null,
     "data": {
       "dataset_name": "pump",
       "time_candidates": [
@@ -256,12 +204,66 @@
       ],
       "shape": {
         "rows": 220320,
-        "cols": 81
+        "cols": 70
       }
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:14.561641+00:00",
+    "ts_utc": "2026-03-13T06:56:02.773786+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "decision",
+    "step": "build_canonical_identity_and_order_master",
+    "message": "Built canonical identity + ordering master and wrote the resolution to Truth Store.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "dataset_name": "pump",
+      "time_candidates": [
+        "timestamp",
+        "event_time",
+        "time",
+        "datetime",
+        "date"
+      ],
+      "step_candidates": [
+        "cycle",
+        "step",
+        "event_step",
+        "sample",
+        "time_index"
+      ],
+      "tie_breaker_candidates": [
+        "meta__source_row_id",
+        "meta__record_id"
+      ],
+      "ordering_mode": "time",
+      "group_columns": [
+        "meta__asset_id",
+        "meta__run_id"
+      ],
+      "group_count": 1,
+      "rows": 220320,
+      "time_column_used": "timestamp",
+      "time_parse_success_percent": 100.0,
+      "step_column_used": "event_step",
+      "step_parse_success_percent": 100.0,
+      "tie_breaker_column_used": "meta__source_row_id",
+      "sorted": true,
+      "sort_columns": [
+        "meta__asset_id",
+        "meta__run_id",
+        "event_time",
+        "meta__source_row_id"
+      ],
+      "shape": {
+        "rows": 220320,
+        "cols": 70
+      }
+    }
+  },
+  {
+    "ts_utc": "2026-03-13T06:56:13.941646+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -285,12 +287,12 @@
       "anomaly_rate_percent": 6.5740740740740735,
       "shape": {
         "rows": 220320,
-        "columns": 85
+        "columns": 74
       }
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:34.223813+00:00",
+    "ts_utc": "2026-03-13T06:56:41.321010+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -304,7 +306,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:38.373237+00:00",
+    "ts_utc": "2026-03-13T06:57:08.723750+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -334,14 +336,14 @@
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:39.948386+00:00",
+    "ts_utc": "2026-03-13T06:57:19.519047+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "finalize_feature_set",
-    "message": "Finalized feature set after applying feature filters (e.g., missingness quarantine).",
-    "why": "Feature set identifier must represent the final schema used in downstream EDA/modeling.",
-    "consequence": "Registry + parquet are consistent; Gold can assert schema alignment.",
+    "message": "Finalized feature set and wrote feature set metadata to Truth Store.",
+    "why": null,
+    "consequence": null,
     "data": {
       "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
       "label_source_column": "machine_status",
@@ -356,16 +358,10 @@
         "time_index",
         "event_date",
         "meta__event_id",
-        "meta__event_time_source",
-        "meta__event_step_source",
-        "meta__event_time_parse_success_percent",
-        "meta__event_step_parse_success_percent",
         "anomaly_flag",
         "is_anomaly",
         "is_normal",
-        "status_normal_value",
-        "meta__label_source",
-        "meta__label_type"
+        "status_normal_value"
       ],
       "feature_count": 50,
       "selected_feature_columns": [
@@ -476,26 +472,43 @@
       },
       "shape": {
         "rows": 220320,
-        "cols": 86
+        "cols": 73
       }
     }
   },
   {
-    "ts_utc": "2026-03-04T00:48:52.196978+00:00",
+    "ts_utc": "2026-03-13T06:57:56.888976+00:00",
+    "stage": "silver",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "build_silver_truth_record",
+    "message": "Built and saved Silver truth record and stamped only truth lineage columns to dataframe.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "silver_truth_hash": "abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29",
+      "silver_parent_truth_hash": "32a311acca5658248baf17483951e97141eb2669e1b14b50ffe0ed38aef8264e",
+      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29.json",
+      "pipeline_mode": "batch",
+      "process_run_id": "silver_process__20260313T065424Z"
+    }
+  },
+  {
+    "ts_utc": "2026-03-13T06:58:06.646920+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "silver_finalize_export",
-    "message": "Finalized Silver schema, ran quick quality checks, exported Parquet, and saved feature registry.",
-    "why": "A stable Silver export and feature registry is the foundation for reproducible EDA, modeling, and synthetic anomaly generation.",
-    "consequence": "Downstream steps can load the Parquet and feature registry as the single source of truth for Silver.",
+    "message": "Finalized Silver export under the strict truth-store meta contract.",
+    "why": null,
+    "consequence": null,
     "data": {
       "dataset_name": "pump",
       "silver_parquet_path": "/workspace/data/silver/train/pump__silver__train.parquet",
       "feature_registry_path": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
       "quality_info": {
         "total_rows": 220320,
-        "total_columns": 86,
+        "total_columns": 73,
         "duplicate_row_count": 0,
         "duplicate_event_id_count": 0,
         "numeric_feature_count": 50,
@@ -534,9 +547,13 @@
       },
       "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
       "feature_count": 50,
+      "silver_truth_hash": "abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29",
+      "silver_parent_truth_hash": "32a311acca5658248baf17483951e97141eb2669e1b14b50ffe0ed38aef8264e",
+      "pipeline_mode": "batch",
+      "process_run_id": "silver_process__20260313T065424Z",
       "shape": {
         "rows": 220320,
-        "cols": 86
+        "cols": 73
       }
     }
   }

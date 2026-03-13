@@ -1,0 +1,11 @@
+gold_preprocessing:
+  layer_name: gold
+  recipe_id: gold_preprocessing__v001_cascade
+  process_run_id_prefix: gold_process
+  train_fraction: 0.70
+  random_seed: 42
+  scaler_kind: robust
+  scaler_artifact_name_template: "{dataset.name}__gold__{gold_preprocessing.scaler_kind}_scaler.joblib"
+  stage2_target_feature_count: 12
+  stage3_primary_count: 5
+  stage3_secondary_count: 8

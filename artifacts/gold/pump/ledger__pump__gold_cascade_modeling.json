@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-02T05:21:18.298831+00:00",
+    "ts_utc": "2026-03-13T08:06:48.159521+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -11,24 +11,45 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-02T05:21:19.266699+00:00",
+    "ts_utc": "2026-03-13T08:06:51.279571+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
     "step": "load_modeling_inputs",
-    "message": "Loaded saved Gold fit/test parquet artifacts and Stage 1/2/3 feature inputs.",
+    "message": "Loaded Gold scaled parquet, loaded Gold truth, substituted truth-linked artifact paths, then loaded cascade inputs.",
     "why": null,
     "consequence": null,
     "data": {
+      "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
+      "gold_truth_hash": "52040214a1b81f683312ca3f97704c6d08e7bbcfe03b984952cffa6954826a1f",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__52040214a1b81f683312ca3f97704c6d08e7bbcfe03b984952cffa6954826a1f.json",
+      "gold_preprocessed_path": "/workspace/data/gold/pump__gold__preprocessed_prescaled.parquet",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+      "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
+      "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
+      "stage2_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_features.json",
+      "stage3_primary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_primary_rule_sensors.json",
+      "stage3_secondary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json",
+      "gold_preprocessed_shape": [
+        220320,
+        74
+      ],
+      "gold_scaled_shape": [
+        220320,
+        74
+      ],
       "gold_fit_shape": [
-        161772,
-        87
+        122065,
+        74
       ],
       "gold_test_shape": [
-        44064,
-        87
+        83889,
+        74
+      ],
+      "gold_train_shape": [
+        136431,
+        74
       ],
       "stage1_feature_count": 50,
       "stage2_feature_count": 12,
@@ -37,7 +58,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-02T05:21:19.786267+00:00",
+    "ts_utc": "2026-03-13T08:06:52.604271+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -46,92 +67,108 @@
     "why": null,
     "consequence": null,
     "data": {
-      "training_rows": 161772,
+      "training_rows": 122065,
       "reference_feature_count": 50
     }
   },
   {
-    "ts_utc": "2026-03-02T05:21:21.898511+00:00",
+    "ts_utc": "2026-03-13T08:06:56.862011+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
     "step": "run_cascade_stage1",
-    "message": "Ran Stage 1 broad Isolation Forest using saved Gold fit data and scored the saved Gold test data.",
+    "message": "Ran Stage 1 broad Isolation Forest using saved Gold fit data and scored all rows of the scaled dataset.",
     "why": null,
     "consequence": null,
     "data": {
       "estimator_count": 200,
       "threshold_percentile": 95.0,
-      "threshold": 0.532497962842102,
+      "threshold": 0.5337445171501773,
       "feature_count": 50,
-      "alert_count_test_rows": 785
+      "alert_count_all_rows": 22742,
+      "alert_count_test_rows": 2288
     }
   },
   {
-    "ts_utc": "2026-03-02T05:21:24.664687+00:00",
+    "ts_utc": "2026-03-13T08:07:00.971707+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
-    "step": "run_cascade_stage2",
-    "message": "Ran Stage 2 narrow Isolation Forest on saved Gold fit data and gated test results through Stage 1.",
+    "step": "run_cascade_stage2_fixed",
+    "message": "Ran Stage 2 fixed narrow Isolation Forest using the fixed branch from the cascade config.",
     "why": null,
     "consequence": null,
     "data": {
-      "estimator_count": 300,
-      "threshold_percentile": 98.5,
-      "threshold": 0.6900805433271796,
+      "selection_mode": "fixed",
+      "best_params": {
+        "n_estimators": 300,
+        "max_samples": "auto",
+        "contamination": "auto",
+        "max_features": 1.0,
+        "bootstrap": false
+      },
+      "selected_threshold_percentile": 98.5,
+      "threshold": 0.5862519236715605,
       "feature_count": 12,
-      "raw_alert_count_all_rows": 2,
-      "stage2_confirmed_count_test_rows": 2
+      "raw_alert_count_all_rows": 21605,
+      "raw_alert_count_test_rows": 6065,
+      "stage2_confirmed_count_all_rows": 16545,
+      "stage2_confirmed_count_test_rows": 1176
     }
   },
   {
-    "ts_utc": "2026-03-02T05:21:30.827263+00:00",
+    "ts_utc": "2026-03-13T08:07:05.282867+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
     "step": "run_cascade_stage3_confirmation",
-    "message": "Applied Stage 3 confirmation checks to the saved Gold test data.",
+    "message": "Applied Stage 3 confirmation checks to all rows of the scaled dataset.",
     "why": null,
     "consequence": null,
     "data": {
       "primary_rule_sensor_count": 5,
       "secondary_rule_sensor_count": 7,
-      "profile_breach_rows": 6694,
-      "corroboration_rows": 15609,
-      "persistence_rows": 2,
-      "drift_rows": 6978,
-      "final_alert_count_all_rows": 2,
-      "final_alert_count_test_rows": 2
+      "profile_breach_rows_all": 72702,
+      "profile_breach_rows_test": 49472,
+      "corroboration_rows_all": 150151,
+      "corroboration_rows_test": 80276,
+      "persistence_rows_all": 16535,
+      "persistence_rows_test": 1165,
+      "drift_rows_all": 2448,
+      "drift_rows_test": 1409,
+      "final_alert_count_all_rows": 16501,
+      "final_alert_count_test_rows": 1166
     }
   },
   {
-    "ts_utc": "2026-03-02T05:21:39.181324+00:00",
+    "ts_utc": "2026-03-13T08:07:50.732209+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
     "step": "save_cascade_outputs",
-    "message": "Saved cascade results, trained Stage 1 and Stage 2 models, thresholds, summary, metadata, and reference profile.",
+    "message": "Saved cascade results, trained Stage 1 and Stage 2 models, thresholds, summary, metadata, reference profile, and cascade stage truth record.",
     "why": null,
     "consequence": null,
     "data": {
-      "cascade_results_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+      "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+      "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.pkl",
       "cascade_reference_profile_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_reference_profile.csv",
-      "stage1_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
-      "stage2_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib",
+      "stage1_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
+      "stage1_models_path": "/workspace/models/pump/pump__gold__stage1_isolation_forest.joblib",
+      "stage2_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib",
+      "stage2_models_path": "/workspace/models/pump/pump__gold__stage2_isolation_forest.joblib",
       "cascade_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_thresholds.json",
       "cascade_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_summary.json",
       "cascade_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_metadata.json",
-      "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
-      "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
-      "result_row_count": 44064,
-      "stage1_alert_count_all_rows": 785,
-      "stage2_alert_count_all_rows": 2,
-      "final_cascade_alert_count_all_rows": 2
+      "cascade_truth_hash": "db762f28aef67c53c2c1e8beba112940c130026e573d055f41c6e49448610165",
+      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__db762f28aef67c53c2c1e8beba112940c130026e573d055f41c6e49448610165.json",
+      "result_row_count": 220320,
+      "final_alert_count_all_rows": 16501,
+      "final_alert_count_test_rows": 1166
     }
   },
   {
-    "ts_utc": "2026-03-02T05:21:39.204564+00:00",
+    "ts_utc": "2026-03-13T08:07:51.076214+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -142,19 +179,22 @@
     "data": {
       "cascade_metrics": {
         "model": "3-Stage Cascade",
-        "stage1_alert_count_all_rows": 785,
-        "stage2_alert_count_all_rows": 2,
-        "final_alert_count_all_rows": 2,
-        "stage1_alert_count_test_rows": 785,
-        "stage2_alert_count_test_rows": 2,
-        "final_alert_count_test_rows": 2,
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0
+        "stage1_alert_count_all_rows": 22742,
+        "stage2_alert_count_all_rows": 16545,
+        "final_alert_count_all_rows": 16501,
+        "stage1_alert_count_test_rows": 2288,
+        "stage2_alert_count_test_rows": 1176,
+        "final_alert_count_test_rows": 1166,
+        "precision": 0.05574614065180103,
+        "recall": 0.5508474576271186,
+        "f1": 0.10124610591900311
       },
-      "cascade_results_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
-      "stage1_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
-      "stage2_model_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib"
+      "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.csv",
+      "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_results.pkl",
+      "stage1_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib",
+      "stage1_models_path": "/workspace/models/pump/pump__gold__stage1_isolation_forest.joblib",
+      "stage2_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib",
+      "stage2_models_path": "/workspace/models/pump/pump__gold__stage2_isolation_forest.joblib"
     }
   }
 ]

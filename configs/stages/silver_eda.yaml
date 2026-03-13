@@ -1,0 +1,27 @@
+silver_eda:
+  layer_name: silver_eda
+  process_run_id_prefix: silver_eda_process
+  cleaning_recipe_id: silver_eda__v001
+
+  min_time_parse_success_percent: 95.0
+  min_step_parse_success_percent: 95.0
+  quarantine_missing_pct: 30.0
+  correlation_threshold: 0.85
+  use_robust_scaler: True
+
+  top_n_sensors_for_plots: 8
+  pairplot_sensor_cap: 8
+  pairplot_sample_n: 2000
+  top_plot_cols: 8
+  top_corr_cols: 15
+  rolling_minutes: 60
+  lookback_hours: 48
+  baseline_days: 7
+  baseline_gap_hours: 12
+  sustain_minutes: 180
+  top_sensor_pre_hours: 6
+  pre_window_steps: 200
+  post_window_steps: 200
+  max_onsets_to_use: 30
+  pca_sample_row_count: 8000
+  impute_sample_row_count: 20000

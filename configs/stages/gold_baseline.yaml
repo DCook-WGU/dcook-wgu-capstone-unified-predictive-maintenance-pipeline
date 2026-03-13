@@ -1,0 +1,11 @@
+gold_baseline:
+  layer_name: gold
+  process_run_id_prefix: gold_baseline_process
+  recipe_id: gold_modeling__v001_baseline
+  random_seed: 42
+  train_fraction: 0.70
+  use_robust_scaler: false
+  baseline_threshold_percentile: 97.0
+  stage1_threshold_percentile: 95.0
+  stage2_threshold_percentile: 98.5
+  baseline_estimator_count: 200

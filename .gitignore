@@ -62,6 +62,13 @@ data/streams/replay/*
 data/preprocessed/*
 !data/preprocessed/.gitkeep
 
+# Large Files:
+artifacts/gold/pump/*results.csv
+artifacts/gold/pump/*results.pkl
+artifacts/gold/pump/*.joblib
+
+# logs
+logs/
 
 # ============================
 # Docker volumes (if they appear as local dirs)

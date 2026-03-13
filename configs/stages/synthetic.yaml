@@ -1,0 +1,53 @@
+synthetic:
+  layer_name: "synthetic"
+  process_run_id_prefix: "synthetic"
+  random_seed: 42
+
+  # batch sizes
+  normal_batch_size: 50
+
+  # episode defaults
+  episode:
+    normal_before_range: [200, 600]
+    buildup_range: [50, 140]
+    failure_range: [40, 120]
+    recovery_range: [80, 180]
+    normal_after_range: [200, 600]
+    magnitude_range: [0.75, 2.0]
+
+  # fault selection behavior
+  faults:
+    allowed:
+      - drift_up
+      - drift_down
+      - spike
+      - stuck_constant
+      - variance_burst
+      - step_shift
+      - intermittent_dropout
+      - sawtooth
+    random_mode_probability: 0.30
+    multisensor_probability: 0.25
+
+  # artifact keys expected in the parent Silver EDA truth (or fallback paths)
+  silver_eda_artifact_keys:
+    profile_normal: "feature_profile_normal_path"
+    profile_abnormal: "feature_profile_abnormal_path"
+    profile_recovery: "feature_profile_recovery_path"
+    corr_pairs_normal: "sensor_correlation_pairs_normal_path"
+    group_map_normal: "sensor_group_map_normal_path"
+    fault_pairings_normal: "sensor_fault_pairings_normal_path"
+
+
+  output_mode: "postgres_batch"   # later: "kafka_publish"
+  postgres:
+    schema: "public"
+    table_artifact_name: "stream"
+  export:
+    enabled: true
+    export_dir_key: "artifacts_root"
+
+  kafka:
+    enabled: false
+    topic: "synthetic_pump"
+    checkpoint_table: "synthetic_pump_kafka_checkpoint"

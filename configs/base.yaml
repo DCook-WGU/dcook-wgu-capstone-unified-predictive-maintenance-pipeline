@@ -1,0 +1,70 @@
+# Base Yaml
+
+project:
+  name: capstone
+
+runtime:
+  mode: train
+  stage: bronze
+  dataset: pump
+  profile: default
+  
+pipeline:
+  execution_mode: batch
+  orchestration_mode: notebook
+
+versions:
+  bronze: bronze__001
+  silver: silver__001
+  silver_eda: silver_eda__001
+  gold: gold__001
+  truth: truth__001
+
+paths:
+  data_dir: data
+  artifacts_dir: artifacts
+  models_dir: models
+  logs_dir: logs
+  wandb_dir: wandb
+  raw_subdir: raw
+  bronze_subdir: bronze
+  bronze_train_subdir: bronze/train
+  bronze_test_subdir: bronze/test
+  silver_subdir: silver
+  silver_train_subdir: silver/train
+  silver_test_subdir: silver/test
+  gold_subdir: gold
+
+wandb:
+  enabled: true
+  project: capstone
+  entity: dcoo230-western-governors-university
+  run_name_template: "{versions.gold}_{runtime.mode}"
+
+execution:
+  persist_truths: true
+  persist_ledgers: true
+  persist_models: true
+  save_config_snapshot: true
+  fit_models: true
+  score_only: false
+  use_existing_gold_truth: false
+
+lineage:
+  parent_truth_hash: null
+  training_truth_hash: null
+  load_training_artifacts_from_truth: false
+
+mode_behavior:
+  train:
+    execution:
+      fit_models: true
+      score_only: false
+      persist_models: true
+  test:
+    execution:
+      fit_models: false
+      score_only: true
+      persist_models: false
+    lineage:
+      load_training_artifacts_from_truth: true

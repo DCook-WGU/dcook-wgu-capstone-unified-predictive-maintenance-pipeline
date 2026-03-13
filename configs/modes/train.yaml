@@ -1,0 +1,11 @@
+runtime:
+  mode: train
+
+execution:
+  fit_models: true
+  score_only: false
+  persist_models: true
+
+lineage:
+  training_truth_hash: null
+  load_training_artifacts_from_truth: false

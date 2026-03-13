@@ -1,0 +1,70 @@
+silver_preeda:
+  layer_name: silver
+  cleaning_recipe_id: silver__clean__dataset__agnostic__v001
+  process_run_id_prefix: silver_process
+
+  canonical_output_columns:
+    - event_time
+    - event_step
+    - time_index
+
+  canonical_non_meta_order:
+    - event_time
+    - event_step
+    - time_index
+    - event_date
+
+  label_columns_order:
+    - anomaly_flag
+    - is_anomaly
+    - is_normal
+    - status_normal_value
+
+  meta_required_columns:
+    - meta__dataset
+    - meta__split
+    - meta__run_id
+    - meta__asset_id
+    - meta__source_file
+    - meta__source_row_id
+    - meta__ingested_at_utc
+    - meta__record_id
+
+  canonical_exclude_columns:
+    - event_time
+    - event_step
+    - time_index
+    - event_date
+    - meta__event_id
+
+  label_exclude_columns:
+    - anomaly_flag
+    - is_anomaly
+    - is_normal
+    - status_normal_value
+
+  asset_id_default_fallback: asset__001
+  run_id_default_fallback: run__001
+  raw_prefix: raw__
+
+  time_column_candidates: [timestamp, event_time, time, datetime, date]
+  step_column_candidates: [cycle, step, event_step, sample, time_index]
+  tie_breaker_candidates: [meta__source_row_id, meta__record_id]
+  status_column_candidates: [machine_status, status, state, condition]
+  label_column_candidates: [anomaly_flag, fault_flag, target, label, y]
+
+  min_time_parse_success_percent: 95.0
+  min_step_parse_success_percent: 95.0
+  quarantine_missing_pct: 30.0
+  correlation_threshold: 0.85
+  top_n_sensors_for_plots: 8
+  pairplot_sensor_cap: 8
+  pairplot_sample_n: 2000
+  top_plot_cols: 8
+  top_corr_cols: 15
+  rolling_minutes: 60
+  lookback_hours: 48
+  baseline_days: 7
+  baseline_gap_hours: 12
+  sustain_minutes: 180
+  top_sensor_pre_hours: 6

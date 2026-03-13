@@ -1,0 +1,11 @@
+bronze:
+  layer_name: bronze
+  
+  dataset_candidates: [meta__dataset_name, meta__source_dataset, meta__dataset]
+
+  process_run_id_prefix: bronze_process
+  add_record_id: true
+  record_id_inputs:
+    - meta__source_file
+    - meta__source_row_id
+  record_id_method: hash_pandas_object_uint64

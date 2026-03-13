@@ -1,0 +1,14 @@
+dataset:
+  name: pump
+  raw_dataset_subdir: pump_sensor_data
+  raw_file_name: sensor.csv
+  asset_id: asset__001
+  run_id: run__001
+  split_status: unsplit
+  label_type: null
+  label_source: null
+  normal_status_values:
+    - normal
+    - ok
+    - healthy
+    - running

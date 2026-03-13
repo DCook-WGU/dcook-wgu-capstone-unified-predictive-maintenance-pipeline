@@ -1,10 +1,13 @@
 from pathlib import Path
 
+from typing import List, Optional, Tuple
+
 from datetime import datetime
 import pandas as pd
 import numpy as np
 
 import json
+import hashlib 
 
 import logging
 
@@ -36,6 +39,99 @@ def _resolve_path(file_path, file_name=None):
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+
+
+def _clean_values(series: pd.Series) -> pd.Series:
+    values = (
+        series.dropna()
+        .astype("string")
+        .str.strip()
+    )
+    return values[values != ""]
+
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+
+def _normalize_dataset_name(dataset_name: str) -> str:
+    normalized_value = str(dataset_name).strip().lower()
+    normalized_value = normalized_value.replace(" ", "_")
+    normalized_value = normalized_value.replace("-", "_")
+
+    cleaned_characters = []
+    for character in normalized_value:
+        if character.isalnum() or character == "_":
+            cleaned_characters.append(character)
+
+    normalized_value = "".join(cleaned_characters)
+
+    while "__" in normalized_value:
+        normalized_value = normalized_value.replace("__", "_")
+
+    normalized_value = normalized_value.strip("_")
+
+    if normalized_value == "":
+        raise ValueError("Dataset name normalization produced an empty value.")
+
+    return normalized_value
+
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+
+
+def _generate_deterministic_dataset_name_from_file_details(path_value: Optional[str]) -> Optional[str]:
+    """
+    Build a deterministic dataset name from file details.
+
+    Uses:
+    - file stem
+    - file size in bytes
+    - modified timestamp
+    - short hash of those combined details
+    """
+    if path_value is None or str(path_value).strip() == "":
+        return None
+
+    path_object = Path(path_value)
+
+    file_stem_raw = path_object.stem.strip()
+    if file_stem_raw == "":
+        file_stem_raw = "dataset"
+
+    file_stem_normalized = _normalize_dataset_name(file_stem_raw)
+
+    file_size_bytes = "na"
+    modified_timestamp = "na"
+
+    if path_object.exists() and path_object.is_file():
+        stat_result = path_object.stat()
+        file_size_bytes = str(int(stat_result.st_size))
+        modified_timestamp = str(int(stat_result.st_mtime))
+
+    identity_text = "|".join(
+        [
+            file_stem_normalized,
+            file_size_bytes,
+            modified_timestamp,
+        ]
+    )
+
+    identity_hash = hashlib.sha1(identity_text.encode("utf-8")).hexdigest()[:8]
+
+    generated_dataset_name = (
+        f"{file_stem_normalized}_{file_size_bytes}_{modified_timestamp}_{identity_hash}"
+    )
+
+    return _normalize_dataset_name(generated_dataset_name)
+
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
 
 
 # Creating Compact Hash ID - May not end up using 
@@ -85,9 +181,11 @@ def ingest_data(
         file_path, 
         file_name=None, 
         dataset_name=None, 
+        dataset_name_config=None,
+        dataset_candidates=None,
         split="unsplit", 
-        label_type=pd.NA,
-        label_source=pd.NA,
+        #label_type=pd.NA,
+        #label_source=pd.NA,
         run_id="run__001",
         asset_id="asset__001",
         add_record_id: bool = False,
@@ -163,12 +261,34 @@ def ingest_data(
     # `meta__*` fields are reserved for lineage/audit/context. Downstream feature selection
     # can safely exclude these columns without maintaining dataset-specific exclusion lists.
 
-    dataframe["meta__dataset"] = dataset_name if dataset_name is not None else pd.NA
+    if dataset_candidates is None:
+        dataset_candidates = []
+
+    RESOLVED_DATASET_NAME, DATASET_SOURCE_COLUMN, DATASET_METHOD = resolve_dataset_name_for_bronze(
+        dataframe=dataframe,
+        dataset_candidates=dataset_candidates,
+        argument_value=dataset_name,
+        config_value=dataset_name_config,
+        fallback_value="unknown_dataset",
+        source_path=str(path),
+        bronze_source_column="meta__dataset",
+        fail_on_multiple_in_dataset=False,
+    )
+
+    logger.info(
+        "Resolved dataset name during Bronze ingest | dataset_name=%s | source_column=%s | method=%s",
+        RESOLVED_DATASET_NAME,
+        DATASET_SOURCE_COLUMN,
+        DATASET_METHOD,
+    )
+
+    # Bronze Metadata Contract
+    dataframe["meta__dataset"] = RESOLVED_DATASET_NAME
     dataframe["meta__split"] = split
     dataframe["meta__run_id"] = run_id
     dataframe["meta__asset_id"] = asset_id
-    dataframe["meta__label_type"] = label_type
-    dataframe["meta__label_source"] = label_source
+    #dataframe["meta__label_type"] = label_type
+    #dataframe["meta__label_source"] = label_source
     
     ingested_at_utc = pd.Timestamp.now(tz="UTC")
     dataframe["meta__ingested_at_utc"] = ingested_at_utc
@@ -203,7 +323,8 @@ def ingest_data(
     
 
     # Cast Low-Cardinality Meta Columns into category type
-    for column in ["meta__dataset", "meta__split", "meta__label_type", "meta__label_source"]:
+    #for column in ["meta__dataset", "meta__split", "meta__label_type", "meta__label_source"]:
+    for column in ["meta__dataset", "meta__split"]:
         if column in dataframe.columns:
             dataframe[column] = dataframe[column].astype("category")
 
@@ -215,7 +336,7 @@ def ingest_data(
     # dataframe["meta__run_id"] = dataframe["meta__run_id"].astype("category")
     # dataframe["meta__source_file"] = dataframe["meta__source_file"].astype("category")
 
-
+    '''
     columns_to_front = [
         "meta__dataset", "meta__split", 
         "meta__run_id", "meta__asset_id", 
@@ -223,6 +344,15 @@ def ingest_data(
         "meta__ingested_at_utc", 
         "meta__source_file", "meta__source_row_id"
         ] + (["meta__record_id"] if add_record_id else [])
+    '''
+
+    columns_to_front = [
+        "meta__dataset", "meta__split", 
+        "meta__run_id", "meta__asset_id", 
+        "meta__ingested_at_utc", 
+        "meta__source_file", "meta__source_row_id"
+        ] + (["meta__record_id"] if add_record_id else [])
+
 
     dataframe = dataframe[columns_to_front + [column for column in dataframe.columns if column not in columns_to_front]]
 
@@ -263,6 +393,19 @@ def ingest_data(
         
         if len(dataframe) == 0:
             raise ValueError("Ingest produced an empty dataframe")
+        
+    dataframe.attrs["dataset_resolution"] = {
+        "dataset_name": RESOLVED_DATASET_NAME,
+        "dataset_source_column": DATASET_SOURCE_COLUMN,
+        "dataset_method": DATASET_METHOD,
+        "priority_order": [
+            "argument",
+            "config",
+            "inside_dataset",
+            "file_details",
+            "fallback",
+        ],
+    }
 
     return dataframe
 
@@ -433,5 +576,150 @@ def load_json(
         raise
 
 
-    #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+
+def resolve_dataset_name_for_bronze(
+        dataframe: pd.DataFrame,
+        *,
+        dataset_candidates: List[str],
+        argument_value: Optional[str] = None,
+        config_value: Optional[str] = None,
+        fallback_value: Optional[str] = None,
+        source_path: Optional[str] = None,
+        bronze_source_column: str = "meta__dataset",
+        fail_on_multiple_in_dataset: bool = True,
+    ) -> Tuple[str, str, str]:
+    """
+    Resolve dataset name during Bronze ingestion using the following priority order:
+
+    1. CLI / Argument
+    2. Config File
+    3. Inside Dataset
+    4. Deterministic file-details-based generated name
+    5. Fallback
+
+    Returns
+    -------
+    Tuple[str, str, str]
+        dataset_name,
+        dataset_source_column,
+        dataset_method
+    """
+
+
+    #### #### #### #### 
+    # 1. CLI / Argument
+
+    if argument_value is not None and str(argument_value).strip() != "":
+        return (
+            _normalize_dataset_name(str(argument_value)),
+            "argument",
+            "argument",
+        )
+
+    #### #### #### #### 
+    # 2. Config File
+
+    if config_value is not None and str(config_value).strip() != "":
+        return (
+            _normalize_dataset_name(str(config_value)),
+            "config",
+            "config",
+        )
+
+    #### #### #### #### 
+    # 3. Inside Dataset
+    #    First check meta__dataset, then approved dataset candidate columns
+
+    if bronze_source_column in dataframe.columns:
+        values = _clean_values(dataframe[bronze_source_column])
+
+        if len(values) > 0:
+            unique_values = values.unique()
+
+            if len(unique_values) == 1:
+                return (
+                    _normalize_dataset_name(str(unique_values[0])),
+                    bronze_source_column,
+                    "unique",
+                )
+
+            if fail_on_multiple_in_dataset:
+                raise ValueError(
+                    f"Multiple values are not allowed from bronze source '{bronze_source_column}'. "
+                    f"Values discovered: {unique_values[:10]}"
+                )
+
+            top_value = values.value_counts().index[0]
+            return (
+                _normalize_dataset_name(str(top_value)),
+                bronze_source_column,
+                "mode",
+            )
+
+    for column in dataset_candidates:
+        if column == bronze_source_column:
+            continue
+        if column not in dataframe.columns:
+            continue
+
+        values = _clean_values(dataframe[column])
+
+        if len(values) == 0:
+            continue
+
+        unique_values = values.unique()
+
+        if len(unique_values) == 1:
+            return (
+                _normalize_dataset_name(str(unique_values[0])),
+                column,
+                "unique",
+            )
+
+        if fail_on_multiple_in_dataset:
+            raise ValueError(
+                f"Multiple values are not allowed from dataset candidate '{column}'. "
+                f"Values discovered: {unique_values[:10]}"
+            )
+
+        top_value = values.value_counts().index[0]
+        return (
+            _normalize_dataset_name(str(top_value)),
+            column,
+            "mode",
+        )
+
+    #### #### #### #### 
+    # 4. Deterministic file-details-based generated name
+
+    generated_dataset_name = _generate_deterministic_dataset_name_from_file_details(source_path)
+
+    if generated_dataset_name is not None:
+        return (
+            generated_dataset_name,
+            "source_path",
+            "file_details",
+        )
+
+    #### #### #### #### 
+    # 5. Fallback
+
+    fallback_value_text = (
+        fallback_value
+        if (fallback_value is not None and str(fallback_value).strip() != "")
+        else "unknown_dataset"
+    )
+
+    return (
+        _normalize_dataset_name(str(fallback_value_text)),
+        "fallback",
+        "fallback",
+    )
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+

@@ -1,0 +1,4 @@
+gold_comparison:
+  layer_name: gold
+  process_run_id_prefix: gold_comparision
+  recipe_id: gold_modeling__v001_model_comparision

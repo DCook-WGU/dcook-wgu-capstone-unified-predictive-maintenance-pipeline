@@ -1,7 +1,7 @@
 {
   "dataset_name": "pump",
   "row_count": 220320,
-  "column_count": 86,
+  "column_count": 73,
   "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
   "feature_count": 50,
   "feature_columns": [
@@ -140,18 +140,16 @@
     "time_index",
     "event_date",
     "meta__event_id",
-    "meta__event_time_source",
-    "meta__event_step_source",
-    "meta__event_time_parse_success_percent",
-    "meta__event_step_parse_success_percent",
     "anomaly_flag",
     "is_anomaly",
     "is_normal",
-    "status_normal_value",
-    "meta__label_source",
-    "meta__label_type"
+    "status_normal_value"
   ],
   "label_source_column": "machine_status",
   "label_source_type": "status",
-  "quarantine_missing_pct": 30.0
+  "quarantine_missing_pct": 30.0,
+  "pipeline_mode": "batch",
+  "process_run_id": "silver_process__20260313T065424Z",
+  "truth_hash": "abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29",
+  "parent_truth_hash": "32a311acca5658248baf17483951e97141eb2669e1b14b50ffe0ed38aef8264e"
 }

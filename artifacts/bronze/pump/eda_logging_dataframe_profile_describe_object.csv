@@ -1,0 +1,11 @@
+,count,unique,top,freq
+meta__dataset,220320,1,pump,220320
+meta__split,220320,1,unsplit,220320
+meta__run_id,220320,1,run__001,220320
+meta__asset_id,220320,1,asset__001,220320
+meta__source_file,220320,1,sensor.csv,220320
+meta__truth_hash,220320,1,32a311acca5658248baf17483951e97141eb2669e1b14b50ffe0ed38aef8264e,220320
+meta__parent_truth_hash,0,0,,
+meta__pipeline_mode,220320,1,batch,220320
+timestamp,220320,220320,2018-08-31 23:43:00,1
+machine_status,220320,3,NORMAL,205836

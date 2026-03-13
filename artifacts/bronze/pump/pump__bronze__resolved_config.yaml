@@ -1,0 +1,210 @@
+project:
+  name: capstone
+runtime:
+  mode: train
+  stage: bronze
+  dataset: pump
+  profile: default
+pipeline:
+  execution_mode: batch
+  orchestration_mode: notebook
+versions:
+  bronze: bronze__001
+  silver: silver__001
+  silver_eda: silver_eda__001
+  gold: gold__001
+  truth: truth__001
+paths:
+  data_dir: data
+  artifacts_dir: artifacts
+  models_dir: models
+  logs_dir: logs
+  wandb_dir: wandb
+  raw_subdir: raw
+  bronze_subdir: bronze
+  bronze_train_subdir: bronze/train
+  bronze_test_subdir: bronze/test
+  silver_subdir: silver
+  silver_train_subdir: silver/train
+  silver_test_subdir: silver/test
+  gold_subdir: gold
+wandb:
+  enabled: true
+  project: capstone
+  entity: dcoo230-western-governors-university
+  run_name_template: gold__001_train
+execution:
+  persist_truths: true
+  persist_ledgers: true
+  persist_models: true
+  save_config_snapshot: true
+  fit_models: true
+  score_only: false
+  use_existing_gold_truth: false
+lineage:
+  parent_truth_hash: null
+  training_truth_hash: null
+  load_training_artifacts_from_truth: false
+mode_behavior:
+  train:
+    execution:
+      fit_models: true
+      score_only: false
+      persist_models: true
+  test:
+    execution:
+      fit_models: false
+      score_only: true
+      persist_models: false
+    lineage:
+      load_training_artifacts_from_truth: true
+dataset:
+  name: pump
+  raw_dataset_subdir: pump_sensor_data
+  raw_file_name: sensor.csv
+  asset_id: asset__001
+  run_id: run__001
+  split_status: unsplit
+  label_type: null
+  label_source: null
+  normal_status_values:
+  - normal
+  - ok
+  - healthy
+  - running
+bronze:
+  layer_name: bronze
+  dataset_candidates:
+  - meta__dataset_name
+  - meta__source_dataset
+  - meta__dataset
+  process_run_id_prefix: bronze_process
+  add_record_id: true
+  record_id_inputs:
+  - meta__source_file
+  - meta__source_row_id
+  record_id_method: hash_pandas_object_uint64
+filenames:
+  raw_file_name: sensor.csv
+  bronze_train_file_name: pump__bronze__train.parquet
+  silver_train_file_name: pump__silver__train.parquet
+  gold_preprocessed_file_name: pump__gold__preprocessed.parquet
+  gold_preprocessed_prescaled_file_name: pump__gold__preprocessed_prescaled.parquet
+  gold_preprocessed_scaled_file_name: pump__gold__preprocessed_scaled.parquet
+  gold_fit_file_name: pump__gold__fit_normal_only.parquet
+  gold_train_file_name: pump__gold__train.parquet
+  gold_test_file_name: pump__gold__test.parquet
+  feature_registry_file_name: pump__silver__feature_registry.json
+  impute_recommendation_file_name: imputation__recommendation.json
+  stage1_features_file_name: pump__gold__stage1_features.json
+  stage2_features_file_name: pump__gold__stage2_features.json
+  stage3_primary_file_name: pump__gold__stage3_primary_rule_sensors.json
+  stage3_secondary_file_name: pump__gold__stage3_secondary_rule_sensors.json
+  baseline_results_file_name_csv: pump__gold__baseline_results.csv
+  baseline_results_file_name_pickle: pump__gold__baseline_results.pkl
+  baseline_model_file_name: pump__gold__baseline_isolation_forest.joblib
+  baseline_thresholds_file_name: pump__gold__baseline_thresholds.json
+  baseline_summary_file_name: pump__gold__baseline_summary.json
+  baseline_metadata_file_name: pump__gold__baseline_metadata.json
+  cascade_results_file_name_csv: pump__gold__cascade_results.csv
+  cascade_results_file_name_pickle: pump__gold__cascade_results.pkl
+  cascade_thresholds_file_name: pump__gold__cascade_thresholds.json
+  cascade_summary_file_name: pump__gold__cascade_summary.json
+  cascade_metadata_file_name: pump__gold__cascade_metadata.json
+  cascade_reference_profile_file_name: pump__gold__cascade_reference_profile.csv
+  stage1_model_file_name: pump__gold__stage1_isolation_forest.joblib
+  stage2_model_file_name: pump__gold__stage2_isolation_forest.joblib
+  comparison_file_name: pump__gold__comparison__baseline_vs_cascade.csv
+  baseline_vs_cascade_file_name: pump__gold__baseline_vs_cascade.csv
+  baseline_vs_cascade_summary_file_name: pump__gold__baseline_vs_cascade_summary.json
+  preprocessing_summary_file_name: pump__gold__preprocessing_summary.json
+  preprocessing_metadata_file_name: pump__gold__preprocessing_metadata.json
+  reference_profile_file_name: pump__gold__reference_profile.csv
+  comparison_plot_with_test_alerts_file_name: pump__gold__comparison__2panel_test_alerts_and_metrics.png
+  bronze_ledger_file_name: ledger__pump__bronze_preprocessing.json
+  silver_ledger_file_name: ledger__pump__silver_preeda.json
+  silver_eda_ledger_file_name: ledger__pump__silver_eda.json
+  gold_preprocessing_ledger_file_name: ledger__pump__gold_preprocessing.json
+  gold_baseline_ledger_file_name: ledger__pump__gold_baseline_modeling.json
+  gold_cascade_ledger_file_name: ledger__pump__gold_cascade_modeling.json
+  gold_comparison_ledger_file_name: ledger__pump__gold_comparison.json
+  bronze_version: bronze__001
+  silver_version: silver__001
+  silver_eda_version: silver_eda__001
+  gold_version: gold__001
+resolved_paths:
+  project_root: /workspace
+  data_root: /workspace/data
+  artifacts_root: /workspace/artifacts
+  models_root: /workspace/models
+  logs_root: /workspace/logs
+  wandb_root: /workspace/wandb
+  data_raw_dir: /workspace/data/raw
+  data_bronze_dir: /workspace/data/bronze
+  data_bronze_train_dir: /workspace/data/bronze/train
+  data_bronze_test_dir: /workspace/data/bronze/test
+  data_silver_dir: /workspace/data/silver
+  data_silver_train_dir: /workspace/data/silver/train
+  data_silver_test_dir: /workspace/data/silver/test
+  data_gold_dir: /workspace/data/gold
+  truths_dir: /workspace/artifacts/truths
+  truth_index_path: /workspace/artifacts/truths/truth_index.jsonl
+  bronze_artifacts_dir: /workspace/artifacts/bronze/pump
+  silver_artifacts_dir: /workspace/artifacts/silver/pump
+  silver_eda_artifacts_dir: /workspace/artifacts/silver_eda/pump
+  gold_artifacts_dir: /workspace/artifacts/gold/pump
+  dataset_models_dir: /workspace/models/pump
+  raw_file_path: /workspace/data/raw/pump_sensor_data/sensor.csv
+  bronze_train_data_path: /workspace/data/bronze/train/pump__bronze__train.parquet
+  silver_train_data_path: /workspace/data/silver/train/pump__silver__train.parquet
+  gold_preprocessed_data_path: /workspace/data/gold/pump__gold__preprocessed.parquet
+  gold_preprocessed_prescaled_data_path: /workspace/data/gold/pump__gold__preprocessed_prescaled.parquet
+  gold_preprocessed_scaled_data_path: /workspace/data/gold/pump__gold__preprocessed_scaled.parquet
+  gold_fit_data_path: /workspace/data/gold/pump__gold__fit_normal_only.parquet
+  gold_train_data_path: /workspace/data/gold/pump__gold__train.parquet
+  gold_test_data_path: /workspace/data/gold/pump__gold__test.parquet
+  feature_registry_path: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
+  impute_recommendation_path: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
+  stage1_features_path: /workspace/artifacts/gold/pump/pump__gold__stage1_features.json
+  stage2_features_path: /workspace/artifacts/gold/pump/pump__gold__stage2_features.json
+  stage3_primary_path: /workspace/artifacts/gold/pump/pump__gold__stage3_primary_rule_sensors.json
+  stage3_secondary_path: /workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json
+  baseline_results_path_csv: /workspace/artifacts/gold/pump/pump__gold__baseline_results.csv
+  baseline_results_path_pickle: /workspace/artifacts/gold/pump/pump__gold__baseline_results.pkl
+  baseline_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__baseline_isolation_forest.joblib
+  baseline_models_path: /workspace/models/pump/pump__gold__baseline_isolation_forest.joblib
+  baseline_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json
+  baseline_summary_path: /workspace/artifacts/gold/pump/pump__gold__baseline_summary.json
+  baseline_metadata_path: /workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json
+  cascade_results_path_csv: /workspace/artifacts/gold/pump/pump__gold__cascade_results.csv
+  cascade_results_path_pickle: /workspace/artifacts/gold/pump/pump__gold__cascade_results.pkl
+  cascade_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__cascade_thresholds.json
+  cascade_summary_path: /workspace/artifacts/gold/pump/pump__gold__cascade_summary.json
+  cascade_metadata_path: /workspace/artifacts/gold/pump/pump__gold__cascade_metadata.json
+  cascade_reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__cascade_reference_profile.csv
+  stage1_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib
+  stage2_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib
+  stage1_models_path: /workspace/models/pump/pump__gold__stage1_isolation_forest.joblib
+  stage2_models_path: /workspace/models/pump/pump__gold__stage2_isolation_forest.joblib
+  comparison_path: /workspace/artifacts/gold/pump/pump__gold__comparison__baseline_vs_cascade.csv
+  baseline_vs_cascade_path: /workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade.csv
+  baseline_vs_cascade_summary_path: /workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade_summary.json
+  preprocessing_summary_path: /workspace/artifacts/gold/pump/pump__gold__preprocessing_summary.json
+  preprocessing_metadata_path: /workspace/artifacts/gold/pump/pump__gold__preprocessing_metadata.json
+  reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__reference_profile.csv
+  comparison_plot_with_test_alerts_path: /workspace/artifacts/gold/pump/pump__gold__comparison__2panel_test_alerts_and_metrics.png
+  bronze_log_path: /workspace/logs/bronze.log
+  silver_log_path: /workspace/logs/silver.log
+  silver_eda_log_path: /workspace/logs/silver_eda.log
+  gold_preprocessing_log_path: /workspace/logs/gold_preprocessing.log
+  gold_baseline_log_path: /workspace/logs/gold_modeling_baseline.log
+  gold_cascade_log_path: /workspace/logs/gold_modeling_cascade.log
+  gold_comparison_log_path: /workspace/logs/gold_model_comparison.log
+config_meta:
+  source_files:
+  - /workspace/configs/base.yaml
+  - /workspace/configs/datasets/pump.yaml
+  - /workspace/configs/modes/train.yaml
+  - /workspace/configs/stages/bronze.yaml
+  project_root: /workspace
+  config_hash: d50e83203bd6462b7c46cb490722fa9ec89c013865937c49bb9508eb7194be8d

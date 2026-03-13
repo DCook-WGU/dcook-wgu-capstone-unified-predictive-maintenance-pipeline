@@ -31,9 +31,9 @@ def profile_dataframe(
         artifacts_dir = Path(artifacts_dir)
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        numeric_path = artifacts_dir / "describe_numeric.csv"
-        object_path = artifacts_dir / "describe_object.csv"
-        boolean_path = artifacts_dir / "describe_boolean.csv"
+        numeric_path = artifacts_dir / "eda_logging_dataframe_profile_describe_numeric.csv"
+        object_path = artifacts_dir / "eda_logging_dataframe_profile_describe_object.csv"
+        boolean_path = artifacts_dir / "eda_logging_dataframe_profile_describe_boolean.csv"
 
         numeric_columns = dataframe.select_dtypes(include=["number"]).columns.tolist()
         if len(numeric_columns) > 0:
