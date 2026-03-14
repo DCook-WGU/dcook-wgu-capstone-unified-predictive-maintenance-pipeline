@@ -212,6 +212,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
     logs_root = project_root / roots["logs_dir"]
     wandb_root = project_root / roots["wandb_dir"]
 
+
     dataset_name = cfg["dataset"]["name"]
     raw_dataset_subdir = cfg["dataset"]["raw_dataset_subdir"]
 
@@ -224,6 +225,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "models_root": str(models_root),
         "logs_root": str(logs_root),
         "wandb_root": str(wandb_root),
+
 
         # Data Folders
         "data_raw_dir": str(data_root / roots["raw_subdir"]),

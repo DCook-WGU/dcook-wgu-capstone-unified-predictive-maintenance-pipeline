@@ -40,9 +40,11 @@ synthetic:
 
 
   output_mode: "postgres_batch"   # later: "kafka_publish"
+
   postgres:
-    schema: "public"
+    schema: "capstone"
     table_artifact_name: "stream"
+    
   export:
     enabled: true
     export_dir_key: "artifacts_root"

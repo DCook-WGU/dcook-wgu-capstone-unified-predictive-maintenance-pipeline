@@ -91,7 +91,7 @@ class SyntheticGenerator:
                     "secondary": str(row["sensor_secondary"]),
                     "strength": float(row["fault_coupling_strength"]),
                     "lag": int(row["lag_cycles"]),
-                    "recommended_secondary_fault": str(r.get("recommended_secondary_fault", "variance_burst")),
+                    "recommended_secondary_fault": str(row.get("recommended_secondary_fault", "variance_burst")),
                 }
             )
 

@@ -3,12 +3,13 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
+import json 
 
 import pandas as pd
 
 from utils.paths import get_paths
 from utils.file_io import save_data
-from utils.logging_setup import configure_logging
+from utils.logging_setup import configure_logging, log_layer_paths
 from utils.pipeline_config_loader import (
     load_pipeline_config,
     build_truth_config_block,
@@ -92,7 +93,7 @@ def main() -> None:
 
     SYN_CFG = CONFIG["synthetic"]
     PATHS = CONFIG["resolved_paths"]
-    PIPELINE = CONFIG.get("pipeline", {"execution_mode": "batch", "orchestration_mode": "script"})
+    PIPELINE = CONFIG.get("pipeline", {"execution_mode": "batch", "orchestration_mode": "notebook"})
 
     PIPELINE_MODE = PIPELINE["execution_mode"]
     DATASET_NAME = str(CONFIG["dataset"]["name"]).strip().lower()
@@ -107,9 +108,135 @@ def main() -> None:
     LOGS_PATH.mkdir(parents=True, exist_ok=True)
     ARTIFACTS_ROOT.mkdir(parents=True, exist_ok=True)
 
-    synthetic_log_path = Path(paths.logs) / "synthetic.log"
-    configure_logging("capstone", synthetic_log_path, level=logging.DEBUG, overwrite_handlers=True)
     set_wandb_dir_from_config(CONFIG)
+
+    print("DATASET_NAME:", DATASET_NAME)
+    print("TRUTHS_PATH:", TRUTHS_PATH)
+    print("ARTIFACTS_ROOT:", ARTIFACTS_ROOT)
+
+    synthetic_log_path = paths.logs / "synthetic_data_generator.log"
+
+    # Initial Logger
+    configure_logging(
+        "capstone",
+        synthetic_log_path,
+        level=logging.DEBUG,
+        overwrite_handlers=True,
+    )
+
+    # Initiate Logger and log file
+    logger = logging.getLogger("capstone.synthetic")
+
+    # Log load and initiation
+    logger.info("Synethetic Data Generation starting")
+
+    # Log paths loads
+    log_layer_paths(paths, current_layer="synthetic", logger=logger)
+
+
+    def get_latest_truth_hash(
+        *,
+        truth_index_path: Path,
+        layer_name: str,
+        dataset_name: str,
+    ) -> str:
+        """
+        Return the most recent truth_hash for a given layer + dataset from truth_index.jsonl.
+
+        Assumes truth_index.jsonl is append-only and newer entries are later in the file.
+        """
+        if not truth_index_path.exists():
+            raise FileNotFoundError(f"truth_index.jsonl not found: {truth_index_path}")
+
+        dataset_name_norm = str(dataset_name).strip().lower()
+        layer_name_norm = str(layer_name).strip().lower()
+
+        latest_record: Optional[Dict[str, Any]] = None
+
+        with truth_index_path.open("r", encoding="utf-8") as file:
+            for line in file:
+                line = line.strip()
+                if not line:
+                    continue
+
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                rec_layer = str(rec.get("layer_name", "")).strip().lower()
+                rec_dataset = str(rec.get("dataset_name", "")).strip().lower()
+
+                if rec_layer == layer_name_norm and rec_dataset == dataset_name_norm:
+                    latest_record = rec
+
+        if latest_record is None:
+            raise ValueError(
+                f"No truth records found for layer='{layer_name}' dataset='{dataset_name}' in {truth_index_path}"
+            )
+
+        truth_hash = latest_record.get("truth_hash")
+        if truth_hash is None or str(truth_hash).strip() == "":
+            raise ValueError("Latest record is missing a usable truth_hash.")
+
+        return str(truth_hash).strip()
+
+
+    def get_latest_silver_eda_truth_hash(
+            *,
+            truth_index_path: Path,
+            dataset_name: str,
+        ) -> str:
+            """
+            Convenience wrapper: latest Silver EDA truth hash for a dataset.
+            """
+            return get_latest_truth_hash(
+                truth_index_path=truth_index_path,
+                layer_name="silver_eda",
+                dataset_name=dataset_name,
+            )
+
+
+        # Updated
+        # --- Notebook params ---
+    STAGE = SYN_CFG["layer_name"]
+    DATASET = "pump"
+    MODE = "train"
+    PROFILE = "default"
+
+    # Parent truth hash from your latest Silver EDA run
+    SILVER_EDA_TRUTH_HASH = get_latest_silver_eda_truth_hash(truth_index_path=TRUTH_INDEX_PATH, dataset_name=DATASET_NAME,)
+    print("Latest SILVER_EDA_TRUTH_HASH:", SILVER_EDA_TRUTH_HASH)
+
+    # Faults
+    # Episode overrides (easy test knobs)
+    PRIMARY_SENSOR = None          # None => first sensor
+    PRIMARY_FAULT_TYPE = list(SYN_CFG["faults"]["allowed"])
+
+
+    # Episode Settings
+    NORMAL_BEFORE = SYN_CFG["episode"]["normal_before_range"]
+    BUILDUP = SYN_CFG["episode"]["buildup_range"]
+    FAILURE = SYN_CFG["episode"]["failure_range"]
+    RECOVERY = SYN_CFG["episode"]["recovery_range"]
+    NORMAL_AFTER = SYN_CFG["episode"]["normal_after_range"]
+    MAGNITUDE = SYN_CFG["episode"]["magnitude_range"]
+
+    SYNTH_PROCESS_RUN_ID = make_process_run_id(SYN_CFG["process_run_id_prefix"])
+
+    # Outputs
+    OUTPUT_MODE = SYN_CFG["output_mode"]
+
+    # Postgres settings
+    PG_SCHEMA = SYN_CFG["postgres"]["schema"]
+    TABLE_ARTIFACT_NAME = SYN_CFG["postgres"]["table_artifact_name"]
+
+    # medallion naming: synthetic_<dataset>_<artifact_name>
+    ARTIFACT_NAME = "stream"       
+
+    # Export
+    EXPORT_ENABLED = SYN_CFG["export"]["enabled"]
+    EXPORT_DIRECTORY = SYN_CFG["export"]["export_dir_key"]
 
     # ---------------------------
     # 1) Load parent truth (Silver EDA)
@@ -161,9 +288,9 @@ def main() -> None:
         normal_profiles=normal_profiles,
         abnormal_profiles=abnormal_profiles,
         recovery_profiles=recovery_profiles,
-        correlation_pairs_df=corr_pairs_df,
-        group_map_df=group_map_df,
-        fault_pairings_df=fault_pairings_df,
+        correlation_pairs_dataframe=corr_pairs_df,
+        group_map_dataframe=group_map_df,
+        fault_pairings_dataframe=fault_pairings_df,
         random_seed=int(SYN_CFG["random_seed"]),
     )
 

@@ -72,7 +72,7 @@ def log_layer_paths(
     """
     layer = current_layer.strip().lower()
 
-    valid_layers = ["bronze", "silver", "gold"]
+    valid_layers = ["bronze", "silver", "gold", "synthetic"]
     if layer not in valid_layers:
         raise ValueError(f"current_layer must be one of {valid_layers}, got '{current_layer}'")
 

@@ -9,6 +9,10 @@ import pandas as pd
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 
+import psycopg2
+from urllib.parse import quote_plus
+
+
 
 VALID_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -77,14 +81,19 @@ def build_postgres_url(
     database: str,
     username: str,
     password: str,
-    driver: str = "psycopg",
+    driver: str = "psycopg2",
 ) -> str:
     """Build a SQLAlchemy PostgreSQL connection URL."""
-    return f"postgresql+{driver}://{username}:{password}@{host}:{port}/{database}"
+    user_q = quote_plus(username)
+    pwd_q = quote_plus(password)
+    
+    #url = f"postgresql+psycopg2://{user_q}:{pwd_q}@{host}:{port}/{database}"    
+
+    return f"postgresql+{driver}://{user_q}:{pwd_q}@{host}:{port}/{database}"
 
 
 
-def build_postgres_url_from_env(prefix: str = "POSTGRES", driver: str = "psycopg") -> str:
+def build_postgres_url_from_env(prefix: str = "POSTGRES", driver: str = "psycopg2") -> str:
     """
     Build a PostgreSQL URL from environment variables.
 
@@ -100,6 +109,7 @@ def build_postgres_url_from_env(prefix: str = "POSTGRES", driver: str = "psycopg
     database = (
         os.getenv(f"{prefix}_DB")
         or os.getenv(f"{prefix}_DATABASE")
+        or os.getenv(f"{prefix}_NAME")
         or os.getenv("PGDATABASE")
     )
     username = os.getenv(f"{prefix}_USER") or os.getenv("PGUSER")
@@ -107,7 +117,7 @@ def build_postgres_url_from_env(prefix: str = "POSTGRES", driver: str = "psycopg
 
     missing: list[str] = []
     if not database:
-        missing.append(f"{prefix}_DB/{prefix}_DATABASE or PGDATABASE")
+        missing.append(f"{prefix}_DB/{prefix}_DATABASE/{prefix}_NAME or PGDATABASE ")
     if not username:
         missing.append(f"{prefix}_USER or PGUSER")
     if not password:

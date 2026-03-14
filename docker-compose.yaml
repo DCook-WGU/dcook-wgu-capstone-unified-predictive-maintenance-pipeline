@@ -123,6 +123,7 @@ services:
       DB_HOST: dcook_capstone_postgres
       DB_PORT: 5432
       DB_NAME: dcook_capstone_postgres_db
+      DB_DATABASE: dcook_capstone_postgres_db
       DB_USER: dcook_admin
       DB_PASSWORD: V9m!pQ4z@H2eS7wK
 
