@@ -144,6 +144,7 @@ def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
         "gold_fit_file_name": f"{dataset_name}__gold__fit_normal_only.parquet",
         "gold_train_file_name": f"{dataset_name}__gold__train.parquet",
         "gold_test_file_name": f"{dataset_name}__gold__test.parquet",
+        "silver_preeda_dropped_sensors_file_name": f"{dataset_name}__silver_preeda__dropped_sensors.parquet",
 
         # EDA Files
         "feature_registry_file_name": f"{dataset_name}__silver__feature_registry.json",
@@ -260,6 +261,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "gold_fit_data_path": str(data_root / roots["gold_subdir"] / filenames["gold_fit_file_name"]),
         "gold_train_data_path": str(data_root / roots["gold_subdir"] / filenames["gold_train_file_name"]),
         "gold_test_data_path": str(data_root / roots["gold_subdir"] / filenames["gold_test_file_name"]),
+        "silver_preeda_dropped_sensors_data_path": str(artifacts_root / "silver" / dataset_name / filenames["silver_preeda_dropped_sensors_file_name"]),
 
         # EDA
         "feature_registry_path": str(artifacts_root / "silver" / dataset_name / filenames["feature_registry_file_name"]),

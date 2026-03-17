@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-13T06:54:26.402888+00:00",
+    "ts_utc": "2026-03-17T04:55:31.812001+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-13T06:54:27.352300+00:00",
+    "ts_utc": "2026-03-17T04:55:32.824048+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -29,7 +29,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:54:53.352983+00:00",
+    "ts_utc": "2026-03-17T04:55:35.350531+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -45,7 +45,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:54:59.784597+00:00",
+    "ts_utc": "2026-03-17T04:55:35.997852+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -59,7 +59,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:55:09.135288+00:00",
+    "ts_utc": "2026-03-17T04:55:36.813160+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -74,7 +74,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:55:14.776230+00:00",
+    "ts_utc": "2026-03-17T04:55:37.222056+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -93,7 +93,7 @@
         "meta__ingested_at_utc",
         "meta__record_id"
       ],
-      "processed_at_utc": "2026-03-13T06:55:14.775417+00:00",
+      "processed_at_utc": "2026-03-17T04:55:37.221600+00:00",
       "shape": {
         "rows": 220320,
         "cols": 65
@@ -101,7 +101,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:55:27.220269+00:00",
+    "ts_utc": "2026-03-17T04:55:38.208885+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -132,7 +132,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:55:39.793983+00:00",
+    "ts_utc": "2026-03-17T04:55:39.662019+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -155,7 +155,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:55:53.135308+00:00",
+    "ts_utc": "2026-03-17T04:55:41.604328+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -209,61 +209,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:56:02.773786+00:00",
-    "stage": "silver",
-    "recipe": "silver__clean__dataset__agnostic__v001",
-    "kind": "decision",
-    "step": "build_canonical_identity_and_order_master",
-    "message": "Built canonical identity + ordering master and wrote the resolution to Truth Store.",
-    "why": null,
-    "consequence": null,
-    "data": {
-      "dataset_name": "pump",
-      "time_candidates": [
-        "timestamp",
-        "event_time",
-        "time",
-        "datetime",
-        "date"
-      ],
-      "step_candidates": [
-        "cycle",
-        "step",
-        "event_step",
-        "sample",
-        "time_index"
-      ],
-      "tie_breaker_candidates": [
-        "meta__source_row_id",
-        "meta__record_id"
-      ],
-      "ordering_mode": "time",
-      "group_columns": [
-        "meta__asset_id",
-        "meta__run_id"
-      ],
-      "group_count": 1,
-      "rows": 220320,
-      "time_column_used": "timestamp",
-      "time_parse_success_percent": 100.0,
-      "step_column_used": "event_step",
-      "step_parse_success_percent": 100.0,
-      "tie_breaker_column_used": "meta__source_row_id",
-      "sorted": true,
-      "sort_columns": [
-        "meta__asset_id",
-        "meta__run_id",
-        "event_time",
-        "meta__source_row_id"
-      ],
-      "shape": {
-        "rows": 220320,
-        "cols": 70
-      }
-    }
-  },
-  {
-    "ts_utc": "2026-03-13T06:56:13.941646+00:00",
+    "ts_utc": "2026-03-17T04:55:44.209012+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -292,7 +238,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:56:41.321010+00:00",
+    "ts_utc": "2026-03-17T04:56:00.059052+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -306,21 +252,30 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:57:08.723750+00:00",
+    "ts_utc": "2026-03-17T04:57:09.221000+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "missingness_quarantine",
     "message": "Dropped features exceeding missingness threshold (or all-null).",
     "why": "High-missingness features add noise/instability to EDA + modeling.",
-    "consequence": "Feature set shrinks; downstream stats/imputation/modeling operate on remaining features.",
+    "consequence": "Feature set shrinks; synthetic generator will replicate missingness for dropped sensors.",
     "data": {
       "threshold_pct": 30.0,
-      "dropped": [
+      "dropped_count": 2,
+      "dropped_features": [
         "sensor_15",
         "sensor_50"
       ],
-      "remaining": 50,
+      "drop_reasons": {
+        "sensor_15": "all_null",
+        "sensor_50": "missing_rate_above_threshold"
+      },
+      "dropped_missing_pct": {
+        "sensor_15": 100.0,
+        "sensor_50": 34.95688090050835
+      },
+      "remaining_count": 50,
       "top_missing_pct": {
         "sensor_15": 100.0,
         "sensor_50": 34.95688090050835,
@@ -332,11 +287,137 @@
         "sensor_09": 2.0856027596223674,
         "sensor_01": 0.16748366013071894,
         "sensor_30": 0.1184640522875817
+      },
+      "missingness_pct_all": {
+        "sensor_00": 4.633260711692085,
+        "sensor_01": 0.16748366013071894,
+        "sensor_02": 0.008623819898329702,
+        "sensor_03": 0.008623819898329702,
+        "sensor_04": 0.008623819898329702,
+        "sensor_05": 0.008623819898329702,
+        "sensor_06": 2.177741466957153,
+        "sensor_07": 2.474128540305011,
+        "sensor_08": 2.3179920116194626,
+        "sensor_09": 2.0856027596223674,
+        "sensor_10": 0.008623819898329702,
+        "sensor_11": 0.008623819898329702,
+        "sensor_12": 0.008623819898329702,
+        "sensor_13": 0.008623819898329702,
+        "sensor_14": 0.009531590413943355,
+        "sensor_16": 0.014070442992011621,
+        "sensor_17": 0.020878721859114015,
+        "sensor_18": 0.020878721859114015,
+        "sensor_19": 0.007262164124909223,
+        "sensor_20": 0.007262164124909223,
+        "sensor_21": 0.007262164124909223,
+        "sensor_22": 0.018609295570079884,
+        "sensor_23": 0.007262164124909223,
+        "sensor_24": 0.007262164124909223,
+        "sensor_25": 0.01633986928104575,
+        "sensor_26": 0.00907770515613653,
+        "sensor_27": 0.007262164124909223,
+        "sensor_28": 0.007262164124909223,
+        "sensor_29": 0.0326797385620915,
+        "sensor_30": 0.1184640522875817,
+        "sensor_31": 0.007262164124909223,
+        "sensor_32": 0.030864197530864196,
+        "sensor_33": 0.007262164124909223,
+        "sensor_34": 0.007262164124909223,
+        "sensor_35": 0.007262164124909223,
+        "sensor_36": 0.007262164124909223,
+        "sensor_37": 0.007262164124909223,
+        "sensor_38": 0.012254901960784314,
+        "sensor_39": 0.012254901960784314,
+        "sensor_40": 0.012254901960784314,
+        "sensor_41": 0.012254901960784314,
+        "sensor_42": 0.012254901960784314,
+        "sensor_43": 0.012254901960784314,
+        "sensor_44": 0.012254901960784314,
+        "sensor_45": 0.012254901960784314,
+        "sensor_46": 0.012254901960784314,
+        "sensor_47": 0.012254901960784314,
+        "sensor_48": 0.012254901960784314,
+        "sensor_49": 0.012254901960784314,
+        "sensor_51": 6.982116920842412
+      },
+      "missingness_pct_by_state": null,
+      "missingness_state_dependent_flag": {
+        "sensor_00": false,
+        "sensor_01": false,
+        "sensor_02": false,
+        "sensor_03": false,
+        "sensor_04": false,
+        "sensor_05": false,
+        "sensor_06": false,
+        "sensor_07": false,
+        "sensor_08": false,
+        "sensor_09": false,
+        "sensor_10": false,
+        "sensor_11": false,
+        "sensor_12": false,
+        "sensor_13": false,
+        "sensor_14": false,
+        "sensor_16": false,
+        "sensor_17": false,
+        "sensor_18": false,
+        "sensor_19": false,
+        "sensor_20": false,
+        "sensor_21": false,
+        "sensor_22": false,
+        "sensor_23": false,
+        "sensor_24": false,
+        "sensor_25": false,
+        "sensor_26": false,
+        "sensor_27": false,
+        "sensor_28": false,
+        "sensor_29": false,
+        "sensor_30": false,
+        "sensor_31": false,
+        "sensor_32": false,
+        "sensor_33": false,
+        "sensor_34": false,
+        "sensor_35": false,
+        "sensor_36": false,
+        "sensor_37": false,
+        "sensor_38": false,
+        "sensor_39": false,
+        "sensor_40": false,
+        "sensor_41": false,
+        "sensor_42": false,
+        "sensor_43": false,
+        "sensor_44": false,
+        "sensor_45": false,
+        "sensor_46": false,
+        "sensor_47": false,
+        "sensor_48": false,
+        "sensor_49": false,
+        "sensor_51": false
+      },
+      "missingness_state_gate_params": {
+        "diff_gate_pct": 5.0,
+        "min_rows_per_state_for_gate": 200,
+        "rows_by_state": {
+          "normal": 205836,
+          "abnormal": 7,
+          "recovery": 14477
+        },
+        "state_list": [
+          "normal",
+          "abnormal",
+          "recovery"
+        ],
+        "state_col_resolved": "machine_status",
+        "state_col_synth": "machine_status__synethic",
+        "state_map": {
+          "normal": "normal",
+          "broken": "abnormal",
+          "recovering": "recovery"
+        }
       }
     }
   },
   {
-    "ts_utc": "2026-03-13T06:57:19.519047+00:00",
+    "ts_utc": "2026-03-17T05:03:47.762213+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -477,7 +558,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-13T06:57:56.888976+00:00",
+    "ts_utc": "2026-03-17T05:04:04.852519+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -486,15 +567,15 @@
     "why": null,
     "consequence": null,
     "data": {
-      "silver_truth_hash": "abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29",
+      "silver_truth_hash": "9a22c26fca10e05d7a6bd4853ced3eb23c05fbb85c742e37493214e641866beb",
       "silver_parent_truth_hash": "32a311acca5658248baf17483951e97141eb2669e1b14b50ffe0ed38aef8264e",
-      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29.json",
+      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__9a22c26fca10e05d7a6bd4853ced3eb23c05fbb85c742e37493214e641866beb.json",
       "pipeline_mode": "batch",
-      "process_run_id": "silver_process__20260313T065424Z"
+      "process_run_id": "silver_process__20260317T045527Z"
     }
   },
   {
-    "ts_utc": "2026-03-13T06:58:06.646920+00:00",
+    "ts_utc": "2026-03-17T05:04:07.350985+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -547,10 +628,10 @@
       },
       "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
       "feature_count": 50,
-      "silver_truth_hash": "abd68753081a07cf1eb74348011929e2661ba07262f694070367cb00a3f47b29",
+      "silver_truth_hash": "9a22c26fca10e05d7a6bd4853ced3eb23c05fbb85c742e37493214e641866beb",
       "silver_parent_truth_hash": "32a311acca5658248baf17483951e97141eb2669e1b14b50ffe0ed38aef8264e",
       "pipeline_mode": "batch",
-      "process_run_id": "silver_process__20260313T065424Z",
+      "process_run_id": "silver_process__20260317T045527Z",
       "shape": {
         "rows": 220320,
         "cols": 73

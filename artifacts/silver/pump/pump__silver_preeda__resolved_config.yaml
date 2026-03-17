@@ -141,6 +141,13 @@ silver_preeda:
   - y
   min_time_parse_success_percent: 95.0
   min_step_parse_success_percent: 95.0
+  minimum_state_difference_gate_percentage: 5.0
+  minimum_rows_per_state_for_gate: 200
+  missiness_state_map:
+    normal: normal
+    broken: abnormal
+    recoverying: recovery
+  missingness_synthetic_suffix: __synethic
   quarantine_missing_pct: 30.0
   correlation_threshold: 0.85
   top_n_sensors_for_plots: 8
@@ -164,6 +171,7 @@ filenames:
   gold_fit_file_name: pump__gold__fit_normal_only.parquet
   gold_train_file_name: pump__gold__train.parquet
   gold_test_file_name: pump__gold__test.parquet
+  silver_preeda_dropped_sensors_file_name: pump__silver_preeda__dropped_sensors.parquet
   feature_registry_file_name: pump__silver__feature_registry.json
   impute_recommendation_file_name: imputation__recommendation.json
   stage1_features_file_name: pump__gold__stage1_features.json
@@ -233,6 +241,7 @@ resolved_paths:
   gold_fit_data_path: /workspace/data/gold/pump__gold__fit_normal_only.parquet
   gold_train_data_path: /workspace/data/gold/pump__gold__train.parquet
   gold_test_data_path: /workspace/data/gold/pump__gold__test.parquet
+  silver_preeda_dropped_sensors_data_path: /workspace/artifacts/silver/pump/pump__silver_preeda__dropped_sensors.parquet
   feature_registry_path: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
   impute_recommendation_path: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
   stage1_features_path: /workspace/artifacts/gold/pump/pump__gold__stage1_features.json
@@ -277,4 +286,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/silver_preeda.yaml
   project_root: /workspace
-  config_hash: 990cd439fe0f2ca5b0f4d61797a299b9fde3dba9f7632f6c3e328daaa84058d2
+  config_hash: 92d91e51bff8becf65d19bfa470e185be32ba1384a148aa25cf1efbc32bf859f
