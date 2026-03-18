@@ -3,16 +3,16 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-import json 
+from typing import Any, Dict, Optional
 
+import numpy as np
 import pandas as pd
 
 from utils.paths import get_paths
 from utils.file_io import save_data
-from utils.logging_setup import configure_logging, log_layer_paths
+from utils.logging_setup import configure_logging
 from utils.pipeline_config_loader import (
     load_pipeline_config,
-    build_truth_config_block,
     set_wandb_dir_from_config,
     export_config_snapshot,
 )
@@ -28,19 +28,27 @@ from utils.truths import (
     load_truth_record_by_hash,
     get_truth_hash,
     get_pipeline_mode_from_truth,
+    get_parent_truth_hash,
     get_artifact_path_from_truth,
 )
 
 from utils.synthetic_profiles import (
-    load_rich_profile_csv,
+    load_and_merge_rich_profiles,
     load_correlation_pairs_csv,
     load_group_map_csv,
     load_fault_pairings_csv,
 )
-from utils.synthetic_generator import SyntheticGenerator, EpisodeSpec
 
-from utils.synthetic_postgres_writer import *
+from utils.synthetic_missingness import build_missingness_spec_from_truth_payload
+from utils.synthetic_generator import SyntheticGenerator, EpisodeSpec
+from utils.synthetic_postgres_writer import (
+    ensure_sequence,
+    reserve_next_batch_id,
+    reserve_cycle_range,
+    write_stream_batch,
+)
 from utils.synthetic_export import export_synthetic_batch_to_parquet
+from utils.postgres_util import get_engine_from_env
 
 logger = logging.getLogger("capstone.synthetic")
 
@@ -52,25 +60,44 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", default="train")
     parser.add_argument("--profile", default="default")
 
-    # This is the one thing you MUST provide if config doesn't already include it
     parser.add_argument(
         "--silver-eda-truth-hash",
         default=None,
-        help="Truth hash of the Silver EDA run to pull artifacts from (overrides config.runtime.silver_eda_truth_hash).",
+        help="Truth hash of the Silver EDA run to pull artifacts from.",
     )
 
-    # Optional overrides
-    parser.add_argument("--primary-sensor", default=None, help="Primary sensor name (default: first sensor).")
-    parser.add_argument("--primary-fault-type", default="drift_up")
-    parser.add_argument("--magnitude", type=float, default=1.5)
+    parser.add_argument("--primary-sensor", default=None)
+    parser.add_argument("--primary-fault-type", default="drift_up")  # or "random"
+    parser.add_argument("--seed", type=int, default=None)
 
-    parser.add_argument("--normal-before", type=int, default=300)
-    parser.add_argument("--buildup", type=int, default=100)
-    parser.add_argument("--failure", type=int, default=80)
-    parser.add_argument("--recovery", type=int, default=120)
-    parser.add_argument("--normal-after", type=int, default=300)
+    # Optional scalar overrides (if omitted, ranges from config are sampled)
+    parser.add_argument("--normal-before", type=int, default=None)
+    parser.add_argument("--buildup", type=int, default=None)
+    parser.add_argument("--failure", type=int, default=None)
+    parser.add_argument("--recovery", type=int, default=None)
+    parser.add_argument("--normal-after", type=int, default=None)
+    parser.add_argument("--magnitude", type=float, default=None)
 
     return parser.parse_args()
+
+
+def _sample_range(rng: np.random.Generator, value: Any, *, cast_type: type) -> Any:
+    """
+    Accepts either:
+      - scalar (already usable)
+      - 2-list / 2-tuple [low, high] -> uniform int/float sample
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        lo, hi = value
+        if cast_type is int:
+            return int(rng.integers(int(lo), int(hi) + 1))
+        return float(rng.uniform(float(lo), float(hi)))
+
+    # scalar
+    return cast_type(value)
 
 
 def main() -> None:
@@ -93,7 +120,7 @@ def main() -> None:
 
     SYN_CFG = CONFIG["synthetic"]
     PATHS = CONFIG["resolved_paths"]
-    PIPELINE = CONFIG.get("pipeline", {"execution_mode": "batch", "orchestration_mode": "notebook"})
+    PIPELINE = CONFIG.get("pipeline", {"execution_mode": "batch", "orchestration_mode": "script"})
 
     PIPELINE_MODE = PIPELINE["execution_mode"]
     DATASET_NAME = str(CONFIG["dataset"]["name"]).strip().lower()
@@ -108,144 +135,20 @@ def main() -> None:
     LOGS_PATH.mkdir(parents=True, exist_ok=True)
     ARTIFACTS_ROOT.mkdir(parents=True, exist_ok=True)
 
+    synthetic_log_path = Path(paths.logs) / "synthetic.log"
+    configure_logging("capstone", synthetic_log_path, level=logging.DEBUG, overwrite_handlers=True)
     set_wandb_dir_from_config(CONFIG)
 
-    print("DATASET_NAME:", DATASET_NAME)
-    print("TRUTHS_PATH:", TRUTHS_PATH)
-    print("ARTIFACTS_ROOT:", ARTIFACTS_ROOT)
-
-    synthetic_log_path = paths.logs / "synthetic_data_generator.log"
-
-    # Initial Logger
-    configure_logging(
-        "capstone",
-        synthetic_log_path,
-        level=logging.DEBUG,
-        overwrite_handlers=True,
-    )
-
-    # Initiate Logger and log file
-    logger = logging.getLogger("capstone.synthetic")
-
-    # Log load and initiation
-    logger.info("Synethetic Data Generation starting")
-
-    # Log paths loads
-    log_layer_paths(paths, current_layer="synthetic", logger=logger)
-
-
-    def get_latest_truth_hash(
-        *,
-        truth_index_path: Path,
-        layer_name: str,
-        dataset_name: str,
-    ) -> str:
-        """
-        Return the most recent truth_hash for a given layer + dataset from truth_index.jsonl.
-
-        Assumes truth_index.jsonl is append-only and newer entries are later in the file.
-        """
-        if not truth_index_path.exists():
-            raise FileNotFoundError(f"truth_index.jsonl not found: {truth_index_path}")
-
-        dataset_name_norm = str(dataset_name).strip().lower()
-        layer_name_norm = str(layer_name).strip().lower()
-
-        latest_record: Optional[Dict[str, Any]] = None
-
-        with truth_index_path.open("r", encoding="utf-8") as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
-
-                try:
-                    rec = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-
-                rec_layer = str(rec.get("layer_name", "")).strip().lower()
-                rec_dataset = str(rec.get("dataset_name", "")).strip().lower()
-
-                if rec_layer == layer_name_norm and rec_dataset == dataset_name_norm:
-                    latest_record = rec
-
-        if latest_record is None:
-            raise ValueError(
-                f"No truth records found for layer='{layer_name}' dataset='{dataset_name}' in {truth_index_path}"
-            )
-
-        truth_hash = latest_record.get("truth_hash")
-        if truth_hash is None or str(truth_hash).strip() == "":
-            raise ValueError("Latest record is missing a usable truth_hash.")
-
-        return str(truth_hash).strip()
-
-
-    def get_latest_silver_eda_truth_hash(
-            *,
-            truth_index_path: Path,
-            dataset_name: str,
-        ) -> str:
-            """
-            Convenience wrapper: latest Silver EDA truth hash for a dataset.
-            """
-            return get_latest_truth_hash(
-                truth_index_path=truth_index_path,
-                layer_name="silver_eda",
-                dataset_name=dataset_name,
-            )
-
-
-        # Updated
-        # --- Notebook params ---
-    STAGE = SYN_CFG["layer_name"]
-    DATASET = "pump"
-    MODE = "train"
-    PROFILE = "default"
-
-    # Parent truth hash from your latest Silver EDA run
-    SILVER_EDA_TRUTH_HASH = get_latest_silver_eda_truth_hash(truth_index_path=TRUTH_INDEX_PATH, dataset_name=DATASET_NAME,)
-    print("Latest SILVER_EDA_TRUTH_HASH:", SILVER_EDA_TRUTH_HASH)
-
-    # Faults
-    # Episode overrides (easy test knobs)
-    PRIMARY_SENSOR = None          # None => first sensor
-    PRIMARY_FAULT_TYPE = list(SYN_CFG["faults"]["allowed"])
-
-
-    # Episode Settings
-    NORMAL_BEFORE = SYN_CFG["episode"]["normal_before_range"]
-    BUILDUP = SYN_CFG["episode"]["buildup_range"]
-    FAILURE = SYN_CFG["episode"]["failure_range"]
-    RECOVERY = SYN_CFG["episode"]["recovery_range"]
-    NORMAL_AFTER = SYN_CFG["episode"]["normal_after_range"]
-    MAGNITUDE = SYN_CFG["episode"]["magnitude_range"]
-
-    SYNTH_PROCESS_RUN_ID = make_process_run_id(SYN_CFG["process_run_id_prefix"])
-
-    # Outputs
-    OUTPUT_MODE = SYN_CFG["output_mode"]
-
-    # Postgres settings
-    PG_SCHEMA = SYN_CFG["postgres"]["schema"]
-    TABLE_ARTIFACT_NAME = SYN_CFG["postgres"]["table_artifact_name"]
-
-    # medallion naming: synthetic_<dataset>_<artifact_name>
-    ARTIFACT_NAME = "stream"       
-
-    # Export
-    EXPORT_ENABLED = SYN_CFG["export"]["enabled"]
-    EXPORT_DIRECTORY = SYN_CFG["export"]["export_dir_key"]
+    # RNG seed
+    seed = int(args.seed) if args.seed is not None else int(SYN_CFG.get("random_seed", 42))
+    rng = np.random.default_rng(seed)
 
     # ---------------------------
-    # 1) Load parent truth (Silver EDA)
+    # 1) Load parent truth (Silver EDA) + parent (Silver PreEDA)
     # ---------------------------
-    silver_hash = args.silver_eda_truth_hash or CONFIG.get("runtime", {}).get("silver_eda_truth_hash")
-    if silver_hash is None or str(silver_hash).strip() == "":
-        raise ValueError(
-            "Silver EDA truth hash is required. Provide --silver-eda-truth-hash or set config.runtime.silver_eda_truth_hash"
-        )
+    silver_hash = args.silver_eda_truth_hash or (CONFIG.get("runtime", {}) or {}).get("silver_eda_truth_hash")
+    if not silver_hash:
+        raise ValueError("Silver EDA truth hash required: --silver-eda-truth-hash or config.runtime.silver_eda_truth_hash")
 
     silver_eda_truth = load_truth_record_by_hash(
         truth_dir=TRUTHS_PATH,
@@ -260,29 +163,76 @@ def main() -> None:
     if parent_mode:
         PIPELINE_MODE = parent_mode
 
+    # PreEDA truth (needed for missingness)
+    silver_preeda_hash = get_parent_truth_hash(silver_eda_truth)
+    if not silver_preeda_hash:
+        raise ValueError("Silver EDA truth is missing parent_truth_hash (Silver PreEDA).")
+
+    silver_preeda_truth = load_truth_record_by_hash(
+        truth_dir=TRUTHS_PATH,
+        layer_name="silver_preeda",
+        dataset_name=DATASET_NAME,
+        truth_hash=str(silver_preeda_hash).strip(),
+    )
+
     # ---------------------------
-    # 2) Resolve artifact paths from parent truth
+    # 2) Resolve artifact paths from Silver EDA truth
     # ---------------------------
     keys = SYN_CFG["silver_eda_artifact_keys"]
 
+    # Base profiles
     profile_normal_path = get_artifact_path_from_truth(silver_eda_truth, keys["profile_normal"])
     profile_abnormal_path = get_artifact_path_from_truth(silver_eda_truth, keys["profile_abnormal"])
     profile_recovery_path = get_artifact_path_from_truth(silver_eda_truth, keys["profile_recovery"])
 
+    # Dropped profiles (optional, new)
+    dropped_profile_normal_path = None
+    dropped_profile_abnormal_path = None
+    dropped_profile_recovery_path = None
+    if "profile_dropped_normal" in keys:
+        dropped_profile_normal_path = get_artifact_path_from_truth(silver_eda_truth, keys["profile_dropped_normal"])
+    if "profile_dropped_abnormal" in keys:
+        dropped_profile_abnormal_path = get_artifact_path_from_truth(silver_eda_truth, keys["profile_dropped_abnormal"])
+    if "profile_dropped_recovery" in keys:
+        dropped_profile_recovery_path = get_artifact_path_from_truth(silver_eda_truth, keys["profile_dropped_recovery"])
+
+    # Normal-only correlation/group/pairings
     corr_pairs_normal_path = get_artifact_path_from_truth(silver_eda_truth, keys["corr_pairs_normal"])
     group_map_normal_path = get_artifact_path_from_truth(silver_eda_truth, keys["group_map_normal"])
     fault_pairings_normal_path = get_artifact_path_from_truth(silver_eda_truth, keys["fault_pairings_normal"])
 
     # ---------------------------
-    # 3) Load profiles + build generator
+    # 3) MissingnessSpec from Silver PreEDA truth (runtime_facts.missingness_quarantine)
     # ---------------------------
-    normal_profiles = load_rich_profile_csv(profile_normal_path, state_scope="normal")
-    abnormal_profiles = load_rich_profile_csv(profile_abnormal_path, state_scope="abnormal")
-    recovery_profiles = load_rich_profile_csv(profile_recovery_path, state_scope="recovery")
+    preeda_runtime = (silver_preeda_truth.get("runtime_facts", {}) or {})
+    missingness_payload = (preeda_runtime.get("missingness_quarantine", {}) or {})
+    if not missingness_payload:
+        raise ValueError("Silver PreEDA truth is missing runtime_facts.missingness_quarantine (required for synthetic).")
 
-    corr_pairs_df = load_correlation_pairs_csv(corr_pairs_normal_path)
-    group_map_df = load_group_map_csv(group_map_normal_path)
-    fault_pairings_df = load_fault_pairings_csv(fault_pairings_normal_path)
+    missingness_spec = build_missingness_spec_from_truth_payload(missingness_payload)
+
+    # ---------------------------
+    # 4) Load profiles + build generator
+    # ---------------------------
+    normal_profiles = load_and_merge_rich_profiles(
+        base_profile_csv_path=str(profile_normal_path),
+        dropped_profile_csv_path=str(dropped_profile_normal_path) if dropped_profile_normal_path else None,
+        state_scope="normal",
+    )
+    abnormal_profiles = load_and_merge_rich_profiles(
+        base_profile_csv_path=str(profile_abnormal_path),
+        dropped_profile_csv_path=str(dropped_profile_abnormal_path) if dropped_profile_abnormal_path else None,
+        state_scope="abnormal",
+    )
+    recovery_profiles = load_and_merge_rich_profiles(
+        base_profile_csv_path=str(profile_recovery_path),
+        dropped_profile_csv_path=str(dropped_profile_recovery_path) if dropped_profile_recovery_path else None,
+        state_scope="recovery",
+    )
+
+    corr_pairs_df = load_correlation_pairs_csv(str(corr_pairs_normal_path))
+    group_map_df = load_group_map_csv(str(group_map_normal_path))
+    fault_pairings_df = load_fault_pairings_csv(str(fault_pairings_normal_path))
 
     generator = SyntheticGenerator(
         normal_profiles=normal_profiles,
@@ -291,79 +241,95 @@ def main() -> None:
         correlation_pairs_dataframe=corr_pairs_df,
         group_map_dataframe=group_map_df,
         fault_pairings_dataframe=fault_pairings_df,
-        random_seed=int(SYN_CFG["random_seed"]),
+        random_seed=seed,
+        missingness_spec=missingness_spec,
     )
 
     # ---------------------------
-    # 4) Build episode spec (manual overrides supported)
+    # 5) Build episode spec (scalar overrides OR sample from config ranges)
     # ---------------------------
-    primary_sensor = args.primary_sensor or generator.sensors[0]
-    primary_fault_type = args.primary_fault_type
+    ep_cfg = (SYN_CFG.get("episode", {}) or {})
+
+    PRIMARY_SENSOR = args.primary_sensor
+    PRIMARY_FAULT_TYPE = args.primary_fault_type
+
+    # sample ranges unless user provided scalar override
+    NORMAL_BEFORE = args.normal_before if args.normal_before is not None else _sample_range(rng, ep_cfg.get("normal_before_range", 300), cast_type=int)
+    BUILDUP = args.buildup if args.buildup is not None else _sample_range(rng, ep_cfg.get("buildup_range", 100), cast_type=int)
+    FAILURE = args.failure if args.failure is not None else _sample_range(rng, ep_cfg.get("failure_range", 80), cast_type=int)
+    RECOVERY = args.recovery if args.recovery is not None else _sample_range(rng, ep_cfg.get("recovery_range", 120), cast_type=int)
+    NORMAL_AFTER = args.normal_after if args.normal_after is not None else _sample_range(rng, ep_cfg.get("normal_after_range", 300), cast_type=int)
+    MAGNITUDE = args.magnitude if args.magnitude is not None else _sample_range(rng, ep_cfg.get("magnitude_range", 1.5), cast_type=float)
+
+    primary_sensor = PRIMARY_SENSOR or generator.sensors[0]
+
+    if str(PRIMARY_FAULT_TYPE).strip().lower() == "random":
+        allowed = (SYN_CFG.get("fault_selection", {}) or {}).get("allowed_primary_faults", []) or []
+        if not allowed:
+            raise ValueError("primary-fault-type=random requested but synthetic.fault_selection.allowed_primary_faults is empty.")
+        primary_fault_type = str(rng.choice(np.array(allowed, dtype=object)))
+    else:
+        primary_fault_type = str(PRIMARY_FAULT_TYPE)
 
     episode = EpisodeSpec(
         primary_sensor=primary_sensor,
         primary_fault_type=primary_fault_type,
-        magnitude=float(args.magnitude),
-        normal_before=int(args.normal_before),
-        buildup=int(args.buildup),
-        failure=int(args.failure),
-        recovery=int(args.recovery),
-        normal_after=int(args.normal_after),
+        magnitude=float(MAGNITUDE),
+        normal_before=int(NORMAL_BEFORE),
+        buildup=int(BUILDUP),
+        failure=int(FAILURE),
+        recovery=int(RECOVERY),
+        normal_after=int(NORMAL_AFTER),
     )
 
     synthetic_df = generator.generate_episode(episode)
 
     # ---------------------------
-    # 5) Connect to Postgres Database and write table
+    # 6) Write to Postgres (batch)
     # ---------------------------
+    engine = get_engine_from_env()
+    PG_SCHEMA = str(SYN_CFG.get("postgres_schema", "capstone"))
 
-    engine = get_engine(env_prefix="POSTGRES")  # reads POSTGRES_* or PG* env vars :contentReference[oaicite:5]{index=5}
-
-    schema = "capstone"
-    table = "synthetic_pump_stream"
     batch_seq = f"seq_synthetic_{DATASET_NAME}_batch_id"
     cycle_seq = f"seq_synthetic_{DATASET_NAME}_cycle_id"
 
-    ensure_sequence(engine, schema=schema, sequence_name=batch_seq)
-    ensure_sequence(engine, schema=schema, sequence_name=cycle_seq)
+    ensure_sequence(engine, schema=PG_SCHEMA, sequence_name=batch_seq)
+    ensure_sequence(engine, schema=PG_SCHEMA, sequence_name=cycle_seq)
 
-    batch_id = reserve_next_batch_id(engine, schema=schema, sequence_name=batch_seq)
+    batch_id = reserve_next_batch_id(engine, schema=PG_SCHEMA, sequence_name=batch_seq)
+    cycle_start = reserve_cycle_range(engine, schema=PG_SCHEMA, sequence_name=cycle_seq, n_rows=len(synthetic_df))
 
-    # optional: reserve a continuous cycle id range for this batch
-    cycle_start = reserve_cycle_range(engine, schema=schema, sequence_name=cycle_seq, n_rows=len(synthetic_df))
-
-    # --- Write batch ---
     table_name = write_stream_batch(
         engine,
         synthetic_df,
         dataset_name=DATASET_NAME,
-        schema=schema,
+        schema=PG_SCHEMA,
         artifact_name="stream",
         batch_id=batch_id,
         cycle_start=cycle_start,
     )
 
-    logger.info("Wrote synthetic batch to %s (batch_id=%s, cycle_start=%s)", table_name, batch_id, cycle_start)
+    logger.info("Wrote synthetic batch to %s (batch_id=%s cycle_start=%s)", table_name, batch_id, cycle_start)
     print("Wrote synthetic batch to table:", table_name)
 
+    # ---------------------------
+    # 7) Export batch parquet (optional but useful)
+    # ---------------------------
+    EXPORT_ENABLED = bool(SYN_CFG.get("export_batch_parquet", True))
+    export_path = None
+    if EXPORT_ENABLED:
+        export_dir = ARTIFACTS_ROOT / "synthetic_exports" / DATASET_NAME
+        export_path = export_synthetic_batch_to_parquet(
+            dataset_name=DATASET_NAME,
+            batch_id=batch_id,
+            out_dir=export_dir,
+            schema=PG_SCHEMA,
+            artifact_name="stream",
+        )
+        print("Exported batch parquet:", export_path)
 
     # ---------------------------
-    # 6) Export Batch to Parquet
-    # ---------------------------
-
-    export_dir = Path(PATHS["artifacts_root"]) / "synthetic_exports" / DATASET_NAME
-    export_path = export_synthetic_batch_to_parquet(
-        dataset_name=DATASET_NAME,
-        batch_id=batch_id,
-        out_dir=export_dir,
-        schema="public",
-        artifact_name="stream",
-    )
-
-    print("Exported batch parquet:", export_path)
-
-    # ---------------------------
-    # 7) Truth record (synthetic layer)
+    # 8) Local episode artifact + truth record
     # ---------------------------
     process_run_id = make_process_run_id(str(SYN_CFG.get("process_run_id_prefix", "synthetic")))
 
@@ -376,11 +342,17 @@ def main() -> None:
         parent_truth_hash=PARENT_TRUTH_HASH,
     )
 
+    # resolved config snapshot (write to file, then store path)
+    resolved_dir = ARTIFACTS_ROOT / "synthetic" / DATASET_NAME
+    resolved_dir.mkdir(parents=True, exist_ok=True)
+    resolved_config_path = resolved_dir / f"{DATASET_NAME}__synthetic__resolved_config.yaml"
+    export_config_snapshot(CONFIG, destination=resolved_config_path)
+
     synthetic_truth = update_truth_section(
         synthetic_truth,
         "config_snapshot",
         {
-            "pipeline_config": export_config_snapshot(CONFIG),
+            "resolved_config_path": str(resolved_config_path),
             "synthetic_cfg": SYN_CFG,
         },
     )
@@ -392,42 +364,48 @@ def main() -> None:
             "primary_sensor": primary_sensor,
             "primary_fault_type": primary_fault_type,
             "episode": episode.__dict__,
+            "sampled_ranges": {
+                "normal_before": NORMAL_BEFORE,
+                "buildup": BUILDUP,
+                "failure": FAILURE,
+                "recovery": RECOVERY,
+                "normal_after": NORMAL_AFTER,
+                "magnitude": MAGNITUDE,
+            },
             "row_count": int(len(synthetic_df)),
             "parent_truth_hash": PARENT_TRUTH_HASH,
             "silver_eda_truth_hash": PARENT_TRUTH_HASH,
+            "silver_preeda_truth_hash": str(silver_preeda_hash),
         },
     )
 
-    synth_dir = ARTIFACTS_ROOT / "synthetic" / DATASET_NAME
-    synth_dir.mkdir(parents=True, exist_ok=True)
+    # local parquet of the episode
+    out_path = resolved_dir / f"{DATASET_NAME}__synthetic__episode.parquet"
+    save_data(synthetic_df, resolved_dir, out_path.name)
 
-    out_path = synth_dir / f"{DATASET_NAME}__synthetic__episode.parquet"
+    artifact_paths_payload: Dict[str, Any] = {
+        "profile_normal_path": str(profile_normal_path),
+        "profile_abnormal_path": str(profile_abnormal_path),
+        "profile_recovery_path": str(profile_recovery_path),
+        "dropped_profile_normal_path": str(dropped_profile_normal_path) if dropped_profile_normal_path else None,
+        "dropped_profile_abnormal_path": str(dropped_profile_abnormal_path) if dropped_profile_abnormal_path else None,
+        "dropped_profile_recovery_path": str(dropped_profile_recovery_path) if dropped_profile_recovery_path else None,
+        "corr_pairs_normal_path": str(corr_pairs_normal_path),
+        "group_map_normal_path": str(group_map_normal_path),
+        "fault_pairings_normal_path": str(fault_pairings_normal_path),
+        "synthetic_episode_path": str(out_path),
+        "postgres_schema": PG_SCHEMA,
+        "postgres_table": table_name,
+        "postgres_batch_id": int(batch_id),
+        "postgres_cycle_start": int(cycle_start),
+    }
+    if export_path is not None:
+        artifact_paths_payload["export_batch_parquet_path"] = str(export_path)
 
-    # IMPORTANT: correct save_data call order for your file_io.py
-    # save_data(dataframe, file_path, file_name=None, ...)
-    save_data(synthetic_df, synth_dir, out_path.name)
-
-    synthetic_truth = update_truth_section(
-        synthetic_truth,
-        "artifact_paths",
-        {
-            "silver_eda_truth_hash": PARENT_TRUTH_HASH,
-            "profile_normal_path": profile_normal_path,
-            "profile_abnormal_path": profile_abnormal_path,
-            "profile_recovery_path": profile_recovery_path,
-            "corr_pairs_normal_path": corr_pairs_normal_path,
-            "group_map_normal_path": group_map_normal_path,
-            "fault_pairings_normal_path": fault_pairings_normal_path,
-            "synthetic_episode_path": str(out_path),
-            "postgres_schema": schema,
-            "postgres_table": table_name,
-            "postgres_batch_id": int(batch_id),
-            "postgres_cycle_start": int(cycle_start),
-        },
-    )
+    synthetic_truth = update_truth_section(synthetic_truth, "artifact_paths", artifact_paths_payload)
 
     meta_columns = sorted(["meta__truth_hash", "meta__parent_truth_hash", "meta__pipeline_mode"])
-    feature_columns = sorted([column for column in synthetic_df.columns if not str(column).startswith("meta__")])
+    feature_columns = sorted([c for c in synthetic_df.columns if not str(c).startswith("meta__")])
 
     truth_record = build_truth_record(
         truth_base=synthetic_truth,
@@ -452,12 +430,11 @@ def main() -> None:
         dataset_name=DATASET_NAME,
         layer_name="synthetic",
     )
-
     append_truth_index(truth_record, truth_index_path=TRUTH_INDEX_PATH)
 
     print("Synthetic truth hash:", synth_truth_hash)
     print("Synthetic truth path:", truth_path)
-    print("Synthetic episode path:", out_path)
+    print("Local episode parquet:", out_path)
 
 
 if __name__ == "__main__":

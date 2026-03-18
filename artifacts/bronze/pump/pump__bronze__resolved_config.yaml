@@ -74,11 +74,11 @@ dataset:
   - running
 bronze:
   layer_name: bronze
+  process_run_id_prefix: bronze_process
   dataset_candidates:
   - meta__dataset_name
   - meta__source_dataset
   - meta__dataset
-  process_run_id_prefix: bronze_process
   add_record_id: true
   record_id_inputs:
   - meta__source_file
@@ -94,6 +94,7 @@ filenames:
   gold_fit_file_name: pump__gold__fit_normal_only.parquet
   gold_train_file_name: pump__gold__train.parquet
   gold_test_file_name: pump__gold__test.parquet
+  silver_preeda_dropped_sensors_file_name: pump__silver_preeda__dropped_sensors.parquet
   feature_registry_file_name: pump__silver__feature_registry.json
   impute_recommendation_file_name: imputation__recommendation.json
   stage1_features_file_name: pump__gold__stage1_features.json
@@ -163,6 +164,7 @@ resolved_paths:
   gold_fit_data_path: /workspace/data/gold/pump__gold__fit_normal_only.parquet
   gold_train_data_path: /workspace/data/gold/pump__gold__train.parquet
   gold_test_data_path: /workspace/data/gold/pump__gold__test.parquet
+  silver_preeda_dropped_sensors_data_path: /workspace/artifacts/silver/pump/pump__silver_preeda__dropped_sensors.parquet
   feature_registry_path: /workspace/artifacts/silver/pump/pump__silver__feature_registry.json
   impute_recommendation_path: /workspace/artifacts/silver_eda/pump/imputation__recommendation.json
   stage1_features_path: /workspace/artifacts/gold/pump/pump__gold__stage1_features.json
@@ -207,4 +209,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/bronze.yaml
   project_root: /workspace
-  config_hash: d50e83203bd6462b7c46cb490722fa9ec89c013865937c49bb9508eb7194be8d
+  config_hash: e6b0e919f6509ebebd3e7d7ba11330dd46535a236aa06926b72f4b57fad9431f

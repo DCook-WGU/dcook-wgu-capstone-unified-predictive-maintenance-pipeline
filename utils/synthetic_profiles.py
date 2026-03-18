@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -103,3 +104,38 @@ def load_fault_pairings_csv(path: str) -> pd.DataFrame:
     dataframe = pd.read_csv(path)
     _require_columns(dataframe, ["sensor_primary", "sensor_secondary", "fault_coupling_strength", "lag_cycles"], "fault_pairings")
     return dataframe
+
+def merge_profile_dicts(
+    base: Dict[str, SensorRichProfile],
+    extra: Dict[str, SensorRichProfile],
+) -> Dict[str, SensorRichProfile]:
+    """
+    Merge two profile dicts. 'extra' overwrites 'base' on collisions.
+    """
+    out = dict(base or {})
+    out.update(extra or {})
+    return out
+
+
+def load_and_merge_rich_profiles(
+    *,
+    base_profile_csv_path: str,
+    state_scope: str,
+    dropped_profile_csv_path: Optional[str] = None,
+) -> Dict[str, SensorRichProfile]:
+    """
+    Load base profile CSV (normal/abnormal/recovery) and optionally merge dropped-sensor profiles
+    for the same state.
+
+    dropped_profile_csv_path should point to one of:
+      pump__silver_eda__dropped_feature_profiles__normal.csv
+      pump__silver_eda__dropped_feature_profiles__abnormal.csv
+      pump__silver_eda__dropped_feature_profiles__recovery.csv
+    """
+    base = load_rich_profile_csv(str(base_profile_csv_path), state_scope=state_scope)
+
+    if dropped_profile_csv_path is None or str(dropped_profile_csv_path).strip() == "":
+        return base
+
+    extra = load_rich_profile_csv(str(dropped_profile_csv_path), state_scope=state_scope)
+    return merge_profile_dicts(base, extra)

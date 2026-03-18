@@ -1,0 +1,318 @@
+{
+  "artifact_paths": {
+    "corr_pairs_normal_path": "/workspace/artifacts/silver_eda/pump/sensor_correlation_pairs_normal.csv",
+    "export_batch_parquet_path": "/workspace/artifacts/synthetic/pump/pump__synthetic__episode.parquet",
+    "fault_pairings_normal_path": "/workspace/artifacts/silver_eda/pump/sensor_fault_pairings_normal.csv",
+    "group_map_normal_path": "/workspace/artifacts/silver_eda/pump/sensor_group_map_normal.csv",
+    "postgres_batch_id": 5,
+    "postgres_cycle_start": 3781,
+    "postgres_schema": "capstone",
+    "postgres_table": "synthetic_pump_stream",
+    "profile_abnormal_path": "/workspace/artifacts/silver_eda/pump/feature_profile_abnormal.csv",
+    "profile_normal_path": "/workspace/artifacts/silver_eda/pump/feature_profile_normal.csv",
+    "profile_recovery_path": "/workspace/artifacts/silver_eda/pump/feature_profile_recovery.csv",
+    "silver_eda_truth_hash": "df2f416c588a68ab07bf03afa75c23587ffb7609aa2eaca7edf0c5ed018d3188",
+    "synthetic_episode_path": "/workspace/artifacts/synthetic/pump/pump__synthetic__episode.parquet"
+  },
+  "column_count": 57,
+  "config_snapshot": {
+    "resolved_config_path": "/workspace/artifacts/synthetic/pump/pump__synthetic__resolved_config.yaml",
+    "synthetic_cfg": {
+      "episode": {
+        "buildup_range": [
+          50,
+          140
+        ],
+        "failure_range": [
+          40,
+          120
+        ],
+        "magnitude_range": [
+          0.75,
+          2.0
+        ],
+        "normal_after_range": [
+          200,
+          600
+        ],
+        "normal_before_range": [
+          200,
+          600
+        ],
+        "recovery_range": [
+          80,
+          180
+        ]
+      },
+      "export": {
+        "enabled": true,
+        "export_dir_key": "artifacts_root"
+      },
+      "faults": {
+        "allowed": [
+          "drift_up",
+          "drift_down",
+          "spike",
+          "stuck_constant",
+          "variance_burst",
+          "step_shift",
+          "intermittent_dropout",
+          "sawtooth"
+        ],
+        "multisensor_probability": 0.25,
+        "random_mode_probability": 0.3
+      },
+      "kafka": {
+        "checkpoint_table": "synthetic_pump_kafka_checkpoint",
+        "enabled": false,
+        "topic": "synthetic_pump"
+      },
+      "layer_name": "synthetic",
+      "normal_batch_size": 50,
+      "output_mode": "postgres_batch",
+      "postgres": {
+        "schema": "capstone",
+        "table_artifact_name": "stream"
+      },
+      "process_run_id_prefix": "synthetic",
+      "random_seed": 42,
+      "silver_eda_artifact_keys": {
+        "corr_pairs_normal": "sensor_correlation_pairs_normal_path",
+        "fault_pairings_normal": "sensor_fault_pairings_normal_path",
+        "group_map_normal": "sensor_group_map_normal_path",
+        "profile_abnormal": "feature_profile_abnormal_path",
+        "profile_normal": "feature_profile_normal_path",
+        "profile_recovery": "feature_profile_recovery_path"
+      }
+    },
+    "truth_config_block": {
+      "config_hash": "30c203806edc540d69f29f628bd866fee1a777de952dc60a9bfe53890b52d010",
+      "execution": {
+        "fit_models": true,
+        "persist_ledgers": true,
+        "persist_models": true,
+        "persist_truths": true,
+        "save_config_snapshot": true,
+        "score_only": false,
+        "use_existing_gold_truth": false
+      },
+      "lineage": {
+        "load_training_artifacts_from_truth": false,
+        "parent_truth_hash": null,
+        "training_truth_hash": null
+      },
+      "runtime": {
+        "dataset": "pump",
+        "mode": "train",
+        "profile": "default",
+        "stage": "synthetic"
+      },
+      "source_files": [
+        "/workspace/configs/base.yaml",
+        "/workspace/configs/datasets/pump.yaml",
+        "/workspace/configs/modes/train.yaml",
+        "/workspace/configs/stages/synthetic.yaml"
+      ],
+      "stage_params": {
+        "episode": {
+          "buildup_range": [
+            50,
+            140
+          ],
+          "failure_range": [
+            40,
+            120
+          ],
+          "magnitude_range": [
+            0.75,
+            2.0
+          ],
+          "normal_after_range": [
+            200,
+            600
+          ],
+          "normal_before_range": [
+            200,
+            600
+          ],
+          "recovery_range": [
+            80,
+            180
+          ]
+        },
+        "export": {
+          "enabled": true,
+          "export_dir_key": "artifacts_root"
+        },
+        "faults": {
+          "allowed": [
+            "drift_up",
+            "drift_down",
+            "spike",
+            "stuck_constant",
+            "variance_burst",
+            "step_shift",
+            "intermittent_dropout",
+            "sawtooth"
+          ],
+          "multisensor_probability": 0.25,
+          "random_mode_probability": 0.3
+        },
+        "kafka": {
+          "checkpoint_table": "synthetic_pump_kafka_checkpoint",
+          "enabled": false,
+          "topic": "synthetic_pump"
+        },
+        "layer_name": "synthetic",
+        "normal_batch_size": 50,
+        "output_mode": "postgres_batch",
+        "postgres": {
+          "schema": "capstone",
+          "table_artifact_name": "stream"
+        },
+        "process_run_id_prefix": "synthetic",
+        "random_seed": 42,
+        "silver_eda_artifact_keys": {
+          "corr_pairs_normal": "sensor_correlation_pairs_normal_path",
+          "fault_pairings_normal": "sensor_fault_pairings_normal_path",
+          "group_map_normal": "sensor_group_map_normal_path",
+          "profile_abnormal": "feature_profile_abnormal_path",
+          "profile_normal": "feature_profile_normal_path",
+          "profile_recovery": "feature_profile_recovery_path"
+        }
+      },
+      "versions": {
+        "bronze": "bronze__001",
+        "gold": "gold__001",
+        "silver": "silver__001",
+        "silver_eda": "silver_eda__001",
+        "truth": "truth__001"
+      },
+      "wandb": {
+        "enabled": true,
+        "entity": "dcoo230-western-governors-university",
+        "project": "capstone",
+        "run_name_template": "gold__001_train"
+      }
+    }
+  },
+  "created_at_utc": "2026-03-18T05:11:45+00:00",
+  "dataset_name": "pump",
+  "feature_columns": [
+    "phase",
+    "sensor_00",
+    "sensor_01",
+    "sensor_02",
+    "sensor_03",
+    "sensor_04",
+    "sensor_05",
+    "sensor_06",
+    "sensor_07",
+    "sensor_08",
+    "sensor_09",
+    "sensor_10",
+    "sensor_11",
+    "sensor_12",
+    "sensor_13",
+    "sensor_14",
+    "sensor_15",
+    "sensor_16",
+    "sensor_17",
+    "sensor_18",
+    "sensor_19",
+    "sensor_20",
+    "sensor_21",
+    "sensor_22",
+    "sensor_23",
+    "sensor_24",
+    "sensor_25",
+    "sensor_26",
+    "sensor_27",
+    "sensor_28",
+    "sensor_29",
+    "sensor_30",
+    "sensor_31",
+    "sensor_32",
+    "sensor_33",
+    "sensor_34",
+    "sensor_35",
+    "sensor_36",
+    "sensor_37",
+    "sensor_38",
+    "sensor_39",
+    "sensor_40",
+    "sensor_41",
+    "sensor_42",
+    "sensor_43",
+    "sensor_44",
+    "sensor_45",
+    "sensor_46",
+    "sensor_47",
+    "sensor_48",
+    "sensor_49",
+    "sensor_50",
+    "sensor_51",
+    "stream_state"
+  ],
+  "layer_name": "synthetic",
+  "meta_columns": [
+    "meta__parent_truth_hash",
+    "meta__pipeline_mode",
+    "meta__truth_hash"
+  ],
+  "notes": {},
+  "parent_truth_hash": "df2f416c588a68ab07bf03afa75c23587ffb7609aa2eaca7edf0c5ed018d3188",
+  "pipeline_mode": "batch",
+  "process_run_id": "synthetic__20260318T051145Z",
+  "row_count": 945,
+  "runtime_facts": {
+    "buildup_range": [
+      50,
+      140
+    ],
+    "buildup_selection": 120,
+    "episode": {
+      "buildup": 120,
+      "failure": 93,
+      "magnitude": 1.6217100363242047,
+      "normal_after": 373,
+      "normal_before": 235,
+      "primary_fault_type": "drift_up",
+      "primary_sensor": "sensor_00",
+      "recovery": 124
+    },
+    "failure_range": [
+      40,
+      120
+    ],
+    "failure_selection": 93,
+    "magnitude_range": [
+      0.75,
+      2.0
+    ],
+    "magnitude_selection": 1.6217100363242047,
+    "normal_after_range": [
+      200,
+      600
+    ],
+    "normal_after_selection": 373,
+    "normal_before_range": [
+      200,
+      600
+    ],
+    "normal_before_selection": 235,
+    "parent_truth_hash": "df2f416c588a68ab07bf03afa75c23587ffb7609aa2eaca7edf0c5ed018d3188",
+    "primary_fault_type": "drift_up",
+    "primary_sensor": "sensor_00",
+    "recovery_range": [
+      80,
+      180
+    ],
+    "recovery_selection": 124,
+    "row_count": 945,
+    "silver_eda_truth_hash": "df2f416c588a68ab07bf03afa75c23587ffb7609aa2eaca7edf0c5ed018d3188"
+  },
+  "source_fingerprint": {},
+  "truth_hash": "b2c6eaf65824dd49512c61097c73bdc9be58d892964c803159c605c2c7b0b8b7",
+  "truth_version": "truth__001"
+}

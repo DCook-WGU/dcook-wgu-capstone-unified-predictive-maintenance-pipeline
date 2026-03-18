@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from utils.synthetic_profiles import SensorRichProfile
+from utils.synthetic_missingness import MissingnessSpec, build_present_counts_for_block, apply_exact_missingness_mask
 
 
 FaultType = Literal[
@@ -53,6 +54,7 @@ class SyntheticGenerator:
         group_map_dataframe: pd.DataFrame,
         fault_pairings_dataframe: pd.DataFrame,
         random_seed: int = 42,
+        missingness_spec: Optional[MissingnessSpec] = None,
     ) -> None:
         self.rng = np.random.default_rng(int(random_seed))
 
@@ -94,6 +96,9 @@ class SyntheticGenerator:
                     "recommended_secondary_fault": str(row.get("recommended_secondary_fault", "variance_burst")),
                 }
             )
+
+        self.missingness_spec = missingness_spec
+        self.rng = np.random.default_rng(random_seed)
 
     # -------------------------
     # Distribution-aware sampling
@@ -315,4 +320,141 @@ class SyntheticGenerator:
         if group_name is not None:
             self._apply_group_driver(dataframe.iloc[f0:r0], group_name, self.abnormal, strength=0.55)
 
+        if self.missingness_spec is not None:
+            dataframe = self.apply_missingness(
+                dataframe,
+                missingness=self.missingness_spec,
+                feature_columns=self.sensors,
+                rng=self.rng,
+            )
+
         return dataframe
+
+        #return dataframe
+    
+    # -------------------------
+    # Apply Missingness Replication
+    # -------------------------
+    def apply_missingness(
+        self,
+        dataframe: pd.DataFrame,
+        *,
+        missingness: MissingnessSpec,
+        feature_columns: List[str],
+        rng: np.random.Generator,
+        # default policy: do NOT remove faults
+        apply_to_phases: Optional[Dict[str, str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Apply exact missingness replication.
+
+        apply_to_phases maps df["phase"] values -> state_scope to use ("normal"/"recovery"/"abnormal").
+        If phase not present, falls back to missingness.state_col_synth if present.
+        If neither present, applies GLOBAL missingness to entire df.
+
+        Recommended default:
+        normal_before -> normal
+        buildup      -> normal   (optional; set to None to skip)
+        failure      -> None     (skip so faults are not masked)
+        recovery     -> recovery
+        normal_after -> normal
+        """
+        out = dataframe.copy()
+
+        # choose default mapping
+        if apply_to_phases is None:
+            apply_to_phases = {
+                "normal": "normal",
+                "buildup": "normal",
+                "abnormal": None,
+                "recovery": "recovery",
+            }
+
+        # only keep sensors that exist
+        features = [column for column in feature_columns if column in out.columns]
+        if not features:
+            return out
+
+        # Case A: phase-driven masking
+        if "phase" in out.columns:
+            for phase_value, state_scope in apply_to_phases.items():
+                mask = out["phase"].astype(str).eq(str(phase_value))
+                eligible_idx = out.index[mask].to_numpy()
+
+                if eligible_idx.size == 0:
+                    continue
+
+                # skip phases you don't want masked
+                if state_scope is None:
+                    continue
+
+                # decide whether this sensor uses state-dependent missingness
+                # If your gate says False, fall back to global for that sensor even inside state blocks.
+                pct_by_state = missingness.missingness_pct_by_state.get(state_scope, {})
+
+                # build per-sensor present counts with per-sensor state-dependent selection
+                present_counts: Dict[str, int] = {}
+                for feature in features:
+                    use_state = bool(missingness.missingness_state_dependent_flag.get(feature, False))
+                    pct = pct_by_state.get(feature) if use_state else missingness.missingness_pct_all.get(feature, 0.0)
+                    present_counts[feature] = int(round(len(eligible_idx) * (1.0 - float(pct) / 100.0)))
+                    present_counts[feature] = max(0, min(len(eligible_idx), present_counts[feature]))
+
+                out = apply_exact_missingness_mask(
+                    out,
+                    sensor_cols=features,
+                    rng=rng,
+                    present_counts=present_counts,
+                    eligible_row_idx=eligible_idx,
+                )
+
+            return out
+
+        # Case B: state_col_synth-driven masking
+        if missingness.state_col_synth in out.columns:
+            for state in missingness.state_list:
+                mask = out[missingness.state_col_synth].astype(str).eq(str(state))
+                eligible_idx = out.index[mask].to_numpy()
+                if eligible_idx.size == 0:
+                    continue
+
+                # Optional: skip abnormal if you never want masking there
+                if str(state) == "abnormal":
+                    continue
+
+                pct_by_state = missingness.missingness_pct_by_state.get(state, {})
+                present_counts: Dict[str, int] = {}
+                for feature in features:
+                    use_state = bool(missingness.missingness_state_dependent_flag.get(feature, False))
+                    pct = pct_by_state.get(feature) if use_state else missingness.missingness_pct_all.get(feature, 0.0)
+                    present_counts[feature] = int(round(len(eligible_idx) * (1.0 - float(pct) / 100.0)))
+                    present_counts[feature] = max(0, min(len(eligible_idx), present_counts[feature]))
+
+                out = apply_exact_missingness_mask(
+                    out,
+                    sensor_cols=features,
+                    rng=rng,
+                    present_counts=present_counts,
+                    eligible_row_idx=eligible_idx,
+                )
+
+            return out
+
+        # Case C: global masking on whole frame
+        present_counts = build_present_counts_for_block(
+            sensors=features,
+            n_rows=len(out),
+            pct_all=missingness.missingness_pct_all,
+            pct_by_state=None,
+            use_by_state=False,
+        )
+        out = apply_exact_missingness_mask(
+            out,
+            sensor_cols=features,
+            rng=rng,
+            present_counts=present_counts,
+            eligible_row_idx=out.index.to_numpy(),
+        )
+        return out
+    
+
