@@ -9,9 +9,9 @@ synthetic:
   # episode defaults
   episode:
     normal_before_range: [200, 600]
-    buildup_range: [100, 240]
-    failure_range: [1, 3]
-    recovery_range: [150, 300]
+    buildup_range: [100, 600]
+    failure_range: [1, 1]
+    recovery_range: [50, 200]
     normal_after_range: [200, 600]
     magnitude_range: [0.75, 2.0]
   

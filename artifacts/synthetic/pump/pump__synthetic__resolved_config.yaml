@@ -83,13 +83,13 @@ synthetic:
     - 600
     buildup_range:
     - 100
-    - 240
+    - 600
     failure_range:
     - 1
-    - 3
+    - 1
     recovery_range:
-    - 150
-    - 300
+    - 50
+    - 200
     normal_after_range:
     - 200
     - 600
@@ -251,4 +251,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: 20ce8ea38d56a4dd56860ca48ad953947f107d1c5f440eae46b290012696d254
+  config_hash: f6c6483897e93fe43a8dfa0da48b0fa506cd384df5fdae4f9f080f91ba270eed

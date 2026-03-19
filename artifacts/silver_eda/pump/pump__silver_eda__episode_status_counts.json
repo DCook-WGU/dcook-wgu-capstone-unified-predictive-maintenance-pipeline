@@ -1,0 +1,82 @@
+[
+  {
+    "meta__episode_id": 0,
+    "normal": 17155,
+    "normal_percent": 0.9477900552486188,
+    "failure": 1,
+    "failure_percent": 5.524861878453039e-05,
+    "recovery": 944,
+    "recovery_percent": 0.052154696132596684,
+    "episode_total_rows": 18100
+  },
+  {
+    "meta__episode_id": 1,
+    "normal": 6410,
+    "normal_percent": 0.6732486083394601,
+    "failure": 1,
+    "failure_percent": 0.00010503098414032139,
+    "recovery": 3110,
+    "recovery_percent": 0.3266463606763995,
+    "episode_total_rows": 9521
+  },
+  {
+    "meta__episode_id": 2,
+    "normal": 41697,
+    "normal_percent": 0.9694722157637758,
+    "failure": 1,
+    "failure_percent": 2.3250406882120437e-05,
+    "recovery": 1312,
+    "recovery_percent": 0.030504533829342012,
+    "episode_total_rows": 43010
+  },
+  {
+    "meta__episode_id": 3,
+    "normal": 7159,
+    "normal_percent": 0.9219575016097875,
+    "failure": 1,
+    "failure_percent": 0.000128783000643915,
+    "recovery": 605,
+    "recovery_percent": 0.07791371538956858,
+    "episode_total_rows": 7765
+  },
+  {
+    "meta__episode_id": 4,
+    "normal": 49644,
+    "normal_percent": 0.8554148358749031,
+    "failure": 1,
+    "failure_percent": 1.7230981304385284e-05,
+    "recovery": 8390,
+    "recovery_percent": 0.14456793314379254,
+    "episode_total_rows": 58035
+  },
+  {
+    "meta__episode_id": 5,
+    "normal": 4700,
+    "normal_percent": 0.9911429776465627,
+    "failure": 1,
+    "failure_percent": 0.00021088148460565162,
+    "recovery": 41,
+    "recovery_percent": 0.008646140868831717,
+    "episode_total_rows": 4742
+  },
+  {
+    "meta__episode_id": 6,
+    "normal": 25267,
+    "normal_percent": 0.9970011443002013,
+    "failure": 1,
+    "failure_percent": 3.9458627628931066e-05,
+    "recovery": 75,
+    "recovery_percent": 0.00295939707216983,
+    "episode_total_rows": 25343
+  },
+  {
+    "meta__episode_id": 7,
+    "normal": 53804,
+    "normal_percent": 1.0,
+    "failure": 0,
+    "failure_percent": 0.0,
+    "recovery": 0,
+    "recovery_percent": 0.0,
+    "episode_total_rows": 53804
+  }
+]

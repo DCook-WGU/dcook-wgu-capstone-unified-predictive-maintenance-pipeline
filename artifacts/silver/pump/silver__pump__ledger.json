@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-18T00:30:10.232663+00:00",
+    "ts_utc": "2026-03-19T05:03:54.887394+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-18T00:30:11.598105+00:00",
+    "ts_utc": "2026-03-19T05:03:55.902402+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -29,7 +29,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:14.584160+00:00",
+    "ts_utc": "2026-03-19T05:03:58.494238+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -45,7 +45,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:15.508057+00:00",
+    "ts_utc": "2026-03-19T05:03:59.562011+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -59,7 +59,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:16.548560+00:00",
+    "ts_utc": "2026-03-19T05:04:00.476875+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -74,7 +74,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:16.966937+00:00",
+    "ts_utc": "2026-03-19T05:04:01.091005+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -93,7 +93,7 @@
         "meta__ingested_at_utc",
         "meta__record_id"
       ],
-      "processed_at_utc": "2026-03-18T00:30:16.966324+00:00",
+      "processed_at_utc": "2026-03-19T05:04:01.090430+00:00",
       "shape": {
         "rows": 220320,
         "cols": 65
@@ -101,7 +101,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:18.979680+00:00",
+    "ts_utc": "2026-03-19T05:04:02.496082+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -132,7 +132,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:21.797402+00:00",
+    "ts_utc": "2026-03-19T05:04:04.771109+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -155,7 +155,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:23.705423+00:00",
+    "ts_utc": "2026-03-19T05:04:06.612107+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -209,7 +209,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:25.770299+00:00",
+    "ts_utc": "2026-03-19T05:04:09.145508+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -238,7 +238,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:43.720129+00:00",
+    "ts_utc": "2026-03-19T05:04:27.493300+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -252,7 +252,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:55.288247+00:00",
+    "ts_utc": "2026-03-19T05:04:38.068532+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -574,7 +574,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:30:57.445603+00:00",
+    "ts_utc": "2026-03-19T05:04:39.907850+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
@@ -715,7 +715,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T00:31:05.193446+00:00",
+    "ts_utc": "2026-03-19T05:04:49.279092+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -724,15 +724,15 @@
     "why": null,
     "consequence": null,
     "data": {
-      "silver_truth_hash": "465d45c806faccc92f23c5a6604d114d5a4ca3d9e97a45ac18ca7d79ba2190fb",
-      "silver_parent_truth_hash": "20f862950c08afff1a0b9ee56af5ed3664d75ef9923467c7dbfe05c068213dd3",
-      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__465d45c806faccc92f23c5a6604d114d5a4ca3d9e97a45ac18ca7d79ba2190fb.json",
+      "silver_truth_hash": "5746e39b077403ca8f69cd63272261ae7206f02a450a56add87b8b5bbc5c9483",
+      "silver_parent_truth_hash": "f6b75fec2d35a0b87d90caa0c81da89b5b2da72fd113a73806188f7c32c48b91",
+      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__5746e39b077403ca8f69cd63272261ae7206f02a450a56add87b8b5bbc5c9483.json",
       "pipeline_mode": "batch",
-      "process_run_id": "silver_process__20260318T003002Z"
+      "process_run_id": "silver_process__20260319T050349Z"
     }
   },
   {
-    "ts_utc": "2026-03-18T00:31:07.720405+00:00",
+    "ts_utc": "2026-03-19T05:04:51.900273+00:00",
     "stage": "silver",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
@@ -785,10 +785,10 @@
       },
       "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
       "feature_count": 50,
-      "silver_truth_hash": "465d45c806faccc92f23c5a6604d114d5a4ca3d9e97a45ac18ca7d79ba2190fb",
-      "silver_parent_truth_hash": "20f862950c08afff1a0b9ee56af5ed3664d75ef9923467c7dbfe05c068213dd3",
+      "silver_truth_hash": "5746e39b077403ca8f69cd63272261ae7206f02a450a56add87b8b5bbc5c9483",
+      "silver_parent_truth_hash": "f6b75fec2d35a0b87d90caa0c81da89b5b2da72fd113a73806188f7c32c48b91",
       "pipeline_mode": "batch",
-      "process_run_id": "silver_process__20260318T003002Z",
+      "process_run_id": "silver_process__20260319T050349Z",
       "shape": {
         "rows": 220320,
         "cols": 73

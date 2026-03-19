@@ -21,6 +21,15 @@ FaultType = Literal[
     "sawtooth",
 ]
 
+StateCalibrationTargets = Dict[str, Dict[str, Dict[str, float]]]
+# shape:
+# {
+#   "normal":  {"sensor_00": {"mean": 1.2, "std": 0.4}, ...},
+#   "abnormal":{"sensor_00": {"mean": 2.2, "std": 0.9}, ...},
+#   "recovery":{...},
+#   "buildup": { ... optional ... }
+# }
+
 
 @dataclass(frozen=True)
 class EpisodeSpec:
@@ -55,14 +64,21 @@ class SyntheticGenerator:
         fault_pairings_dataframe: pd.DataFrame,
         random_seed: int = 42,
         missingness_spec: Optional[MissingnessSpec] = None,
+        state_calibration_targets: Optional[StateCalibrationTargets] = None,
+        mean_within_k_std: float = 1.0,
+        std_ratio_bounds: Tuple[float, float] = (0.5, 1.5),
     ) -> None:
-        self.rng = np.random.default_rng(int(random_seed))
+        #self.rng = np.random.default_rng(int(random_seed))
 
         self.normal = normal_profiles
         self.abnormal = abnormal_profiles
         self.recovery = recovery_profiles
 
         self.sensors = sorted(self.normal.keys())
+
+        self.state_calibration_targets = state_calibration_targets
+        self.mean_within_k_std = float(mean_within_k_std)
+        self.std_ratio_bounds = (float(std_ratio_bounds[0]), float(std_ratio_bounds[1]))
 
         # sensor -> group
         self.sensor_to_group: Dict[str, str] = {}
@@ -233,7 +249,124 @@ class SyntheticGenerator:
         values = np.clip(values, float(profile.lower_bound), float(profile.upper_bound))
         values = np.clip(values, float(profile.min_value), float(profile.max_value))
         return values
+    
+    def _calibrate_block_mean_std(
+        self,
+        df: pd.DataFrame,
+        *,
+        idx: np.ndarray,
+        profiles: Dict[str, SensorRichProfile],
+        state_name: str,
+    ) -> None:
+        """
+        In-place calibration on df.loc[idx, sensor] for each sensor:
+        - mean forced into [target_mean - k*target_std, target_mean + k*target_std]
+        - std clamped into [lo_ratio*target_std, hi_ratio*target_std]
+        Preserves NaNs. Re-clips to profile bounds afterward.
+        """
+        if self.state_calibration_targets is None:
+            return
 
+        targets_for_state = self.state_calibration_targets.get(str(state_name), {})
+        if not targets_for_state:
+            return
+
+        k = float(self.mean_within_k_std)
+        lo_ratio, hi_ratio = self.std_ratio_bounds
+
+        for sensor in self.sensors:
+            if sensor not in df.columns:
+                continue
+            if sensor not in targets_for_state:
+                continue
+
+            t = targets_for_state[sensor] or {}
+            if "mean" not in t or "std" not in t:
+                continue
+
+            target_mean = float(t["mean"])
+            target_std = max(float(t["std"]), 1e-6)
+
+            # current values (ignore NaNs)
+            x = pd.to_numeric(df.loc[idx, sensor], errors="coerce").to_numpy(dtype=float, copy=True)
+            mask = np.isfinite(x)
+            if mask.sum() == 0:
+                continue
+
+            cur = x[mask]
+            cur_mean = float(cur.mean())
+            cur_std = float(cur.std(ddof=1)) if cur.size > 1 else 0.0
+
+            # --- mean clamp ---
+            lo_mean = target_mean - k * target_std
+            hi_mean = target_mean + k * target_std
+            desired_mean = min(max(cur_mean, lo_mean), hi_mean)
+
+            # --- std clamp (ratio band around target std) ---
+            desired_std = target_std
+            if cur_std > 1e-12:
+                min_std = lo_ratio * target_std
+                max_std = hi_ratio * target_std
+                desired_std = min(max(cur_std, min_std), max_std)
+            else:
+                # if nearly constant, allow only small variance
+                desired_std = lo_ratio * target_std
+
+            # --- affine adjust on non-null values only ---
+            if cur_std > 1e-12:
+                cur_adj = (cur - cur_mean) / cur_std
+                cur_adj = cur_adj * desired_std + desired_mean
+            else:
+                cur_adj = np.full_like(cur, desired_mean, dtype=float)
+
+            x_new = x.copy()
+            x_new[mask] = cur_adj
+
+            # re-clip to profile bounds
+            prof = profiles.get(sensor)
+            if prof is not None:
+                x_new = np.clip(x_new, float(prof.lower_bound), float(prof.upper_bound))
+                x_new = np.clip(x_new, float(prof.min_value), float(prof.max_value))
+
+            df.loc[idx, sensor] = x_new
+
+
+    def _calibrate_by_phase(self, df: pd.DataFrame) -> None:
+        """
+        Calibrate per-phase (phase column) if present.
+        Uses:
+        normal  -> normal targets
+        buildup -> buildup targets if provided else abnormal targets (recommended)
+        abnormal-> abnormal targets
+        recovery-> recovery targets
+        """
+        if self.state_calibration_targets is None:
+            return
+        if "phase" not in df.columns:
+            return
+
+        phase_map = {
+            "normal": "normal",
+            "buildup": "buildup" if "buildup" in self.state_calibration_targets else "abnormal",
+            "abnormal": "abnormal",
+            "recovery": "recovery",
+        }
+
+        for phase_val, state_name in phase_map.items():
+            mask = df["phase"].astype(str).eq(str(phase_val))
+            idx = df.index[mask].to_numpy()
+            if idx.size == 0:
+                continue
+
+            # choose profiles to clip against
+            if state_name == "normal":
+                profs = self.normal
+            elif state_name == "recovery":
+                profs = self.recovery
+            else:
+                profs = self.abnormal
+
+            self._calibrate_block_mean_std(df, idx=idx, profiles=profs, state_name=state_name)
     # -------------------------
     # Abnormal episode (buildup + failure + recovery)
     # -------------------------
@@ -254,11 +387,36 @@ class SyntheticGenerator:
         dataframe.loc[f0:r0 - 1, "phase"] = "abnormal"
         dataframe.loc[r0:n0 - 1, "phase"] = "recovery"
 
-        # primary buildup (mild)
+        # -------------------------
+        # primary buildup (ramped intensity)
+        # Fault emerges here. We ramp magnitude across the buildup window so it
+        # looks like "approaching failure" instead of flat 0.5x magnitude.
+        # -------------------------
         p_norm = self.normal[spec.primary_sensor]
-        seg = dataframe.loc[b0:f0 - 1, spec.primary_sensor].to_numpy(copy=True)
-        seg = self._inject_fault(seg, spec.primary_fault_type, spec.magnitude * 0.5, p_norm)
-        dataframe.loc[b0:f0 - 1, spec.primary_sensor] = seg
+
+        buildup_len = int(spec.buildup)
+        if buildup_len > 0:
+            # segment values
+            seg = dataframe.loc[b0:f0 - 1, spec.primary_sensor].to_numpy(copy=True)
+
+            # 3-stage ramp: early 0.2x, mid 0.5x, late 0.8x
+            # (You can tune these later without changing semantics.)
+            cut1 = max(1, int(round(buildup_len * 0.33)))
+            cut2 = max(cut1 + 1, int(round(buildup_len * 0.66))) if buildup_len >= 3 else buildup_len
+
+            early = seg[:cut1]
+            mid = seg[cut1:cut2]
+            late = seg[cut2:]
+
+            if early.size:
+                early = self._inject_fault(early, spec.primary_fault_type, spec.magnitude * 0.2, p_norm)
+            if mid.size:
+                mid = self._inject_fault(mid, spec.primary_fault_type, spec.magnitude * 0.5, p_norm)
+            if late.size:
+                late = self._inject_fault(late, spec.primary_fault_type, spec.magnitude * 0.8, p_norm)
+
+            seg2 = np.concatenate([early, mid, late]) if buildup_len > 1 else early
+            dataframe.loc[b0:f0 - 1, spec.primary_sensor] = seg2
 
         # primary failure (stronger; drift -> step_shift for distinctness)
         p_ab = self.abnormal.get(spec.primary_sensor, p_norm)
@@ -268,6 +426,11 @@ class SyntheticGenerator:
         dataframe.loc[f0:r0 - 1, spec.primary_sensor] = seg
 
         # propagate to paired sensors (lag + strength)
+        # IMPORTANT: propagate across buildup + failure, so pairings still matter
+        # when failure_len is 1. We do NOT propagate into recovery.
+        prop_start_base = b0   # start at buildup start (you can change to f0 if you want later)
+        prop_end_base = r0     # end right before recovery begins
+
         for link in self.propagation.get(spec.primary_sensor, []):
             sec = link["secondary"]
             if sec not in dataframe.columns:
@@ -275,8 +438,11 @@ class SyntheticGenerator:
 
             strength = float(link["strength"])
             lag = int(link["lag"])
-            start = f0 + lag
-            end = min(r0, start + (r0 - f0))
+
+            # lag applies from the propagation start base
+            start = prop_start_base + lag
+            end = prop_end_base
+
             if start >= end:
                 continue
 
@@ -320,6 +486,9 @@ class SyntheticGenerator:
         if group_name is not None:
             self._apply_group_driver(dataframe.iloc[f0:r0], group_name, self.abnormal, strength=0.55)
 
+        # optional: calibrate per-phase mean/std toward empirical targets
+        self._calibrate_by_phase(dataframe)
+        
         if self.missingness_spec is not None:
             dataframe = self.apply_missingness(
                 dataframe,

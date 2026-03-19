@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-18T05:04:37.072392+00:00",
+    "ts_utc": "2026-03-19T06:22:05.385220+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-18T05:04:38.277161+00:00",
+    "ts_utc": "2026-03-19T06:22:06.553627+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -29,7 +29,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T05:04:40.572367+00:00",
+    "ts_utc": "2026-03-19T06:22:09.134579+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -44,7 +44,36 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T05:07:20.384133+00:00",
+    "ts_utc": "2026-03-19T06:22:16.918702+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "episode_status_state_stats",
+    "message": "Computed global and per-episode status-state statistics from Silver episode IDs.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "status_column": "machine_status",
+      "episode_column": "meta__episode_id",
+      "episode_count": 8,
+      "mean_total_rows_per_episode": 27540.0,
+      "mean_rows_normal": 25729.5,
+      "mean_rows_failure": 0.88,
+      "mean_rows_recovery": 1809.62,
+      "mean_percent_normal": 0.9195034173479136,
+      "mean_percent_failure": 7.248551299873191e-05,
+      "mean_percent_recovery": 0.08042409713908762,
+      "global_count_normal": 205836,
+      "global_count_failure": 7,
+      "global_count_recovery": 14477,
+      "global_percent_normal": 93.43,
+      "global_percent_failure": 0.0,
+      "global_percent_recovery": 6.57,
+      "episode_status_counts_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_counts.json"
+    }
+  },
+  {
+    "ts_utc": "2026-03-19T06:25:07.871715+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -65,7 +94,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T05:07:21.388732+00:00",
+    "ts_utc": "2026-03-19T06:25:09.059003+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "decision",
@@ -82,7 +111,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-18T05:07:25.004657+00:00",
+    "ts_utc": "2026-03-19T06:25:15.678868+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
