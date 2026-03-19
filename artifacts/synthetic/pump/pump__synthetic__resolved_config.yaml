@@ -96,6 +96,7 @@ synthetic:
     magnitude_range:
     - 0.75
     - 2.0
+    buildup_fraction: 0.2
   faults:
     allowed:
     - drift_up
@@ -251,4 +252,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: f6c6483897e93fe43a8dfa0da48b0fa506cd384df5fdae4f9f080f91ba270eed
+  config_hash: d62471605b74553f1ebab3ee815ea98c82afd05111005ca1fa7bb2d74447d827

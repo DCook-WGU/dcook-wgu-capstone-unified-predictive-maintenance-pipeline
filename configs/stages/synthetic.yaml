@@ -14,7 +14,9 @@ synthetic:
     recovery_range: [50, 200]
     normal_after_range: [200, 600]
     magnitude_range: [0.75, 2.0]
-  
+    buildup_fraction: 0.20
+
+    
   # fault selection behavior
   faults:
     allowed:

@@ -374,121 +374,157 @@ class SyntheticGenerator:
         if spec.primary_sensor not in self.sensors:
             raise ValueError(f"Unknown primary sensor: {spec.primary_sensor}")
 
-        total = spec.normal_before + spec.buildup + spec.failure + spec.recovery + spec.normal_after
+        # Define whether this episode is a "fault episode"
+        # (dataset-faithful: failure row is the event marker)
+        is_fault_episode = int(spec.failure) > 0
+
+        # Normalize ints defensively
+        normal_before = int(max(0, spec.normal_before))
+        buildup = int(max(0, spec.buildup)) if is_fault_episode else 0
+        failure = int(max(0, spec.failure)) if is_fault_episode else 0
+        recovery = int(max(0, spec.recovery)) if is_fault_episode else 0
+        normal_after = int(max(0, spec.normal_after))
+
+        total = normal_before + buildup + failure + recovery + normal_after
+        if total <= 0:
+            # safety: never generate an empty frame
+            total = 1
+            normal_before = 1
+
         dataframe = self.generate_normal_batch(total)
 
-        dataframe["phase"] = "normal"
-        b0 = spec.normal_before
-        f0 = b0 + spec.buildup
-        r0 = f0 + spec.failure
-        n0 = r0 + spec.recovery
+        # phase boundaries
+        b0 = normal_before
+        f0 = b0 + buildup
+        r0 = f0 + failure
+        n0 = r0 + recovery
 
-        dataframe.loc[b0:f0 - 1, "phase"] = "buildup"
-        dataframe.loc[f0:r0 - 1, "phase"] = "abnormal"
-        dataframe.loc[r0:n0 - 1, "phase"] = "recovery"
+        # default labels
+        dataframe["phase"] = "normal"
+        dataframe["stream_state"] = "normal"
+
+        # Only label fault phases if this is a fault episode
+        if is_fault_episode:
+            if buildup > 0:
+                dataframe.loc[b0:f0 - 1, "phase"] = "buildup"
+                dataframe.loc[b0:f0 - 1, "stream_state"] = "buildup"
+
+            if failure > 0:
+                dataframe.loc[f0:r0 - 1, "phase"] = "abnormal"
+                dataframe.loc[f0:r0 - 1, "stream_state"] = "abnormal"
+
+            if recovery > 0:
+                dataframe.loc[r0:n0 - 1, "phase"] = "recovery"
+                dataframe.loc[r0:n0 - 1, "stream_state"] = "recovery"
 
         # -------------------------
-        # primary buildup (ramped intensity)
-        # Fault emerges here. We ramp magnitude across the buildup window so it
-        # looks like "approaching failure" instead of flat 0.5x magnitude.
+        # Primary buildup (ramped intensity) — ONLY on fault episodes
         # -------------------------
         p_norm = self.normal[spec.primary_sensor]
 
-        buildup_len = int(spec.buildup)
-        if buildup_len > 0:
-            # segment values
+        if is_fault_episode and buildup > 0:
             seg = dataframe.loc[b0:f0 - 1, spec.primary_sensor].to_numpy(copy=True)
+            buildup_len = int(seg.shape[0])
 
-            # 3-stage ramp: early 0.2x, mid 0.5x, late 0.8x
-            # (You can tune these later without changing semantics.)
-            cut1 = max(1, int(round(buildup_len * 0.33)))
-            cut2 = max(cut1 + 1, int(round(buildup_len * 0.66))) if buildup_len >= 3 else buildup_len
+            if buildup_len > 0:
+                cut1 = max(1, int(round(buildup_len * 0.33)))
+                cut2 = max(cut1 + 1, int(round(buildup_len * 0.66))) if buildup_len >= 3 else buildup_len
 
-            early = seg[:cut1]
-            mid = seg[cut1:cut2]
-            late = seg[cut2:]
+                early = seg[:cut1]
+                mid = seg[cut1:cut2]
+                late = seg[cut2:]
 
-            if early.size:
-                early = self._inject_fault(early, spec.primary_fault_type, spec.magnitude * 0.2, p_norm)
-            if mid.size:
-                mid = self._inject_fault(mid, spec.primary_fault_type, spec.magnitude * 0.5, p_norm)
-            if late.size:
-                late = self._inject_fault(late, spec.primary_fault_type, spec.magnitude * 0.8, p_norm)
+                if early.size:
+                    early = self._inject_fault(early, spec.primary_fault_type, spec.magnitude * 0.2, p_norm)
+                if mid.size:
+                    mid = self._inject_fault(mid, spec.primary_fault_type, spec.magnitude * 0.5, p_norm)
+                if late.size:
+                    late = self._inject_fault(late, spec.primary_fault_type, spec.magnitude * 0.8, p_norm)
 
-            seg2 = np.concatenate([early, mid, late]) if buildup_len > 1 else early
-            dataframe.loc[b0:f0 - 1, spec.primary_sensor] = seg2
+                seg2 = np.concatenate([early, mid, late]) if buildup_len > 1 else early
+                dataframe.loc[b0:f0 - 1, spec.primary_sensor] = seg2
 
-        # primary failure (stronger; drift -> step_shift for distinctness)
-        p_ab = self.abnormal.get(spec.primary_sensor, p_norm)
-        failure_type: FaultType = "step_shift" if spec.primary_fault_type in {"drift_up", "drift_down"} else spec.primary_fault_type
-        seg = dataframe.loc[f0:r0 - 1, spec.primary_sensor].to_numpy(copy=True)
-        seg = self._inject_fault(seg, failure_type, spec.magnitude, p_ab)
-        dataframe.loc[f0:r0 - 1, spec.primary_sensor] = seg
+        # -------------------------
+        # Primary failure marker — ONLY when failure slice exists
+        # -------------------------
+        if is_fault_episode and failure > 0:
+            p_ab = self.abnormal.get(spec.primary_sensor, p_norm)
+            failure_type: FaultType = (
+                "step_shift"
+                if spec.primary_fault_type in {"drift_up", "drift_down"}
+                else spec.primary_fault_type
+            )
 
-        # propagate to paired sensors (lag + strength)
-        # IMPORTANT: propagate across buildup + failure, so pairings still matter
-        # when failure_len is 1. We do NOT propagate into recovery.
-        prop_start_base = b0   # start at buildup start (you can change to f0 if you want later)
-        prop_end_base = r0     # end right before recovery begins
+            seg = dataframe.loc[f0:r0 - 1, spec.primary_sensor].to_numpy(copy=True)
+            if seg.size:  # critical guard
+                seg = self._inject_fault(seg, failure_type, spec.magnitude, p_ab)
+                dataframe.loc[f0:r0 - 1, spec.primary_sensor] = seg
 
-        for link in self.propagation.get(spec.primary_sensor, []):
-            sec = link["secondary"]
-            if sec not in dataframe.columns:
-                continue
+        # -------------------------
+        # Propagate to paired sensors — ONLY on fault episodes
+        # Span buildup + failure (not recovery), so pairings still matter with 1-row failure.
+        # -------------------------
+        if is_fault_episode and (buildup + failure) > 0:
+            prop_start_base = b0
+            prop_end_base = r0  # right before recovery begins
 
-            strength = float(link["strength"])
-            lag = int(link["lag"])
+            for link in self.propagation.get(spec.primary_sensor, []):
+                sec = link["secondary"]
+                if sec not in dataframe.columns:
+                    continue
 
-            # lag applies from the propagation start base
-            start = prop_start_base + lag
-            end = prop_end_base
+                strength = float(link["strength"])
+                lag = int(link["lag"])
 
-            if start >= end:
-                continue
+                start = prop_start_base + lag
+                end = prop_end_base
+                if start >= end:
+                    continue
 
-            sec_fault = str(link.get("recommended_secondary_fault", "variance_burst"))
-            if sec_fault not in {
-                "drift_up", "drift_down", "spike", "stuck_constant", "variance_burst",
-                "step_shift", "intermittent_dropout", "sawtooth"
-            }:
-                sec_fault = "variance_burst"
+                sec_fault = str(link.get("recommended_secondary_fault", "variance_burst"))
+                if sec_fault not in {
+                    "drift_up", "drift_down", "spike", "stuck_constant", "variance_burst",
+                    "step_shift", "intermittent_dropout", "sawtooth"
+                }:
+                    sec_fault = "variance_burst"
 
-            sec_prof = self.abnormal.get(sec, self.normal[sec])
-            sec_seg = dataframe.loc[start:end - 1, sec].to_numpy(copy=True)
-            sec_seg = self._inject_fault(sec_seg, sec_fault, spec.magnitude * strength, sec_prof)
-            dataframe.loc[start:end - 1, sec] = sec_seg
+                sec_prof = self.abnormal.get(sec, self.normal[sec])
 
-        # recovery: pull each sensor toward recovery profile mean with mild noise
-        if spec.recovery > 0:
+                sec_seg = dataframe.loc[start:end - 1, sec].to_numpy(copy=True)
+                if sec_seg.size:  # critical guard
+                    sec_seg = self._inject_fault(sec_seg, sec_fault, spec.magnitude * strength, sec_prof)
+                    dataframe.loc[start:end - 1, sec] = sec_seg
+
+        # -------------------------
+        # Recovery — ONLY when recovery slice exists
+        # -------------------------
+        if is_fault_episode and recovery > 0:
             for sensor in self.sensors:
                 rec_prof = self.recovery.get(sensor, self.normal[sensor])
                 cur = dataframe.loc[r0:n0 - 1, sensor].to_numpy(copy=True)
 
                 target = float(rec_prof.mean)
                 start_val = float(cur[0]) if len(cur) else target
-                curve = np.linspace(start_val, target, spec.recovery)
+                curve = np.linspace(start_val, target, recovery)
 
                 noise_scale = max(float(rec_prof.std) * 0.25, 1e-6)
-                curve = curve + self.rng.normal(0.0, noise_scale, size=spec.recovery)
+                curve = curve + self.rng.normal(0.0, noise_scale, size=recovery)
 
                 curve = np.clip(curve, float(rec_prof.lower_bound), float(rec_prof.upper_bound))
                 curve = np.clip(curve, float(rec_prof.min_value), float(rec_prof.max_value))
                 dataframe.loc[r0:n0 - 1, sensor] = curve
 
-        # stream_state label
-        dataframe["stream_state"] = "normal"
-        dataframe.loc[b0:f0 - 1, "stream_state"] = "buildup"
-        dataframe.loc[f0:r0 - 1, "stream_state"] = "abnormal"
-        dataframe.loc[r0:n0 - 1, "stream_state"] = "recovery"
-
-        # optional: make abnormal window slightly more group-correlated
-        group_name = self.sensor_to_group.get(spec.primary_sensor)
-        if group_name is not None:
-            self._apply_group_driver(dataframe.iloc[f0:r0], group_name, self.abnormal, strength=0.55)
+        # -------------------------
+        # Optional: group correlation boost (abnormal window only)
+        # -------------------------
+        if is_fault_episode and failure > 0:
+            group_name = self.sensor_to_group.get(spec.primary_sensor)
+            if group_name is not None and r0 > f0:
+                self._apply_group_driver(dataframe.iloc[f0:r0], group_name, self.abnormal, strength=0.55)
 
         # optional: calibrate per-phase mean/std toward empirical targets
         self._calibrate_by_phase(dataframe)
-        
+
         if self.missingness_spec is not None:
             dataframe = self.apply_missingness(
                 dataframe,
@@ -498,9 +534,7 @@ class SyntheticGenerator:
             )
 
         return dataframe
-
-        #return dataframe
-    
+        
     # -------------------------
     # Apply Missingness Replication
     # -------------------------
