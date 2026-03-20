@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional, Sequence
 
 import pandas as pd
 from sqlalchemy.engine import Engine
@@ -27,17 +27,6 @@ def build_layer_table_name(
 ) -> str:
     """
     Build a standard layer table name.
-
-    Examples
-    --------
-    include_layer_prefix=False:
-        dataset=pump, artifact=None      -> pump
-        dataset=pump, artifact=features  -> pump_features
-
-    include_layer_prefix=True:
-        layer=bronze, dataset=pump       -> bronze_pump
-        layer=gold, dataset=pump, artifact=baseline_results
-            -> gold_pump_baseline_results
     """
     dataset_part = sanitize_sql_identifier(dataset_name)
     parts = []
@@ -68,7 +57,6 @@ def _series_looks_like_json(series: pd.Series) -> bool:
     return isinstance(sample, (dict, list))
 
 
-
 def _infer_sqlalchemy_dtype_for_series(series: pd.Series):
     """
     Conservative dtype inference for Postgres writes.
@@ -96,11 +84,10 @@ def _infer_sqlalchemy_dtype_for_series(series: pd.Series):
     if pd.api.types.is_string_dtype(series):
         return TEXT()
 
-    if pd.api.types.is_categorical_dtype(series):
+    if isinstance(series.dtype, pd.CategoricalDtype):
         return TEXT()
 
     return TEXT()
-
 
 
 def infer_sqlalchemy_dtypes(
@@ -109,8 +96,6 @@ def infer_sqlalchemy_dtypes(
 ) -> Dict[str, Any]:
     """
     Build a dtype mapping for pandas.to_sql().
-
-    dtype_overrides lets you force types for specific columns.
     """
     dtype_map: Dict[str, Any] = {}
     overrides = dtype_overrides or {}
@@ -137,6 +122,7 @@ def prepare_layer_dataframe(
     process_run_id: Optional[str] = None,
     add_loaded_at_column: bool = False,
     loaded_at_column: str = "meta__loaded_at",
+    extra_meta: Optional[Dict[str, Any]] = None,
 ) -> pd.DataFrame:
     """
     Return a copy of the dataframe with optional capstone-style meta columns.
@@ -155,12 +141,15 @@ def prepare_layer_dataframe(
         "meta__process_run_id": process_run_id,
     }
 
+    if extra_meta:
+        meta_values.update(extra_meta)
+
     for column_name, value in meta_values.items():
         if value is not None and column_name not in out.columns:
             out[column_name] = value
 
     if add_loaded_at_column and loaded_at_column not in out.columns:
-        out[loaded_at_column] = pd.Timestamp.utcnow().tz_localize(None)
+        out[loaded_at_column] = pd.Timestamp.now(tz="UTC")
 
     return out
 
@@ -245,7 +234,6 @@ def write_layer_dataframe(
     return table_name
 
 
-
 def read_layer_dataframe(
     engine: Engine,
     *,
@@ -255,9 +243,12 @@ def read_layer_dataframe(
     layer: Optional[str] = None,
     artifact_name: Optional[str] = None,
     include_layer_prefix_in_table_name: bool = False,
+    columns: Optional[Sequence[str]] = None,
     where_clause: Optional[str] = None,
+    params: Optional[Mapping[str, Any]] = None,
     order_by: Optional[str] = None,
     limit: Optional[int] = None,
+    require_exists: bool = False,
 ) -> pd.DataFrame:
     """
     Read a layer table back into pandas.
@@ -277,7 +268,15 @@ def read_layer_dataframe(
     else:
         table_name = sanitize_sql_identifier(table_name)
 
-    sql_parts = [f'SELECT * FROM "{safe_schema}"."{table_name}"']
+    if require_exists and not table_exists(engine, schema=safe_schema, table_name=table_name):
+        raise FileNotFoundError(f"Table does not exist: {safe_schema}.{table_name}")
+
+    if columns:
+        safe_columns = ", ".join(f'"{sanitize_sql_identifier(column)}"' for column in columns)
+    else:
+        safe_columns = "*"
+
+    sql_parts = [f'SELECT {safe_columns} FROM "{safe_schema}"."{table_name}"']
 
     if where_clause:
         sql_parts.append(f"WHERE {where_clause}")
@@ -289,7 +288,7 @@ def read_layer_dataframe(
         sql_parts.append(f"LIMIT {int(limit)}")
 
     sql = "\n".join(sql_parts)
-    return read_sql_dataframe(engine, sql)
+    return read_sql_dataframe(engine, sql, params=params or {})
 
 
 __all__ = [

@@ -374,6 +374,9 @@ class SyntheticGenerator:
         if spec.primary_sensor not in self.sensors:
             raise ValueError(f"Unknown primary sensor: {spec.primary_sensor}")
 
+        if spec.primary_sensor in {"sensor_15", "sensor_50"}:
+            raise ValueError(f"Primary fault sensor '{spec.primary_sensor}' is excluded (all-null / high-missing).")
+
         # Define whether this episode is a "fault episode"
         # (dataset-faithful: failure row is the event marker)
         is_fault_episode = int(spec.failure) > 0
@@ -468,8 +471,15 @@ class SyntheticGenerator:
             prop_start_base = b0
             prop_end_base = r0  # right before recovery begins
 
+            FAULT_EXCLUDED = {"sensor_15", "sensor_50"}
+
             for link in self.propagation.get(spec.primary_sensor, []):
-                sec = link["secondary"]
+                sec = str(link["secondary"])
+
+                # Never propagate faults into excluded sensors
+                if sec in FAULT_EXCLUDED:
+                    continue
+
                 if sec not in dataframe.columns:
                     continue
 

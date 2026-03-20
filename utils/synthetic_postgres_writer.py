@@ -55,6 +55,17 @@ def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int)
 
     return start
 
+def reset_sequence(engine, *, schema: str, sequence_name: str, start_at: int = 1) -> None:
+    # nextval returns start_at when is_called=false
+    sql = f"SELECT setval('\"{schema}\".\"{sequence_name}\"', {int(start_at)}, false)"
+    execute_sql(engine, sql)
+
+
+def reset_synthetic_sequences(engine, *, schema: str, dataset_name: str) -> None:
+    ds = str(dataset_name).strip().lower()
+    reset_sequence(engine, schema=schema, sequence_name=f"seq_synthetic_{ds}_batch_id", start_at=1)
+    reset_sequence(engine, schema=schema, sequence_name=f"seq_synthetic_{ds}_cycle_id", start_at=1)
+
 
 # -----------------------------------------------------------------------------
 # Stream table helpers

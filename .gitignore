@@ -95,3 +95,4 @@ secrets/wandb/
 .tmp.driveupload
 *.tmp.driveupload
 **/.tmp.driveupload
+*.parquet
