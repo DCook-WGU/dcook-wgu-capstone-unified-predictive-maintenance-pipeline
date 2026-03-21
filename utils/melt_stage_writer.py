@@ -12,6 +12,10 @@ from utils.postgres_util import (
     read_sql_dataframe,
 )
 from utils.layer_postgres_writer import write_layer_dataframe
+from utils.chunked_stage_util import (
+    get_table_row_count,
+    process_postgres_table_in_chunks,
+)
 
 
 # -----------------------------------------------------------------------------
@@ -39,22 +43,16 @@ def _extract_sensor_index(sensor_name_series: pd.Series) -> pd.Series:
     )
 
 
-def _build_message_sequence_index(
+def _build_message_sequence_index_with_rng(
+    *,
     observation_count: int,
     sensors_per_observation: int,
-    random_seed: int,
+    rng: np.random.Generator,
 ) -> np.ndarray:
     """
-    Build a randomized 0..(n_sensors-1) sequence for each observation.
-
-    Output length:
-        observation_count * sensors_per_observation
-
-    Assumes the long dataframe is sorted by:
-        observation_index, sensor_index
-    before applying this output.
+    Build a randomized 0..(n_sensors-1) sequence for each observation
+    using one shared RNG so chunking stays deterministic across the full run.
     """
-    rng = np.random.default_rng(random_seed)
     out = np.empty(observation_count * sensors_per_observation, dtype=int)
 
     for start in range(0, len(out), sensors_per_observation):
@@ -76,67 +74,17 @@ def build_sensor_messages_stage(
     if_exists: str = "replace",
     random_seed: int = 42,
     n_sensors: int = 52,
+    chunk_size: int = 10000,
 ) -> str:
     """
-    Build the long-format sensor message stage from the premelt observation stage.
-
-    Behavior:
-    - reads ordered observation rows from the premelt table
-    - melts sensor_00..sensor_51 into long format
-    - adds sensor_name, sensor_index, sensor_value
-    - adds randomized message_sequence_index per observation
-    - preserves observation reconstruction through observation_index + sensor_index
-    - does not create timestamps yet
-    - does not introduce Kafka yet
+    Build the long-format sensor message stage from the premelt observation stage
+    in chunks instead of loading/melting the full table at once.
     """
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
     safe_target_table = sanitize_sql_identifier(target_table)
 
     sensor_columns = _build_sensor_columns(n_sensors=n_sensors)
-
-    source_sql = f"""
-    SELECT *
-    FROM "{safe_schema}"."{safe_source_table}"
-    ORDER BY observation_index
-    """
-    dataframe = read_sql_dataframe(engine, source_sql)
-
-    if dataframe.empty:
-        raise ValueError(
-            f"Source table '{safe_schema}.{safe_source_table}' is empty."
-        )
-
-    required_columns = [
-        "dataset_id",
-        "run_id",
-        "asset_id",
-        "generated_row_id",
-        "observation_index",
-        "batch_id",
-        "row_in_batch",
-        "global_cycle_id",
-        "stream_state",
-        "phase",
-        "created_at",
-        "meta_episode_id",
-        "meta_primary_fault_type",
-        "meta_magnitude",
-        "is_telemetry_event",
-        "telemetry_event_type",
-        "producer_send_attempt",
-    ]
-    required_columns.extend(sensor_columns)
-
-    _validate_source_columns(dataframe, required_columns)
-
-    # -------------------------------------------------------------------------
-    # Enforce deterministic observation order before melt
-    # -------------------------------------------------------------------------
-    dataframe = dataframe.sort_values(
-        by=["observation_index"],
-        kind="stable",
-    ).reset_index(drop=True)
 
     id_columns = [
         "dataset_id",
@@ -158,40 +106,33 @@ def build_sensor_messages_stage(
         "producer_send_attempt",
     ]
 
+    required_columns = list(id_columns) + list(sensor_columns)
+
     # -------------------------------------------------------------------------
-    # Melt wide sensors to long messages
+    # Validate source table and emptiness before chunk loop
     # -------------------------------------------------------------------------
-    long_dataframe = pd.melt(
-        dataframe,
-        id_vars=id_columns,
-        value_vars=sensor_columns,
-        var_name="sensor_name",
-        value_name="sensor_value",
+    preview_sql = f'''
+    SELECT *
+    FROM "{safe_schema}"."{safe_source_table}"
+    LIMIT 0
+    '''
+    preview_dataframe = read_sql_dataframe(engine, preview_sql)
+    _validate_source_columns(preview_dataframe, required_columns)
+
+    source_row_count = get_table_row_count(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
     )
 
-    long_dataframe["sensor_index"] = _extract_sensor_index(long_dataframe["sensor_name"])
+    if source_row_count == 0:
+        raise ValueError(
+            f"Source table '{safe_schema}.{safe_source_table}' is empty."
+        )
 
-    # -------------------------------------------------------------------------
-    # Re-sort into clean observation/message order
-    # -------------------------------------------------------------------------
-    long_dataframe = long_dataframe.sort_values(
-        by=["observation_index", "sensor_index"],
-        kind="stable",
-    ).reset_index(drop=True)
+    rng = np.random.default_rng(random_seed)
+    has_written_first_chunk = False
 
-    # -------------------------------------------------------------------------
-    # Add randomized send-order index within each observation
-    # -------------------------------------------------------------------------
-    observation_count = len(dataframe)
-    long_dataframe["message_sequence_index"] = _build_message_sequence_index(
-        observation_count=observation_count,
-        sensors_per_observation=n_sensors,
-        random_seed=random_seed,
-    )
-
-    # -------------------------------------------------------------------------
-    # Final column order
-    # -------------------------------------------------------------------------
     ordered_columns = [
         "dataset_id",
         "run_id",
@@ -216,22 +157,94 @@ def build_sensor_messages_stage(
         "producer_send_attempt",
     ]
 
-    remaining_columns = [
-        column for column in long_dataframe.columns
-        if column not in ordered_columns
-    ]
-    long_dataframe = long_dataframe[ordered_columns + remaining_columns]
+    def transform_chunk_func(
+        df_chunk: pd.DataFrame,
+        chunk_number: int,
+        start_row: int,
+        end_row: int,
+    ) -> pd.DataFrame:
+        df_work = df_chunk.copy()
 
-    # -------------------------------------------------------------------------
-    # Write long stage table
-    # -------------------------------------------------------------------------
-    table_name = write_layer_dataframe(
-        engine=engine,
-        dataframe=long_dataframe,
-        schema=safe_schema,
-        table_name=safe_target_table,
-        if_exists=if_exists,
-        index=False,
+        # Optional downcast to reduce memory pressure before melt
+        for col in sensor_columns:
+            if col in df_work.columns:
+                df_work[col] = pd.to_numeric(df_work[col], errors="coerce").astype("float32")
+
+        df_work = df_work.sort_values(
+            by=["observation_index"],
+            kind="stable",
+        ).reset_index(drop=True)
+
+        df_long = pd.melt(
+            df_work,
+            id_vars=id_columns,
+            value_vars=sensor_columns,
+            var_name="sensor_name",
+            value_name="sensor_value",
+        )
+
+        df_long["sensor_index"] = _extract_sensor_index(df_long["sensor_name"])
+
+        df_long = df_long.sort_values(
+            by=["observation_index", "sensor_index"],
+            kind="stable",
+        ).reset_index(drop=True)
+
+        observation_count = len(df_work)
+        df_long["message_sequence_index"] = _build_message_sequence_index_with_rng(
+            observation_count=observation_count,
+            sensors_per_observation=n_sensors,
+            rng=rng,
+        )
+
+        remaining_columns = [
+            column for column in df_long.columns
+            if column not in ordered_columns
+        ]
+        df_long = df_long[ordered_columns + remaining_columns]
+
+        print(
+            f"[chunk] {chunk_number} melted "
+            f"{len(df_work):,} observations -> {len(df_long):,} sensor rows"
+        )
+
+        return df_long
+
+    def write_chunk_func(
+        df_out: pd.DataFrame,
+        chunk_number: int,
+        start_row: int,
+        end_row: int,
+    ) -> None:
+        nonlocal has_written_first_chunk
+
+        chunk_if_exists = if_exists if not has_written_first_chunk else "append"
+
+        write_layer_dataframe(
+            engine=engine,
+            dataframe=df_out,
+            schema=safe_schema,
+            table_name=safe_target_table,
+            if_exists=chunk_if_exists,
+            index=False,
+        )
+
+        has_written_first_chunk = True
+
+        print(
+            f"[chunk] {chunk_number} wrote {len(df_out):,} rows "
+            f"to {safe_schema}.{safe_target_table}"
+        )
+
+    process_postgres_table_in_chunks(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+        select_columns=required_columns,
+        order_by_sql="observation_index",
+        transform_chunk_func=transform_chunk_func,
+        write_chunk_func=write_chunk_func,
+        chunk_size=chunk_size,
     )
 
     # -------------------------------------------------------------------------
@@ -269,7 +282,7 @@ def build_sensor_messages_stage(
         '''
     )
 
-    return table_name
+    return safe_target_table
 
 
 # -----------------------------------------------------------------------------
