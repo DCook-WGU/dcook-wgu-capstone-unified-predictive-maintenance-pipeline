@@ -12,6 +12,11 @@ from utils.postgres_util import (
 )
 from utils.layer_postgres_writer import write_layer_dataframe
 
+from utils.chunk_stage_util import (
+    get_table_columns,
+    process_observation_index_windows,
+    resolve_dataset_run_from_table,
+)
 
 # -----------------------------------------------------------------------------
 # Shared column helpers
@@ -558,69 +563,112 @@ def rebuild_consumed_messages_to_observations(
     n_sensors: int = 52,
     complete_only: bool = True,
     mark_source_rebuilt: bool = True,
+    observation_window_size: int = 2500,
 ) -> dict:
-    consumed = load_consumed_messages_for_rebuild(
-        engine=engine,
-        schema=schema,
-        source_table=source_table,
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_source_table = sanitize_sql_identifier(source_table)
+
+    where_sql = ""
+    params = {}
+    extra_where_sql = ""
+
+    if rebuild_status is not None:
+        extra_where_sql += " AND rebuild_status = :rebuild_status"
+        params["rebuild_status"] = str(rebuild_status).strip()
+        where_sql = "WHERE rebuild_status = :rebuild_status"
+
+    resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
         dataset_id=dataset_id,
         run_id=run_id,
-        rebuild_status=rebuild_status,
+        where_sql=where_sql,
+        params=params,
     )
 
-    if consumed.empty:
-        return {
-            "status": "empty",
-            "consumed_rows": 0,
-            "deduped_rows": 0,
-            "rebuilt_rows": 0,
-            "rebuilt_observations": 0,
-            "target_table": sanitize_sql_identifier(target_table),
-        }
-
-    deduped = deduplicate_consumed_messages(consumed)
-
-    rebuilt_dataframe, rebuilt_keys = build_rebuilt_observations_dataframe(
-        deduped,
-        n_sensors=n_sensors,
-        complete_only=complete_only,
+    source_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
     )
 
-    if rebuilt_dataframe.empty:
-        return {
-            "status": "no_complete_observations",
-            "consumed_rows": int(len(consumed)),
-            "deduped_rows": int(len(deduped)),
-            "rebuilt_rows": 0,
-            "rebuilt_observations": 0,
-            "target_table": sanitize_sql_identifier(target_table),
-        }
+    stats = {
+        "status": "empty",
+        "consumed_rows": 0,
+        "deduped_rows": 0,
+        "rebuilt_rows": 0,
+        "rebuilt_observations": 0,
+        "updated_source_observation_groups": 0,
+        "target_table": sanitize_sql_identifier(target_table),
+    }
 
-    written_table = write_rebuilt_observations_batch(
-        engine=engine,
-        dataframe=rebuilt_dataframe,
-        schema=schema,
-        table_name=target_table,
-    )
+    def transform_chunk_func(df_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> dict:
+        deduped = deduplicate_consumed_messages(df_window)
 
-    updated_source_count = 0
-    if mark_source_rebuilt:
-        updated_source_count = mark_consumed_messages_rebuilt(
-            engine=engine,
-            observation_keys=rebuilt_keys,
-            schema=schema,
-            source_table=source_table,
+        rebuilt_dataframe, rebuilt_keys = build_rebuilt_observations_dataframe(
+            deduped,
+            n_sensors=n_sensors,
+            complete_only=complete_only,
         )
 
-    return {
-        "status": "rebuilt",
-        "consumed_rows": int(len(consumed)),
-        "deduped_rows": int(len(deduped)),
-        "rebuilt_rows": int(len(rebuilt_dataframe)),
-        "rebuilt_observations": int(len(rebuilt_keys)),
-        "updated_source_observation_groups": int(updated_source_count),
-        "target_table": written_table,
-    }
+        return {
+            "consumed_rows": int(len(df_window)),
+            "deduped_rows": int(len(deduped)),
+            "rebuilt_dataframe": rebuilt_dataframe,
+            "rebuilt_keys": rebuilt_keys,
+        }
+
+    def write_chunk_func(payload: dict, window_number: int, obs_min: int, obs_max: int) -> None:
+        stats["consumed_rows"] += int(payload["consumed_rows"])
+        stats["deduped_rows"] += int(payload["deduped_rows"])
+
+        rebuilt_dataframe = payload["rebuilt_dataframe"]
+        rebuilt_keys = payload["rebuilt_keys"]
+
+        if rebuilt_dataframe.empty:
+            return
+
+        written_table = write_rebuilt_observations_batch(
+            engine=engine,
+            dataframe=rebuilt_dataframe,
+            schema=schema,
+            table_name=target_table,
+        )
+
+        stats["status"] = "rebuilt"
+        stats["target_table"] = written_table
+        stats["rebuilt_rows"] += int(len(rebuilt_dataframe))
+        stats["rebuilt_observations"] += int(len(rebuilt_keys))
+
+        if mark_source_rebuilt and not rebuilt_keys.empty:
+            updated_count = mark_consumed_messages_rebuilt(
+                engine=engine,
+                observation_keys=rebuilt_keys,
+                schema=schema,
+                source_table=source_table,
+            )
+            stats["updated_source_observation_groups"] += int(updated_count)
+
+    process_observation_index_windows(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+        select_columns=source_columns,
+        dataset_id=resolved_dataset_id,
+        run_id=resolved_run_id,
+        transform_chunk_func=transform_chunk_func,
+        write_chunk_func=write_chunk_func,
+        window_size=observation_window_size,
+        extra_where_sql=extra_where_sql,
+        params=params,
+        order_by_sql="observation_index, sensor_index, consumer_received_at, kafka_offset",
+    )
+
+    if stats["rebuilt_rows"] == 0 and stats["consumed_rows"] > 0:
+        stats["status"] = "no_complete_observations"
+
+    return stats
 
 
 __all__ = [

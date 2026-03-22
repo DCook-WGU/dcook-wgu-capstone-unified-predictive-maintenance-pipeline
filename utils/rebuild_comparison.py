@@ -12,6 +12,13 @@ from utils.postgres_util import (
 )
 from utils.layer_postgres_writer import write_layer_dataframe
 
+from utils.chunk_stage_util import (
+    get_table_columns,
+    process_observation_index_windows,
+    resolve_dataset_run_from_table,
+    read_table_for_observation_window,
+)
+
 
 # -----------------------------------------------------------------------------
 # Shared helpers
@@ -488,74 +495,97 @@ def write_rebuild_comparison_batch(
 # Orchestration helper
 # -----------------------------------------------------------------------------
 
-def compare_premelt_to_rebuilt_observations(
+def build_rebuild_comparison_stage(
     engine,
     *,
     schema: str = "capstone",
     premelt_table: str = "synthetic_observations_premelt_stage",
     rebuilt_table: str = "synthetic_sensor_observations_rebuilt_stage",
-    comparison_table: str = "synthetic_sensor_rebuild_comparison_stage",
+    target_table: str = "synthetic_sensor_rebuild_comparison_stage",
     dataset_id: Optional[str] = None,
     run_id: Optional[str] = None,
     n_sensors: int = 52,
     float_tolerance: float = 1e-9,
-    write_output: bool = True,
+    observation_window_size: int = 2500,
 ) -> dict:
-    premelt_dataframe = load_premelt_for_comparison(
-        engine=engine,
-        schema=schema,
-        table_name=premelt_table,
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_premelt_table = sanitize_sql_identifier(premelt_table)
+    safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
+    safe_target_table = sanitize_sql_identifier(target_table)
+
+    resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
         dataset_id=dataset_id,
         run_id=run_id,
     )
 
-    rebuilt_dataframe = load_rebuilt_for_comparison(
-        engine=engine,
-        schema=schema,
-        table_name=rebuilt_table,
-        dataset_id=dataset_id,
-        run_id=run_id,
+    premelt_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+    )
+    rebuilt_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_rebuilt_table,
     )
 
-    comparison_dataframe = build_rebuild_comparison_dataframe(
-        premelt_dataframe=premelt_dataframe,
-        rebuilt_dataframe=rebuilt_dataframe,
-        n_sensors=n_sensors,
-        float_tolerance=float_tolerance,
-    )
+    stats = {
+        "status": "empty",
+        "comparison_rows": 0,
+        "target_table": safe_target_table,
+    }
 
-    if comparison_dataframe.empty:
-        return {
-            "status": "empty",
-            "original_rows": int(len(premelt_dataframe)),
-            "rebuilt_rows": int(len(rebuilt_dataframe)),
-            "comparison_rows": 0,
-            "all_match_rows": 0,
-            "mismatch_rows": 0,
-            "comparison_table": sanitize_sql_identifier(comparison_table),
-        }
-
-    written_table = sanitize_sql_identifier(comparison_table)
-    if write_output:
-        written_table = write_rebuild_comparison_batch(
-            engine=engine,
-            dataframe=comparison_dataframe,
-            schema=schema,
-            table_name=comparison_table,
+    def transform_chunk_func(df_premelt_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> pd.DataFrame:
+        rebuilt_window = read_table_for_observation_window(
+            engine,
+            schema_name=safe_schema,
+            table_name=safe_rebuilt_table,
+            select_columns=rebuilt_columns,
+            dataset_id=resolved_dataset_id,
+            run_id=resolved_run_id,
+            observation_index_min=obs_min,
+            observation_index_max=obs_max,
+            order_by_sql="observation_index",
         )
 
-    all_match_rows = int(comparison_dataframe["comparison_all_fields_match"].fillna(False).sum())
-    mismatch_rows = int((~comparison_dataframe["comparison_all_fields_match"].fillna(False)).sum())
+        return build_rebuild_comparison_dataframe(
+            premelt_dataframe=df_premelt_window,
+            rebuilt_dataframe=rebuilt_window,
+            n_sensors=n_sensors,
+            float_tolerance=float_tolerance,
+        )
 
-    return {
-        "status": "compared",
-        "original_rows": int(len(premelt_dataframe)),
-        "rebuilt_rows": int(len(rebuilt_dataframe)),
-        "comparison_rows": int(len(comparison_dataframe)),
-        "all_match_rows": all_match_rows,
-        "mismatch_rows": mismatch_rows,
-        "comparison_table": written_table,
-    }
+    def write_chunk_func(df_out: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> None:
+        if df_out.empty:
+            return
+
+        write_rebuild_comparison_batch(
+            engine=engine,
+            dataframe=df_out,
+            schema=schema,
+            table_name=target_table,
+        )
+
+        stats["status"] = "built"
+        stats["comparison_rows"] += int(len(df_out))
+
+    process_observation_index_windows(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+        select_columns=premelt_columns,
+        dataset_id=resolved_dataset_id,
+        run_id=resolved_run_id,
+        transform_chunk_func=transform_chunk_func,
+        write_chunk_func=write_chunk_func,
+        window_size=observation_window_size,
+        order_by_sql="observation_index",
+    )
+
+    return stats
 
 
 __all__ = [

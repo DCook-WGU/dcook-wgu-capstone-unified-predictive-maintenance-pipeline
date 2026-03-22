@@ -12,6 +12,13 @@ from utils.postgres_util import (
 )
 from utils.layer_postgres_writer import write_layer_dataframe
 
+from utils.chunk_stage_util import (
+    get_table_columns,
+    process_observation_index_windows,
+    resolve_dataset_run_from_table,
+    read_table_for_observation_window,
+)
+
 
 # -----------------------------------------------------------------------------
 # Shared helpers
@@ -215,135 +222,114 @@ def load_rebuilt_for_final_alignment(
 # Final alignment builder
 # -----------------------------------------------------------------------------
 
-def build_final_aligned_observations_dataframe(
-    premelt_dataframe: pd.DataFrame,
-    rebuilt_dataframe: pd.DataFrame,
+def build_final_aligned_observations_stage(
+    engine,
     *,
+    schema: str = "capstone",
+    premelt_table: str = "synthetic_observations_premelt_stage",
+    rebuilt_table: str = "synthetic_sensor_observations_rebuilt_stage",
+    target_table: str = "synthetic_sensor_observations_final_aligned_stage",
+    dataset_id: Optional[str] = None,
+    run_id: Optional[str] = None,
     n_sensors: int = 52,
+    complete_only: bool = True,
     prefer_rebuilt_sensor_values: bool = True,
-) -> pd.DataFrame:
-    if premelt_dataframe.empty or rebuilt_dataframe.empty:
-        return pd.DataFrame()
+    if_exists: str = "replace",
+    observation_window_size: int = 2500,
+) -> dict:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_premelt_table = sanitize_sql_identifier(premelt_table)
+    safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
+    safe_target_table = sanitize_sql_identifier(target_table)
 
-    _validate_premelt_columns(premelt_dataframe, n_sensors=n_sensors)
-    _validate_rebuilt_columns(rebuilt_dataframe, n_sensors=n_sensors)
-
-    key_columns = ["dataset_id", "run_id", "asset_id", "observation_index"]
-    sensor_columns = _build_sensor_columns(n_sensors=n_sensors)
-
-    premelt_passthrough_columns = [
-        "batch_id",
-        "row_in_batch",
-        "global_cycle_id",
-        "stream_state",
-        "phase",
-        "created_at",
-        "meta_episode_id",
-        "meta_primary_fault_type",
-        "meta_magnitude",
-        "generated_row_id",
-    ] + sensor_columns
-
-    rebuilt_columns = [
-        "dataset_id",
-        "run_id",
-        "asset_id",
-        "observation_index",
-        "generated_row_id",
-        "observation_timestamp",
-        "stream_state",
-        "phase",
-        "meta_episode_id",
-        "meta_primary_fault_type",
-        "meta_magnitude",
-        "rebuild_sensor_count",
-        "rebuild_is_complete",
-        "rebuild_completed_at",
-        "rebuild_notes",
-    ] + sensor_columns
-
-    premelt_subset = premelt_dataframe[key_columns + premelt_passthrough_columns].copy()
-    rebuilt_subset = rebuilt_dataframe[rebuilt_columns].copy()
-
-    premelt_subset = premelt_subset.rename(
-        columns={column: f"premelt__{column}" for column in premelt_passthrough_columns}
-    )
-    rebuilt_subset = rebuilt_subset.rename(
-        columns={
-            column: f"rebuilt__{column}"
-            for column in rebuilt_columns
-            if column not in key_columns
-        }
+    resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+        dataset_id=dataset_id,
+        run_id=run_id,
     )
 
-    aligned = premelt_subset.merge(
-        rebuilt_subset,
-        on=key_columns,
-        how="inner",
+    premelt_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+    )
+    rebuilt_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_rebuilt_table,
     )
 
-    final_dataframe = aligned[key_columns].copy()
+    has_written_first_chunk = False
 
-    # original-like structure first
-    final_dataframe["batch_id"] = aligned["premelt__batch_id"]
-    final_dataframe["row_in_batch"] = aligned["premelt__row_in_batch"]
-    final_dataframe["global_cycle_id"] = aligned["premelt__global_cycle_id"]
+    stats = {
+        "status": "empty",
+        "premelt_rows": 0,
+        "rebuilt_rows": 0,
+        "final_rows": 0,
+        "target_table": safe_target_table,
+    }
 
-    final_dataframe["stream_state"] = aligned["rebuilt__stream_state"]
-    final_dataframe["phase"] = aligned["rebuilt__phase"]
-    final_dataframe["created_at"] = aligned["premelt__created_at"]
-    final_dataframe["meta_episode_id"] = aligned["rebuilt__meta_episode_id"]
-    final_dataframe["meta_primary_fault_type"] = aligned["rebuilt__meta_primary_fault_type"]
-    final_dataframe["meta_magnitude"] = aligned["rebuilt__meta_magnitude"]
+    rebuilt_extra_where_sql = " AND rebuild_is_complete = TRUE" if complete_only else ""
 
-    for column in sensor_columns:
-        premelt_column = f"premelt__{column}"
-        rebuilt_column = f"rebuilt__{column}"
+    def transform_chunk_func(df_premelt_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> pd.DataFrame:
+        rebuilt_window = read_table_for_observation_window(
+            engine,
+            schema_name=safe_schema,
+            table_name=safe_rebuilt_table,
+            select_columns=rebuilt_columns,
+            dataset_id=resolved_dataset_id,
+            run_id=resolved_run_id,
+            observation_index_min=obs_min,
+            observation_index_max=obs_max,
+            extra_where_sql=rebuilt_extra_where_sql,
+            order_by_sql="observation_index",
+        )
 
-        if prefer_rebuilt_sensor_values:
-            final_dataframe[column] = aligned[rebuilt_column]
-        else:
-            final_dataframe[column] = aligned[premelt_column]
+        stats["premelt_rows"] += int(len(df_premelt_window))
+        stats["rebuilt_rows"] += int(len(rebuilt_window))
 
-    # pipeline metadata second
-    final_dataframe["generated_row_id"] = aligned["rebuilt__generated_row_id"]
-    final_dataframe["observation_timestamp"] = aligned["rebuilt__observation_timestamp"]
-    final_dataframe["rebuild_sensor_count"] = aligned["rebuilt__rebuild_sensor_count"]
-    final_dataframe["rebuild_is_complete"] = aligned["rebuilt__rebuild_is_complete"]
-    final_dataframe["rebuild_completed_at"] = aligned["rebuilt__rebuild_completed_at"]
-    final_dataframe["rebuild_notes"] = aligned["rebuilt__rebuild_notes"]
+        return build_final_aligned_observations_dataframe(
+            premelt_dataframe=df_premelt_window,
+            rebuilt_dataframe=rebuilt_window,
+            n_sensors=n_sensors,
+            prefer_rebuilt_sensor_values=prefer_rebuilt_sensor_values,
+        )
 
-    ordered_columns = [
-        "batch_id",
-        "row_in_batch",
-        "global_cycle_id",
-        "stream_state",
-        "phase",
-        "created_at",
-        "meta_episode_id",
-        "meta_primary_fault_type",
-        "meta_magnitude",
-    ] + sensor_columns + [
-        "dataset_id",
-        "run_id",
-        "asset_id",
-        "generated_row_id",
-        "observation_index",
-        "observation_timestamp",
-        "rebuild_sensor_count",
-        "rebuild_is_complete",
-        "rebuild_completed_at",
-        "rebuild_notes",
-    ]
+    def write_chunk_func(df_out: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> None:
+        nonlocal has_written_first_chunk
 
-    final_dataframe = final_dataframe[ordered_columns].copy()
+        if df_out.empty:
+            return
 
-    final_dataframe = final_dataframe.sort_values(
-        by=["batch_id", "row_in_batch"],
-        kind="stable",
-    ).reset_index(drop=True)
+        written_table = write_final_aligned_observations(
+            engine=engine,
+            dataframe=df_out,
+            schema=schema,
+            table_name=target_table,
+            if_exists=if_exists if not has_written_first_chunk else "append",
+        )
 
-    return final_dataframe
+        has_written_first_chunk = True
+        stats["status"] = "built"
+        stats["final_rows"] += int(len(df_out))
+        stats["target_table"] = written_table
+
+    process_observation_index_windows(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+        select_columns=premelt_columns,
+        dataset_id=resolved_dataset_id,
+        run_id=resolved_run_id,
+        transform_chunk_func=transform_chunk_func,
+        write_chunk_func=write_chunk_func,
+        window_size=observation_window_size,
+        order_by_sql="observation_index",
+    )
+
+    return stats
 
 
 # -----------------------------------------------------------------------------

@@ -12,6 +12,12 @@ from utils.postgres_util import (
 )
 from utils.layer_postgres_writer import write_layer_dataframe
 
+from utils.chunk_stage_util import (
+    get_table_columns,
+    get_table_row_count,
+    process_postgres_table_in_chunks,
+    resolve_dataset_run_from_table,
+)
 
 # -----------------------------------------------------------------------------
 # Timing config helpers
@@ -241,27 +247,34 @@ def build_sensor_messages_timestamped_stage(
     dataset_id: Optional[str] = None,
     run_id: Optional[str] = None,
     if_exists: str = "replace",
+    chunk_size: int = 10000,
 ) -> str:
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
     safe_target_table = sanitize_sql_identifier(target_table)
 
-    source_sql = f"""
-    SELECT *
-    FROM "{safe_schema}"."{safe_source_table}"
-    ORDER BY observation_index, message_sequence_index, sensor_index
-    """
-    dataframe = read_sql_dataframe(engine, source_sql)
+    source_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+    )
+    preview_dataframe = pd.DataFrame(columns=source_columns)
+    _validate_source_columns(preview_dataframe)
 
-    if dataframe.empty:
+    source_row_count = get_table_row_count(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+    )
+    if source_row_count == 0:
         raise ValueError(
             f"Source table '{safe_schema}.{safe_source_table}' is empty."
         )
 
-    _validate_source_columns(dataframe)
-
-    resolved_dataset_id, resolved_run_id = _resolve_dataset_and_run(
-        dataframe=dataframe,
+    resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
         dataset_id=dataset_id,
         run_id=run_id,
     )
@@ -279,19 +292,6 @@ def build_sensor_messages_timestamped_stage(
 
     if sampling_interval_seconds <= 0:
         raise ValueError("sampling_interval_seconds must be greater than 0.")
-
-    dataframe = dataframe.sort_values(
-        by=["observation_index", "message_sequence_index", "sensor_index"],
-        kind="stable",
-    ).reset_index(drop=True)
-
-    dataframe["observation_timestamp"] = (
-        simulation_start_datetime
-        + pd.to_timedelta(
-            (dataframe["observation_index"].astype(int) - 1) * sampling_interval_seconds,
-            unit="s",
-        )
-    )
 
     ordered_columns = [
         "dataset_id",
@@ -318,19 +318,55 @@ def build_sensor_messages_timestamped_stage(
         "producer_send_attempt",
     ]
 
-    remaining_columns = [
-        column for column in dataframe.columns
-        if column not in ordered_columns
-    ]
-    dataframe = dataframe[ordered_columns + remaining_columns]
+    has_written_first_chunk = False
 
-    table_name = write_layer_dataframe(
-        engine=engine,
-        dataframe=dataframe,
-        schema=safe_schema,
-        table_name=safe_target_table,
-        if_exists=if_exists,
-        index=False,
+    def transform_chunk_func(df_chunk: pd.DataFrame, chunk_number: int, start_row: int, end_row: int) -> pd.DataFrame:
+        dataframe = df_chunk.copy()
+
+        dataframe = dataframe.sort_values(
+            by=["observation_index", "message_sequence_index", "sensor_index"],
+            kind="stable",
+        ).reset_index(drop=True)
+
+        dataframe["observation_timestamp"] = (
+            simulation_start_datetime
+            + pd.to_timedelta(
+                (dataframe["observation_index"].astype(int) - 1) * sampling_interval_seconds,
+                unit="s",
+            )
+        )
+
+        remaining_columns = [
+            column for column in dataframe.columns
+            if column not in ordered_columns
+        ]
+        dataframe = dataframe[ordered_columns + remaining_columns]
+        return dataframe
+
+    def write_chunk_func(df_out: pd.DataFrame, chunk_number: int, start_row: int, end_row: int) -> None:
+        nonlocal has_written_first_chunk
+
+        write_layer_dataframe(
+            engine=engine,
+            dataframe=df_out,
+            schema=safe_schema,
+            table_name=safe_target_table,
+            if_exists=if_exists if not has_written_first_chunk else "append",
+            index=False,
+        )
+
+        has_written_first_chunk = True
+        print(f"[timestamp] wrote chunk {chunk_number} with {len(df_out):,} rows")
+
+    process_postgres_table_in_chunks(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+        select_columns=source_columns,
+        order_by_sql="observation_index, message_sequence_index, sensor_index",
+        transform_chunk_func=transform_chunk_func,
+        write_chunk_func=write_chunk_func,
+        chunk_size=chunk_size,
     )
 
     execute_sql(
@@ -365,7 +401,7 @@ def build_sensor_messages_timestamped_stage(
         '''
     )
 
-    return table_name
+    return safe_target_table
 
 
 # -----------------------------------------------------------------------------

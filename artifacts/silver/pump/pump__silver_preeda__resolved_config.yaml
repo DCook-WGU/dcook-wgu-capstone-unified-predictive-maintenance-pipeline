@@ -184,17 +184,25 @@ filenames:
   baseline_thresholds_file_name: pump__gold__baseline_thresholds.json
   baseline_summary_file_name: pump__gold__baseline_summary.json
   baseline_metadata_file_name: pump__gold__baseline_metadata.json
-  cascade_results_file_name_csv: pump__gold__cascade_results.csv
-  cascade_results_file_name_pickle: pump__gold__cascade_results.pkl
-  cascade_thresholds_file_name: pump__gold__cascade_thresholds.json
-  cascade_summary_file_name: pump__gold__cascade_summary.json
-  cascade_metadata_file_name: pump__gold__cascade_metadata.json
-  cascade_reference_profile_file_name: pump__gold__cascade_reference_profile.csv
-  stage1_model_file_name: pump__gold__stage1_isolation_forest.joblib
-  stage2_model_file_name: pump__gold__stage2_isolation_forest.joblib
-  comparison_file_name: pump__gold__comparison__baseline_vs_cascade.csv
-  baseline_vs_cascade_file_name: pump__gold__baseline_vs_cascade.csv
-  baseline_vs_cascade_summary_file_name: pump__gold__baseline_vs_cascade_summary.json
+  cascade_defaults_results_file_name_csv: pump__gold__cascade_defaults_results.csv
+  cascade_defaults_results_file_name_pickle: pump__gold__cascade_defaults_results.pkl
+  cascade_defaults_thresholds_file_name: pump__gold__cascade_defaults_thresholds.json
+  cascade_defaults_summary_file_name: pump__gold__cascade_defaults_summary.json
+  cascade_defaults_metadata_file_name: pump__gold__cascade_defaults_metadata.json
+  cascade_defaults_reference_profile_file_name: pump__gold__cascade_defaults_reference_profile.csv
+  cascade_defaults_stage1_model_file_name: pump__gold__cascade_defaults_stage1_isolation_forest.joblib
+  cascade_defaults_stage2_model_file_name: pump__gold__cascade_defaults_stage2_isolation_forest.joblib
+  cascade_tuned_results_file_name_csv: pump__gold__cascade_tuned_results.csv
+  cascade_tuned_results_file_name_pickle: pump__gold__cascade_tuned_results.pkl
+  cascade_tuned_thresholds_file_name: pump__gold__cascade_tuned_thresholds.json
+  cascade_tuned_summary_file_name: pump__gold__cascade_tuned_summary.json
+  cascade_tuned_metadata_file_name: pump__gold__cascade_tuned_metadata.json
+  cascade_tuned_reference_profile_file_name: pump__gold__cascade_tuned_reference_profile.csv
+  cascade_tuned_stage1_model_file_name: pump__gold__cascade_tuned_stage1_isolation_forest.joblib
+  cascade_tuned_stage2_model_file_name: pump__gold__cascade_tuned_stage2_isolation_forest.joblib
+  comparison_file_name: pump__gold__comparison__model_comparison.csv
+  model_comparison_file_name: pump__gold__model_comparison.csv
+  model_comparison_summary_file_name: pump__gold__model_comparison_summary.json
   preprocessing_summary_file_name: pump__gold__preprocessing_summary.json
   preprocessing_metadata_file_name: pump__gold__preprocessing_metadata.json
   reference_profile_file_name: pump__gold__reference_profile.csv
@@ -255,19 +263,29 @@ resolved_paths:
   baseline_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json
   baseline_summary_path: /workspace/artifacts/gold/pump/pump__gold__baseline_summary.json
   baseline_metadata_path: /workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json
-  cascade_results_path_csv: /workspace/artifacts/gold/pump/pump__gold__cascade_results.csv
-  cascade_results_path_pickle: /workspace/artifacts/gold/pump/pump__gold__cascade_results.pkl
-  cascade_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__cascade_thresholds.json
-  cascade_summary_path: /workspace/artifacts/gold/pump/pump__gold__cascade_summary.json
-  cascade_metadata_path: /workspace/artifacts/gold/pump/pump__gold__cascade_metadata.json
-  cascade_reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__cascade_reference_profile.csv
-  stage1_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__stage1_isolation_forest.joblib
-  stage2_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__stage2_isolation_forest.joblib
-  stage1_models_path: /workspace/models/pump/pump__gold__stage1_isolation_forest.joblib
-  stage2_models_path: /workspace/models/pump/pump__gold__stage2_isolation_forest.joblib
-  comparison_path: /workspace/artifacts/gold/pump/pump__gold__comparison__baseline_vs_cascade.csv
-  baseline_vs_cascade_path: /workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade.csv
-  baseline_vs_cascade_summary_path: /workspace/artifacts/gold/pump/pump__gold__baseline_vs_cascade_summary.json
+  cascade_defaults_results_path_csv: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_results.csv
+  cascade_defaults_results_path_pickle: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_results.pkl
+  cascade_defaults_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_thresholds.json
+  cascade_defaults_summary_path: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_summary.json
+  cascade_defaults_metadata_path: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_metadata.json
+  cascade_defaults_reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_reference_profile.csv
+  cascade_defaults_stage1_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_stage1_isolation_forest.joblib
+  cascade_defaults_stage2_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_defaults_stage2_isolation_forest.joblib
+  cascade_defaults_stage1_models_path: /workspace/models/pump/pump__gold__cascade_defaults_stage1_isolation_forest.joblib
+  cascade_defaults_stage2_models_path: /workspace/models/pump/pump__gold__cascade_defaults_stage2_isolation_forest.joblib
+  cascade_tuned_results_path_csv: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.csv
+  cascade_tuned_results_path_pickle: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.pkl
+  cascade_tuned_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_thresholds.json
+  cascade_tuned_summary_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_summary.json
+  cascade_tuned_metadata_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_metadata.json
+  cascade_tuned_reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_reference_profile.csv
+  cascade_tuned_stage1_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_stage1_isolation_forest.joblib
+  cascade_tuned_stage2_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_stage2_isolation_forest.joblib
+  cascade_tuned_stage1_models_path: /workspace/models/pump/pump__gold__cascade_tuned_stage1_isolation_forest.joblib
+  cascade_tuned_stage2_models_path: /workspace/models/pump/pump__gold__cascade_tuned_stage2_isolation_forest.joblib
+  comparison_path: /workspace/artifacts/gold/pump/pump__gold__comparison__model_comparison.csv
+  model_comparison_path: /workspace/artifacts/gold/pump/pump__gold__model_comparison.csv
+  model_comparison_summary_path: /workspace/artifacts/gold/pump/pump__gold__model_comparison_summary.json
   preprocessing_summary_path: /workspace/artifacts/gold/pump/pump__gold__preprocessing_summary.json
   preprocessing_metadata_path: /workspace/artifacts/gold/pump/pump__gold__preprocessing_metadata.json
   reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__reference_profile.csv
@@ -286,4 +304,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/silver_preeda.yaml
   project_root: /workspace
-  config_hash: 92d91e51bff8becf65d19bfa470e185be32ba1384a148aa25cf1efbc32bf859f
+  config_hash: da3cc6b602d2ad4fbf4eb10f0b96004f50b60402e770632d2534b22e6264089c
