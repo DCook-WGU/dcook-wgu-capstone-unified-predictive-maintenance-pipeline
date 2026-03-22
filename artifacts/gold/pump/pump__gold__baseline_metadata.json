@@ -1,0 +1,21 @@
+{
+  "gold_preprocessed_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+  "baseline_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv",
+  "baseline_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.pkl",
+  "baseline_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_isolation_forest.joblib",
+  "baseline_models_path": "/workspace/models/pump/pump__gold__baseline_isolation_forest.joblib",
+  "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
+  "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json",
+  "baseline_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json",
+  "gold_truth_hash": "8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117.json",
+  "gold_process_run_id": "gold_process__20260322T081446Z",
+  "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+  "gold_scaler_path": "/workspace/artifacts/gold/pump/pump__gold__robust_scaler.joblib",
+  "gold_scaler_kind": "robust",
+  "gold_recommended_imputation": "forward_fill_within_group_then_median",
+  "baseline_truth_hash": "c03a2caa627b6c35a025fca24795f3d823e8ccd3c1ef5a471284c9904e7b1fd6",
+  "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__c03a2caa627b6c35a025fca24795f3d823e8ccd3c1ef5a471284c9904e7b1fd6.json",
+  "baseline_process_run_id": "gold_baseline_process__20260322T081615Z"
+}

@@ -200,7 +200,8 @@ def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
         "silver_eda_ledger_file_name": f"ledger__{dataset_name}__silver_eda.json",
         "gold_preprocessing_ledger_file_name": f"ledger__{dataset_name}__gold_preprocessing.json",
         "gold_baseline_ledger_file_name": f"ledger__{dataset_name}__gold_baseline_modeling.json",
-        "gold_cascade_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_modeling.json",
+        "gold_cascade_defaults_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_defaults_modeling.json",
+        "gold_cascade_tuned_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_tuned_modeling.json",
         "gold_comparison_ledger_file_name": f"ledger__{dataset_name}__gold_comparison.json",
         
         # Versions 

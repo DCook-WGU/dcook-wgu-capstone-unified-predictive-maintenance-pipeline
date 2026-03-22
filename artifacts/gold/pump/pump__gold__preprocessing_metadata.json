@@ -1,0 +1,22 @@
+{
+  "recipe_id": "gold_preprocessing__v001_cascade",
+  "gold_version": "gold__001",
+  "dataset_name": "pump",
+  "feature_set_source": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
+  "imputation_recommendation_source": "/workspace/artifacts/silver_eda/pump/imputation__recommendation.json",
+  "gold_prescaled_output_path": "/workspace/data/gold/pump__gold__preprocessed_prescaled.parquet",
+  "gold_scaled_output_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
+  "reference_profile_path": "/workspace/artifacts/gold/pump/pump__gold__reference_profile.csv",
+  "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
+  "stage2_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage2_features.json",
+  "stage3_primary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_primary_rule_sensors.json",
+  "stage3_secondary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json",
+  "preprocessor_scaler_path": "/workspace/artifacts/gold/pump/pump__gold__robust_scaler.joblib",
+  "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
+  "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+  "gold_truth_hash": "8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117",
+  "gold_parent_truth_hash": "150ec91684fac04d2ee1c41c1b9297bde4fcd92fa30a2f7fe5bcb2129fb76a22",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117.json",
+  "process_run_id": "gold_process__20260322T081446Z"
+}

@@ -1,0 +1,25 @@
+{
+  "dataset_name": "pump",
+  "baseline_metrics": {
+    "model": "Baseline IsolationForest",
+    "threshold_percentile": 97.0,
+    "threshold": 0.5524266654090823,
+    "alert_count_all_rows": 19493,
+    "alert_count_test_rows": 1522,
+    "precision": 0.04664914586070959,
+    "recall": 0.6016949152542372,
+    "f1": 0.08658536585365853,
+    "roc_auc": 0.9710702441624048,
+    "pr_auc": 0.4703307867606405
+  },
+  "alert_count_all_rows": 19493,
+  "alert_count_test_rows": 1522,
+  "result_row_count": 220320,
+  "baseline_truth_hash": "c03a2caa627b6c35a025fca24795f3d823e8ccd3c1ef5a471284c9904e7b1fd6",
+  "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__c03a2caa627b6c35a025fca24795f3d823e8ccd3c1ef5a471284c9904e7b1fd6.json",
+  "baseline_process_run_id": "gold_baseline_process__20260322T081615Z",
+  "gold_truth_hash": "8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117.json",
+  "gold_process_run_id": "gold_process__20260322T081446Z",
+  "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40"
+}
