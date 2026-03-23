@@ -1,0 +1,28 @@
+{
+  "cascade_variant": "stage3_improved",
+  "stage1_threshold_percentile": 95.0,
+  "stage1_threshold": 0.5337445171501773,
+  "stage2_selection_mode": "fixed",
+  "stage2_selected_threshold_percentile": 99.0,
+  "stage2_threshold": 0.6078905948669239,
+  "stage2_best_params": {
+    "bootstrap": false,
+    "contamination": "auto",
+    "max_features": 1.0,
+    "max_samples": "auto",
+    "n_estimators": 100
+  },
+  "stage3_variant": "weighted_primary_confirmed",
+  "stage3_strong_primary_hits": 3,
+  "stage3_min_primary_sensor_hits": 2,
+  "stage3_min_secondary_sensor_hits": 1,
+  "stage3_profile_breach_weight": 2.0,
+  "stage3_corroboration_weight": 1.0,
+  "stage3_persistence_weight": 1.0,
+  "stage3_drift_weight": 1.0,
+  "stage3_min_weighted_score": 3.0,
+  "stage3_rolling_window_size": 3,
+  "stage3_minimum_flags_in_window": 2,
+  "stage3_drift_rolling_window_size": 5,
+  "stage3_drift_threshold_multiplier": 1.0
+}

@@ -10,7 +10,7 @@ gold_cascade:
     threshold_percentile: 95.0
 
   stage2:
-    selection_mode: fixed   # fixed | threshold_grid | parameter_search
+    selection_mode: parameter_search   # fixed | threshold_grid | parameter_search
     min_recall: 0.50
     random_state: 42
 

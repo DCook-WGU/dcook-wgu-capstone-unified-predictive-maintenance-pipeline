@@ -185,6 +185,17 @@ def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
         "cascade_tuned_stage1_model_file_name": f"{dataset_name}__gold__cascade_tuned_stage1_isolation_forest.joblib",
         "cascade_tuned_stage2_model_file_name": f"{dataset_name}__gold__cascade_tuned_stage2_isolation_forest.joblib",
 
+        # Cascade - Stage 3 Improved
+        "cascade_stage3_improved_results_file_name_csv": f"{dataset_name}__gold__cascade_stage3_improved_results.csv",
+        "cascade_stage3_improved_results_file_name_pickle": f"{dataset_name}__gold__cascade_stage3_improved_results.pkl",
+        "cascade_stage3_improved_thresholds_file_name": f"{dataset_name}__gold__cascade_stage3_improved_thresholds.json",
+        "cascade_stage3_improved_summary_file_name": f"{dataset_name}__gold__cascade_stage3_improved_summary.json",
+        "cascade_stage3_improved_metadata_file_name": f"{dataset_name}__gold__cascade_stage3_improved_metadata.json",
+        "cascade_stage3_improved_reference_profile_file_name": f"{dataset_name}__gold__cascade_stage3_improved_reference_profile.csv",
+        "cascade_stage3_improved_stage1_model_file_name": f"{dataset_name}__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
+        "cascade_stage3_improved_stage2_model_file_name": f"{dataset_name}__gold__cascade_stage3_improved_stage2_isolation_forest.joblib",
+
+
         # Comparisons 
         "comparison_file_name": f"{dataset_name}__gold__comparison__model_comparison.csv",
         "model_comparison_file_name": f"{dataset_name}__gold__model_comparison.csv",
@@ -202,6 +213,7 @@ def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
         "gold_baseline_ledger_file_name": f"ledger__{dataset_name}__gold_baseline_modeling.json",
         "gold_cascade_defaults_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_defaults_modeling.json",
         "gold_cascade_tuned_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_tuned_modeling.json",
+        "gold_cascade_stage3_imporved_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_stage3_improved_modeling.json",
         "gold_comparison_ledger_file_name": f"ledger__{dataset_name}__gold_comparison.json",
         
         # Versions 
@@ -315,6 +327,19 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "cascade_tuned_stage1_models_path": str(models_root / dataset_name / filenames["cascade_tuned_stage1_model_file_name"]),
         "cascade_tuned_stage2_models_path": str(models_root / dataset_name / filenames["cascade_tuned_stage2_model_file_name"]),
 
+        # Cascade - Stage3 Improved 
+        "cascade_stage3_improved_results_path_csv": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_results_file_name_csv"]),
+        "cascade_stage3_improved_results_path_pickle": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_results_file_name_pickle"]),
+        "cascade_stage3_improved_thresholds_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_thresholds_file_name"]),
+        "cascade_stage3_improved_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_summary_file_name"]),
+        "cascade_stage3_improved_metadata_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_metadata_file_name"]),
+        "cascade_stage3_improved_reference_profile_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_reference_profile_file_name"]),
+        "cascade_stage3_improved_stage1_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_stage1_model_file_name"]),
+        "cascade_stage3_improved_stage2_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_stage2_model_file_name"]),
+        "cascade_stage3_improved_stage1_models_path": str(models_root / dataset_name / filenames["cascade_stage3_improved_stage1_model_file_name"]),
+        "cascade_stage3_improved_stage2_models_path": str(models_root / dataset_name / filenames["cascade_stage3_improved_stage2_model_file_name"]),
+
+
         # Comparision
         "comparison_path": str(artifacts_root / "gold" / dataset_name / filenames["comparison_file_name"]),
         "model_comparison_path": str(artifacts_root / "gold" / dataset_name / filenames["model_comparison_file_name"]),
@@ -331,6 +356,9 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "gold_preprocessing_log_path": str(logs_root / "gold_preprocessing.log"),
         "gold_baseline_log_path": str(logs_root / "gold_modeling_baseline.log"),
         "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade.log"),
+        "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade_defaulfts.log"),
+        "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade_tuned.log"),
+        "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade_stage3_improved.log"),
         "gold_comparison_log_path": str(logs_root / "gold_model_comparison.log"),
     }
     return path_map

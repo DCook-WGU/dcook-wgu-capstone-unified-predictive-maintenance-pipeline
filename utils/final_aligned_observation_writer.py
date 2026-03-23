@@ -455,55 +455,101 @@ def build_final_aligned_observations_stage(
     complete_only: bool = True,
     prefer_rebuilt_sensor_values: bool = True,
     if_exists: str = "replace",
+    observation_window_size: int = 2500,
 ) -> dict:
-    premelt_dataframe = load_premelt_for_final_alignment(
-        engine=engine,
-        schema=schema,
-        table_name=premelt_table,
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_premelt_table = sanitize_sql_identifier(premelt_table)
+    safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
+    safe_target_table = sanitize_sql_identifier(target_table)
+
+    resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
         dataset_id=dataset_id,
         run_id=run_id,
     )
 
-    rebuilt_dataframe = load_rebuilt_for_final_alignment(
-        engine=engine,
-        schema=schema,
-        table_name=rebuilt_table,
-        dataset_id=dataset_id,
-        run_id=run_id,
-        complete_only=complete_only,
+    premelt_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+    )
+    rebuilt_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_rebuilt_table,
     )
 
-    final_dataframe = build_final_aligned_observations_dataframe(
-        premelt_dataframe=premelt_dataframe,
-        rebuilt_dataframe=rebuilt_dataframe,
-        n_sensors=n_sensors,
-        prefer_rebuilt_sensor_values=prefer_rebuilt_sensor_values,
-    )
+    has_written_first_chunk = False
 
-    if final_dataframe.empty:
-        return {
-            "status": "empty",
-            "premelt_rows": int(len(premelt_dataframe)),
-            "rebuilt_rows": int(len(rebuilt_dataframe)),
-            "final_rows": 0,
-            "target_table": sanitize_sql_identifier(target_table),
-        }
-
-    written_table = write_final_aligned_observations(
-        engine=engine,
-        dataframe=final_dataframe,
-        schema=schema,
-        table_name=target_table,
-        if_exists=if_exists,
-    )
-
-    return {
-        "status": "built",
-        "premelt_rows": int(len(premelt_dataframe)),
-        "rebuilt_rows": int(len(rebuilt_dataframe)),
-        "final_rows": int(len(final_dataframe)),
-        "target_table": written_table,
+    stats = {
+        "status": "empty",
+        "premelt_rows": 0,
+        "rebuilt_rows": 0,
+        "final_rows": 0,
+        "target_table": safe_target_table,
     }
+
+    rebuilt_extra_where_sql = " AND rebuild_is_complete = TRUE" if complete_only else ""
+
+    def transform_chunk_func(df_premelt_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> pd.DataFrame:
+        rebuilt_window = read_table_for_observation_window(
+            engine,
+            schema_name=safe_schema,
+            table_name=safe_rebuilt_table,
+            select_columns=rebuilt_columns,
+            dataset_id=resolved_dataset_id,
+            run_id=resolved_run_id,
+            observation_index_min=obs_min,
+            observation_index_max=obs_max,
+            extra_where_sql=rebuilt_extra_where_sql,
+            order_by_sql="observation_index",
+        )
+
+        stats["premelt_rows"] += int(len(df_premelt_window))
+        stats["rebuilt_rows"] += int(len(rebuilt_window))
+
+        return build_final_aligned_observations_dataframe(
+            premelt_dataframe=df_premelt_window,
+            rebuilt_dataframe=rebuilt_window,
+            n_sensors=n_sensors,
+            prefer_rebuilt_sensor_values=prefer_rebuilt_sensor_values,
+        )
+
+    def write_chunk_func(df_out: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> None:
+        nonlocal has_written_first_chunk
+
+        if df_out.empty:
+            return
+
+        written_table = write_final_aligned_observations(
+            engine=engine,
+            dataframe=df_out,
+            schema=schema,
+            table_name=target_table,
+            if_exists=if_exists if not has_written_first_chunk else "append",
+        )
+
+        has_written_first_chunk = True
+        stats["status"] = "built"
+        stats["final_rows"] += int(len(df_out))
+        stats["target_table"] = written_table
+
+    process_observation_index_windows(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_premelt_table,
+        select_columns=premelt_columns,
+        dataset_id=resolved_dataset_id,
+        run_id=resolved_run_id,
+        transform_chunk_func=transform_chunk_func,
+        write_chunk_func=write_chunk_func,
+        window_size=observation_window_size,
+        order_by_sql="observation_index",
+    )
+
+    return stats
 
 
 __all__ = [
