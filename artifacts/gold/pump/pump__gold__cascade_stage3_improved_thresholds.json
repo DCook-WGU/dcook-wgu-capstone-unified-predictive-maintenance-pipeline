@@ -12,7 +12,7 @@
     "max_samples": "auto",
     "n_estimators": 100
   },
-  "stage3_variant": "weighted_primary_confirmed",
+  "stage3_variant": "confirmation_and_priority_layer",
   "stage3_strong_primary_hits": 3,
   "stage3_min_primary_sensor_hits": 2,
   "stage3_min_secondary_sensor_hits": 1,

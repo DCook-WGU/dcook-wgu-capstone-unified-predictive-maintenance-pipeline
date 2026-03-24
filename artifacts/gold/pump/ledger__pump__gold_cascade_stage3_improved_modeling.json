@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-23T05:14:04.482449+00:00",
+    "ts_utc": "2026-03-23T23:43:39.402500+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-23T05:14:11.533407+00:00",
+    "ts_utc": "2026-03-23T23:43:49.430748+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -58,7 +58,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-23T05:14:12.023998+00:00",
+    "ts_utc": "2026-03-23T23:43:50.867332+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -72,7 +72,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-23T05:14:14.962768+00:00",
+    "ts_utc": "2026-03-23T23:43:56.187360+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -90,7 +90,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-23T05:14:16.364630+00:00",
+    "ts_utc": "2026-03-23T23:43:58.644555+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -121,16 +121,16 @@
     }
   },
   {
-    "ts_utc": "2026-03-23T05:14:17.456001+00:00",
+    "ts_utc": "2026-03-23T23:44:04.742137+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
     "step": "run_cascade_stage3_confirmation",
-    "message": "Applied improved Stage 3 weighted confirmation checks to all rows of the scaled dataset.",
+    "message": "Applied Stage 3 confirmation, priority labeling, and optional filter variants to all rows of the scaled dataset.",
     "why": null,
     "consequence": null,
     "data": {
-      "stage3_variant": "weighted_primary_confirmed",
+      "stage3_variant": "confirmation_and_priority_layer",
       "primary_rule_sensor_count": 5,
       "secondary_rule_sensor_count": 7,
       "strong_primary_rows_all": 12044,
@@ -145,12 +145,26 @@
       "drift_rows_test": 1409,
       "weighted_score_mean_all": 1.415568264342774,
       "weighted_score_mean_test": 2.160843495571529,
-      "final_alert_count_all_rows": 13004,
-      "final_alert_count_test_rows": 543
+      "confirmed_rows_all": 68782,
+      "confirmed_rows_test": 48006,
+      "final_tuned_alert_count_all_rows": 13898,
+      "final_tuned_alert_count_test_rows": 648,
+      "stage3_relaxed_alert_count_all_rows": 13898,
+      "stage3_relaxed_alert_count_test_rows": 648,
+      "stage3_medium_alert_count_all_rows": 13880,
+      "stage3_medium_alert_count_test_rows": 646,
+      "stage3_strict_alert_count_all_rows": 3673,
+      "stage3_strict_alert_count_test_rows": 62,
+      "high_priority_rows_all": 3673,
+      "high_priority_rows_test": 62,
+      "medium_priority_rows_all": 9331,
+      "medium_priority_rows_test": 481,
+      "low_priority_rows_all": 894,
+      "low_priority_rows_test": 105
     }
   },
   {
-    "ts_utc": "2026-03-23T05:15:22.250625+00:00",
+    "ts_utc": "2026-03-23T23:45:09.180849+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -169,15 +183,18 @@
       "cascade_tuned_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_thresholds.json",
       "cascade_tuned_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_summary.json",
       "cascade_tuned_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_metadata.json",
-      "cascade_truth_hash": "de92441a0cbfec9a6b17c6ecf726b527ed0e15bd732a6e52db4981e3f27fd53b",
-      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__de92441a0cbfec9a6b17c6ecf726b527ed0e15bd732a6e52db4981e3f27fd53b.json",
+      "cascade_truth_hash": "92e0d51aa2536a9417b3721ee4f15c058c43f347bb3a9086aa9239c61ab6a9ca",
+      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__92e0d51aa2536a9417b3721ee4f15c058c43f347bb3a9086aa9239c61ab6a9ca.json",
       "result_row_count": 220320,
-      "final_alert_count_all_rows": 13004,
-      "final_alert_count_test_rows": 543
+      "final_alert_count_all_rows": 13898,
+      "final_alert_count_test_rows": 648,
+      "stage3_relaxed_alert_count_test_rows": 648,
+      "stage3_medium_alert_count_test_rows": 646,
+      "stage3_strict_alert_count_test_rows": 62
     }
   },
   {
-    "ts_utc": "2026-03-23T05:15:22.292946+00:00",
+    "ts_utc": "2026-03-23T23:45:09.550485+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -190,73 +207,25 @@
         "model": "3-Stage Cascade",
         "stage1_alert_count_all_rows": 22742,
         "stage2_alert_count_all_rows": 13898,
-        "final_alert_count_all_rows": 13004,
+        "final_alert_count_all_rows": 13898,
         "stage1_alert_count_test_rows": 2288,
         "stage2_alert_count_test_rows": 648,
-        "final_alert_count_test_rows": 543,
-        "precision": 0.06445672191528545,
-        "recall": 0.2966101694915254,
-        "f1": 0.1059001512859304
-      },
-      "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.csv",
-      "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.pkl",
-      "stage1_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
-      "stage1_models_path": "/workspace/models/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
-      "stage2_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib",
-      "stage2_models_path": "/workspace/models/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib"
-    }
-  },
-  {
-    "ts_utc": "2026-03-23T05:17:45.766736+00:00",
-    "stage": "gold",
-    "recipe": "gold_modeling__v001_cascade",
-    "kind": "step",
-    "step": "finalize_cascade_modeling",
-    "message": "Gold cascade modeling notebook complete.",
-    "why": null,
-    "consequence": null,
-    "data": {
-      "cascade_metrics": {
-        "model": "3-Stage Cascade",
-        "stage1_alert_count_all_rows": 22742,
-        "stage2_alert_count_all_rows": 13898,
-        "final_alert_count_all_rows": 13004,
-        "stage1_alert_count_test_rows": 2288,
-        "stage2_alert_count_test_rows": 648,
-        "final_alert_count_test_rows": 543,
-        "precision": 0.06445672191528545,
-        "recall": 0.2966101694915254,
-        "f1": 0.1059001512859304
-      },
-      "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.csv",
-      "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.pkl",
-      "stage1_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
-      "stage1_models_path": "/workspace/models/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
-      "stage2_model_artifact_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib",
-      "stage2_models_path": "/workspace/models/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib"
-    }
-  },
-  {
-    "ts_utc": "2026-03-23T05:18:02.038922+00:00",
-    "stage": "gold",
-    "recipe": "gold_modeling__v001_cascade",
-    "kind": "step",
-    "step": "finalize_cascade_modeling",
-    "message": "Gold cascade modeling notebook complete.",
-    "why": null,
-    "consequence": null,
-    "data": {
-      "cascade_metrics": {
-        "model": "3-Stage Cascade",
-        "stage1_alert_count_all_rows": 22742,
-        "stage2_alert_count_all_rows": 13898,
-        "final_alert_count_all_rows": 13004,
-        "stage1_alert_count_test_rows": 2288,
-        "stage2_alert_count_test_rows": 648,
-        "final_alert_count_test_rows": 543,
-        "precision": 0.06445672191528545,
-        "recall": 0.2966101694915254,
-        "f1": 0.1059001512859304
+        "final_alert_count_test_rows": 648,
+        "stage3_relaxed_alert_count_test_rows": 648,
+        "stage3_medium_alert_count_test_rows": 646,
+        "stage3_strict_alert_count_test_rows": 62,
+        "precision": 0.09259259259259259,
+        "recall": 0.5084745762711864,
+        "f1": 0.1566579634464752,
+        "stage3_relaxed_precision": 0.09259259259259259,
+        "stage3_relaxed_recall": 0.5084745762711864,
+        "stage3_relaxed_f1": 0.1566579634464752,
+        "stage3_medium_precision": 0.09287925696594428,
+        "stage3_medium_recall": 0.5084745762711864,
+        "stage3_medium_f1": 0.15706806282722513,
+        "stage3_strict_precision": 0.3870967741935484,
+        "stage3_strict_recall": 0.2033898305084746,
+        "stage3_strict_f1": 0.26666666666666666
       },
       "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.csv",
       "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.pkl",
