@@ -58,11 +58,11 @@ services:
       KAFKA_PROCESS_ROLES: "broker,controller"
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@dcook_capstone_kafka:9093"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
 
       # --- Listeners (broker & controller) ---
       KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://dcook_capstone_kafka:9092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
 
@@ -119,7 +119,7 @@ services:
       # Mount W&B Folder
       - ./wandb:/app/wandb
       # Mount Infrastructure Folder
-      - ./infastructure:/infrastructure
+      - ./infrastructure:/infrastructure
       # Mount Kafka Folder
       - ./infrastructure/kafka:/kafka
     environment:
@@ -132,7 +132,7 @@ services:
       DB_PASSWORD: V9m!pQ4z@H2eS7wK
 
       # Kafka bootstrap (Needs to match the advertised listener hostname)
-      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
       # conda env name from Dockerfile
       ENV_NAME: capstone
@@ -171,6 +171,7 @@ services:
     container_name: producer_water_pump_synthetic
     depends_on:
       - kafka
+      - postgres
     env_file:
       - .env
     volumes:
@@ -185,14 +186,43 @@ services:
       - ./infrastructure:/infrastructure
       # Mount the Kafka Service Infrastructure Folder
       - ./infrastructure/kafka:/kafka
+    working_dir: /workspace
     environment:
+
       ENV_NAME: capstone
-      DATASET_NAME: WATER_PUMP
+      PYTHONPATH: "/workspace:/workspace/app"
+
+      # Database connection (same as app)
+      DB_HOST: dcook_capstone_postgres
+      DB_PORT: 5432
+      DB_NAME: dcook_capstone_postgres_db
+      DB_USER: kafka_producer
+      #DB_PASSWORD: F9tX3qL8vW2pR7mC
+      DB_PASSWORD: n?rA^w]V+,2VJjsig0W!
+      #DB_USER: dcook_admin
+      #DB_PASSWORD: V9m!pQ4z@H2eS7wK
+
+      # Variables
+      #DATASET_NAME: WATER_PUMP
+      DATASET_ID: pump_synthetic_v1
+      #RUN_ID: synthetic_run_001
+      RUN_ID: premelt_run_001
+
+      # Producer Details
+      PRODUCER_SCHEMA: capstone
+      PRODUCER_QUEUE_TABLE: synthetic_sensor_messages_send_queue
+      PRODUCER_CONTROL_TABLE: simulation_state_control
+      PRODUCER_WORKER_ID: producer_worker_001
+
+      # Kafka
+      KAFKA_CLIENT_ID: synthetic-telemetry-producer
       #STREAM_MODE: normal
       #ANOMALY_RATE: "0.0"
-      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_TOPIC: pump.telemetry.synthetic
-    command: ["python", "-m", "infrastructure.kafka.producers.run_water_pump_synthetic_producer.py"]
+
+
+    command: ["python", "-m", "infrastructure.kafka.producers.run_water_pump_synthetic_producer"]
     networks:
       - capstone_net
   
@@ -277,7 +307,11 @@ services:
       - ./infrastructure:/infrastructure
       # Mount the Kafka Service Infrastructure Folder
       - ./infrastructure/kafka:/kafka
+    
+    working_dir: /workspace
+      
     environment:
+      PYTHONPATH: "/workspace:/workspace/app"
       # Kafka connection
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       # Comma-separated list of topics this consumer group will read from

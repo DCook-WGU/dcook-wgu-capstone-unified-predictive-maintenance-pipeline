@@ -1,0 +1,65 @@
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kafka_producer') THEN
+        CREATE ROLE kafka_producer LOGIN PASSWORD 'n?rA^w]V+,2VJjsig0W!';
+    END IF;
+END
+$$;
+
+GRANT CONNECT ON DATABASE dcook_capstone_postgres_db TO kafka_producer;
+GRANT USAGE ON SCHEMA capstone TO kafka_producer;
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON ALL TABLES IN SCHEMA capstone
+TO kafka_producer;
+
+GRANT USAGE, SELECT, UPDATE
+ON ALL SEQUENCES IN SCHEMA capstone
+TO kafka_producer;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE dcook_admin IN SCHEMA capstone
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO kafka_producer;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE dcook_admin IN SCHEMA capstone
+GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO kafka_producer;
+
+
+
+---- ---- ---- ---- 
+
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kafka_ingest') THEN
+        CREATE ROLE kafka_ingest LOGIN PASSWORD 'F9tX3qL8vW2pR7mC';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kafka_producer') THEN
+        CREATE ROLE kafka_producer LOGIN PASSWORD 'n?rA^w]V+,2VJjsig0W!';
+    END IF;
+END
+$$;
+
+
+GRANT CONNECT ON DATABASE dcook_capstone_postgres_db TO kafka_ingest;
+GRANT CONNECT ON DATABASE dcook_capstone_postgres_db TO kafka_producer;
+
+-- Needed by your current consumer utility, because it always issues CREATE SCHEMA IF NOT EXISTS
+GRANT CREATE ON DATABASE dcook_capstone_postgres_db TO kafka_ingest;
+
+CREATE SCHEMA IF NOT EXISTS capstone AUTHORIZATION dcook_admin;
+
+GRANT USAGE, CREATE ON SCHEMA capstone TO kafka_ingest;
+GRANT USAGE ON SCHEMA capstone TO kafka_producer;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA capstone TO kafka_ingest;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA capstone TO kafka_producer;
+
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA capstone TO kafka_ingest;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA capstone TO kafka_producer;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE dcook_admin IN SCHEMA capstone
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO kafka_ingest, kafka_producer;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE dcook_admin IN SCHEMA capstone
+GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO kafka_ingest, kafka_producer;
