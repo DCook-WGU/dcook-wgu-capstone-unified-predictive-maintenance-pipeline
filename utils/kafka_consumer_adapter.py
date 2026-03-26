@@ -547,7 +547,13 @@ def run_kafka_consumer_to_postgres_once(
             consumer_group_id=resolved_group_id,
             auto_offset_reset=auto_offset_reset,
             enable_auto_commit=False,
+            extra_config={
+                "session.timeout.ms": 120000,
+                "max.poll.interval.ms": 600000,
+                "heartbeat.interval.ms": 3000,
+            },
         )
+        consumer.subscribe([str(topic).strip()])
         created_consumer = True
 
     try:
@@ -576,19 +582,6 @@ def run_kafka_consumer_to_postgres_once(
             table_name=table_name,
         )
 
-        '''
-        if commit_on_success:
-            consumer.commit(asynchronous=False)
-
-        return {
-            "status": "landed",
-            "received_count": int(result["received_count"]),
-            "written_count": int(result["written_count"]),
-            "table_name": result["table_name"],
-            "topic": str(topic).strip(),
-        }
-        '''
-
         if commit_on_success:
             try:
                 consumer.commit(asynchronous=False)
@@ -602,6 +595,14 @@ def run_kafka_consumer_to_postgres_once(
                     "error": str(exc),
                 }
 
+        return {
+            "status": "landed",
+            "received_count": int(result["received_count"]),
+            "written_count": int(result["written_count"]),
+            "table_name": result["table_name"],
+            "topic": str(topic).strip(),
+        }
+
     finally:
         if created_consumer:
             try:
@@ -609,6 +610,7 @@ def run_kafka_consumer_to_postgres_once(
             except Exception:
                 pass
 
+            
 
 def run_kafka_consumer_to_postgres_loop(
     engine,
