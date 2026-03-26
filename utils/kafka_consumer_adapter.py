@@ -7,6 +7,9 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Mapping, Optional, Sequence
 
+from confluent_kafka import Consumer, KafkaException
+
+
 import pandas as pd
 
 from utils.postgres_util import (
@@ -257,6 +260,8 @@ def ensure_consumed_stage_table_exists(
         payload_json TEXT,
         is_duplicate BOOLEAN NOT NULL DEFAULT FALSE,
         rebuild_status TEXT,
+        observation_index BIGINT,
+        sensor_index BIGINT,
         PRIMARY KEY (kafka_topic, kafka_partition, kafka_offset)
     );
     """
@@ -434,7 +439,7 @@ def consume_kafka_messages_once(
     if max_messages <= 0:
         raise ValueError("max_messages must be > 0")
 
-    consumer.subscribe([str(topic).strip()])
+    #consumer.subscribe([str(topic).strip()])
 
     messages: list[dict[str, Any]] = []
 
@@ -571,6 +576,7 @@ def run_kafka_consumer_to_postgres_once(
             table_name=table_name,
         )
 
+        '''
         if commit_on_success:
             consumer.commit(asynchronous=False)
 
@@ -581,6 +587,20 @@ def run_kafka_consumer_to_postgres_once(
             "table_name": result["table_name"],
             "topic": str(topic).strip(),
         }
+        '''
+
+        if commit_on_success:
+            try:
+                consumer.commit(asynchronous=False)
+            except KafkaException as exc:
+                return {
+                    "status": "commit_failed_assignment_lost",
+                    "received_count": int(result["received_count"]),
+                    "written_count": int(result["written_count"]),
+                    "table_name": result["table_name"],
+                    "topic": str(topic).strip(),
+                    "error": str(exc),
+                }
 
     finally:
         if created_consumer:
@@ -609,12 +629,28 @@ def run_kafka_consumer_to_postgres_loop(
     results: list[dict[str, Any]] = []
 
     resolved_group_id = consumer_group_id or get_kafka_consumer_group_from_env()
+    '''
     consumer = create_confluent_consumer(
         bootstrap_servers=bootstrap_servers,
         consumer_group_id=resolved_group_id,
         auto_offset_reset=auto_offset_reset,
         enable_auto_commit=False,
     )
+    '''
+
+    consumer = create_confluent_consumer(
+        bootstrap_servers=bootstrap_servers,
+        consumer_group_id=resolved_group_id,
+        auto_offset_reset=auto_offset_reset,
+        enable_auto_commit=False,
+        extra_config={
+            "session.timeout.ms": 120000,
+            "max.poll.interval.ms": 600000,
+            "heartbeat.interval.ms": 3000,
+        },
+    )
+
+    consumer.subscribe([str(topic).strip()])
 
     batch_counter = 0
 

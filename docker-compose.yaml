@@ -118,6 +118,10 @@ services:
       - ./utils:/utils
       # Mount W&B Folder
       - ./wandb:/app/wandb
+      # Mount Infrastructure Folder
+      - ./infastructure:/infrastructure
+      # Mount Kafka Folder
+      - ./infrastructure/kafka:/kafka
     environment:
       # Database Connection for my producers/consumers
       DB_HOST: dcook_capstone_postgres
@@ -161,54 +165,88 @@ services:
   # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
   # Water Pump
-  # Water Pump Producer - Normal Data
-  producer_water_pump_normal:
+  # Water Pump Producer - All Data -- Normal and Abnormal
+  producer_water_pump_synthetic:
     image: dcook_capstone_app:latest
-    container_name: dcook_capstone_producer_wp_normal
+    container_name: producer_water_pump_synthetic
     depends_on:
       - kafka
     env_file:
       - .env
     volumes:
+      - ./:/workspace
+      # main code for the container
       - ./app:/app
+      # mount data directory for streaming / EDA / etc.
       - ./data:/data
+      # Mount the streaming data directory
       - ./data/stream:/stream
+      # Mount the Infrastructure Main Folder
+      - ./infrastructure:/infrastructure
+      # Mount the Kafka Service Infrastructure Folder
+      - ./infrastructure/kafka:/kafka
     environment:
       ENV_NAME: capstone
       DATASET_NAME: WATER_PUMP
-      STREAM_MODE: normal
-      ANOMALY_RATE: "0.0"
+      #STREAM_MODE: normal
+      #ANOMALY_RATE: "0.0"
       KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
-      KAFKA_TOPIC: water_pump_stream
-    command: ["python", "-m", "src.streaming.producers.water_pump_producer"]
+      KAFKA_TOPIC: pump.telemetry.synthetic
+    command: ["python", "-m", "infrastructure.kafka.producers.run_water_pump_synthetic_producer.py"]
     networks:
       - capstone_net
   
   # ---- ---- ---- ---- 
 
-  # Water Pump Producer - Abnormal/Mixed Data
-  producer_water_pump_mixed:
-    image: dcook_capstone_app:latest
-    container_name: dcook_capstone_producer_wp_mixed
-    depends_on:
-      - kafka
-    env_file:
-      - .env
-    volumes:
-      - ./app:/app
-      - ./data:/data
-      - ./data/stream:/stream
-    environment:
-      ENV_NAME: capstone
-      DATASET_NAME: WATER_PUMP
-      STREAM_MODE: mixed
-      # Currently set to 10% of rows will contain anomalies
-      ANOMALY_RATE: "0.1"
-      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
-      KAFKA_TOPIC: water_pump_stream
-    command: ["python", "-m", "src.streaming.producers.water_pump_producer"]
-    networks:
-      - capstone_net
+  # # Water Pump
+  # # Water Pump Producer - Normal Data
+  # producer_water_pump_normal:
+  #   image: dcook_capstone_app:latest
+  #   container_name: dcook_capstone_producer_wp_normal
+  #   depends_on:
+  #     - kafka
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./app:/app
+  #     - ./data:/data
+  #     - ./data/stream:/stream
+  #   environment:
+  #     ENV_NAME: capstone
+  #     DATASET_NAME: WATER_PUMP
+  #     STREAM_MODE: normal
+  #     ANOMALY_RATE: "0.0"
+  #     KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+  #     KAFKA_TOPIC: water_pump_stream
+  #   command: ["python", "-m", "src.streaming.producers.water_pump_producer"]
+  #   networks:
+  #     - capstone_net
+  
+  # ---- ---- ---- ---- 
+
+  # # Water Pump Producer - Abnormal/Mixed Data
+  # producer_water_pump_mixed:
+  #   image: dcook_capstone_app:latest
+  #   container_name: dcook_capstone_producer_wp_mixed
+  #   depends_on:
+  #     - kafka
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./app:/app
+  #     - ./data:/data
+  #     - ./data/stream:/stream
+  #   environment:
+  #     ENV_NAME: capstone
+  #     DATASET_NAME: WATER_PUMP
+  #     STREAM_MODE: mixed
+  #     # Currently set to 10% of rows will contain anomalies
+  #     ANOMALY_RATE: "0.1"
+  #     KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+  #     KAFKA_TOPIC: water_pump_stream
+  #   command: ["python", "-m", "src.streaming.producers.water_pump_producer"]
+  #   networks:
+  #     - capstone_net
 
   # Kafka resources:
     # https://kafka.apache.org/quickstart
@@ -230,15 +268,23 @@ services:
     env_file:
       - .env
     volumes:
+      - ./:/workspace
+      # main code for the container
       - ./app:/app
+      # mount data directory for streaming / EDA / etc.
       - ./data:/data
+      # Mount the Infrastructure Main Folder
+      - ./infrastructure:/infrastructure
+      # Mount the Kafka Service Infrastructure Folder
+      - ./infrastructure/kafka:/kafka
     environment:
       # Kafka connection
-      KAFKA_BOOTSTRAP_SERVERS: dcook_capstone_kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       # Comma-separated list of topics this consumer group will read from
-      CONSUMER_TOPICS: "water_pump_stream,tep_stream,azure_pdm_stream,turbofan_stream,ai4i_stream"
+      #CONSUMER_TOPICS: "water_pump_stream,tep_stream,azure_pdm_stream,turbofan_stream,ai4i_stream"
+      CONSUMER_TOPICS: pump.telemetry.synthetic
       # Consumer group id (so you can scale db_consumer if you want)
-      CONSUMER_GROUP_ID: "capstone_db_consumer"
+      CONSUMER_GROUP_ID: synthetic-telemetry-consumer-group
 
       # Database connection (same as app)
       DB_HOST: dcook_capstone_postgres
@@ -249,7 +295,7 @@ services:
 
       # Conda env name used inside the container
       ENV_NAME: capstone
-    command: ["python", "-m", "src.streaming.consumers.db_consumer"]
+    command: ["python", "-m", "infrastructure.kafka.consumers.run_kafka_db_consumer"]
     networks:
       - capstone_net
     # Uncomment to add GPU support for real-time ML inference, Stretch-goal or later addition
