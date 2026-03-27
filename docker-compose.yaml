@@ -291,7 +291,7 @@ services:
   # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
   db_consumer:
     image: dcook_capstone_app:latest
-    container_name: dcook_capstone_db_consumer
+    #container_name: dcook_capstone_db_consumer
     depends_on:
       - kafka
       - postgres
