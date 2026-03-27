@@ -235,7 +235,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
     models_root = project_root / roots["models_dir"]
     logs_root = project_root / roots["logs_dir"]
     wandb_root = project_root / roots["wandb_dir"]
-
+    pipelines_root = project_root / roots["pipelines_dir"]
 
     dataset_name = cfg["dataset"]["name"]
     raw_dataset_subdir = cfg["dataset"]["raw_dataset_subdir"]
@@ -249,6 +249,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "models_root": str(models_root),
         "logs_root": str(logs_root),
         "wandb_root": str(wandb_root),
+        "pipelines_root": str(pipelines_root), 
 
 
         # Data Folders
@@ -260,6 +261,11 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "data_silver_train_dir": str(data_root / roots["silver_train_subdir"]),
         "data_silver_test_dir": str(data_root / roots["silver_test_subdir"]),
         "data_gold_dir": str(data_root / roots["gold_subdir"]),
+
+        # Pipeline Folders:
+        "piplines_bronze_dir": str(pipelines_root / roots["bronze_dir"]),
+        "piplines_silver_dir": str(pipelines_root / roots["silver_dir"]), 
+        "piplines_gold_dir": str(pipelines_root / roots["gold_dir"]), 
 
         # Truths
         "truths_dir": str(artifacts_root / "truths"),

@@ -34,6 +34,7 @@ class ProjectPaths:
     logs: Path
     configs: Path
     truths: Path
+    pipelines: Path
 
 
 @lru_cache(maxsize=1)
@@ -119,5 +120,6 @@ def get_paths() -> ProjectPaths:
         logs=project_root / "logs",
         configs=project_root / "configs",
         truths=project_root / "artifacts/truths",
+        pipelines=project_root / "pipelines",
     )
    

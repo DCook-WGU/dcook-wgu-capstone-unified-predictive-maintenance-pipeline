@@ -16,6 +16,9 @@ from typing import Any, Iterable, Optional, Sequence
 
 import pandas as pd
 from sqlalchemy.engine import Engine
+from sqlalchemy import text
+
+import json
 
 from utils.layer_postgres_writer import write_layer_dataframe
 from utils.postgres_util import (
@@ -24,6 +27,8 @@ from utils.postgres_util import (
     sanitize_sql_identifier,
     table_exists,
 )
+
+from pandas.tseries.frequencies import to_offset
 
 
 DEFAULT_STREAM_STATE_TO_MACHINE_STATUS = {
@@ -92,6 +97,10 @@ def get_sensor_columns(columns: Iterable[str]) -> list[str]:
     sensor_columns = sorted(sensor_columns, key=lambda item: item[0])
     return [column for _, column in sensor_columns]
 
+def _int_or_default(value: Any, default: int = 0) -> int:
+    if value is None or pd.isna(value):
+        return int(default)
+    return int(value)
 
 def read_synthetic_stream_dataframe(
     engine: Engine,
@@ -127,6 +136,505 @@ def read_synthetic_stream_dataframe(
 
     return read_sql_dataframe(engine, sql)
 
+def get_distinct_batch_ids(
+    engine: Engine,
+    *,
+    schema: str,
+    table_name: str,
+    batch_column: str = "batch_id",
+) -> list[int]:
+    """
+    Return distinct batch ids from a table.
+    """
+    if not table_exists(engine, schema=schema, table_name=table_name):
+        return []
+
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+    safe_batch = sanitize_sql_identifier(batch_column)
+
+    sql = f'''
+    SELECT DISTINCT "{safe_batch}" AS batch_id
+    FROM "{safe_schema}"."{safe_table}"
+    WHERE "{safe_batch}" IS NOT NULL
+    ORDER BY 1
+    '''
+
+    dataframe = read_sql_dataframe(engine, sql)
+
+    if dataframe.empty:
+        return []
+
+    return [int(value) for value in dataframe["batch_id"].tolist()]
+
+def get_unloaded_source_batch_ids(
+    engine: Engine,
+    *,
+    source_schema: str,
+    source_table: str,
+    target_schema: str,
+    target_table: str,
+    requested_batch_ids: Optional[Iterable[int]] = None,
+    batch_column: str = "batch_id",
+) -> dict[str, Any]:
+    """
+    Compare source and target tables and return which source batches have not
+    yet been loaded into the target append table.
+    """
+    source_batch_ids = set(
+        get_distinct_batch_ids(
+            engine,
+            schema=source_schema,
+            table_name=source_table,
+            batch_column=batch_column,
+        )
+    )
+
+    if requested_batch_ids is None:
+        candidate_batch_ids = sorted(source_batch_ids)
+    else:
+        requested_batch_ids = {int(value) for value in requested_batch_ids}
+        candidate_batch_ids = sorted(source_batch_ids.intersection(requested_batch_ids))
+
+    target_batch_ids = set(
+        get_distinct_batch_ids(
+            engine,
+            schema=target_schema,
+            table_name=target_table,
+            batch_column=batch_column,
+        )
+    )
+
+    already_loaded_batch_ids = sorted(set(candidate_batch_ids).intersection(target_batch_ids))
+    new_batch_ids = sorted(set(candidate_batch_ids) - target_batch_ids)
+
+    return {
+        "candidate_batch_ids": candidate_batch_ids,
+        "already_loaded_batch_ids": already_loaded_batch_ids,
+        "new_batch_ids": new_batch_ids,
+        "candidate_batch_count": len(candidate_batch_ids),
+        "already_loaded_batch_count": len(already_loaded_batch_ids),
+        "new_batch_count": len(new_batch_ids),
+    }
+
+def get_unloaded_source_batch_ids(
+    engine: Engine,
+    *,
+    source_schema: str,
+    source_table: str,
+    target_schema: str,
+    target_table: str,
+    requested_batch_ids: Optional[Iterable[int]] = None,
+    batch_column: str = "batch_id",
+) -> dict[str, Any]:
+    """
+    Compare source and target tables and return which source batches have not
+    yet been loaded into the target append table.
+    """
+    source_batch_ids = set(
+        get_distinct_batch_ids(
+            engine,
+            schema=source_schema,
+            table_name=source_table,
+            batch_column=batch_column,
+        )
+    )
+
+    if requested_batch_ids is None:
+        candidate_batch_ids = sorted(source_batch_ids)
+    else:
+        requested_batch_ids = {int(value) for value in requested_batch_ids}
+        candidate_batch_ids = sorted(source_batch_ids.intersection(requested_batch_ids))
+
+    target_batch_ids = set(
+        get_distinct_batch_ids(
+            engine,
+            schema=target_schema,
+            table_name=target_table,
+            batch_column=batch_column,
+        )
+    )
+
+    already_loaded_batch_ids = sorted(set(candidate_batch_ids).intersection(target_batch_ids))
+    new_batch_ids = sorted(set(candidate_batch_ids) - target_batch_ids)
+
+    return {
+        "candidate_batch_ids": candidate_batch_ids,
+        "already_loaded_batch_ids": already_loaded_batch_ids,
+        "new_batch_ids": new_batch_ids,
+        "candidate_batch_count": len(candidate_batch_ids),
+        "already_loaded_batch_count": len(already_loaded_batch_ids),
+        "new_batch_count": len(new_batch_ids),
+    }
+
+def ensure_handoff_control_table(
+    engine: Engine,
+    *,
+    schema: str = "capstone",
+    table_name: str = "synthetic_bronze_handoff_control",
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+
+    sql = f'''
+    CREATE TABLE IF NOT EXISTS "{safe_schema}"."{safe_table}" (
+        dataset_name TEXT NOT NULL,
+        target_schema TEXT NOT NULL,
+        target_table TEXT NOT NULL,
+        last_loaded_batch_id BIGINT,
+        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
+        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
+        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
+        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
+        next_timestamp TIMESTAMP NOT NULL,
+        last_append_row_count BIGINT NOT NULL DEFAULT 0,
+        last_loaded_batch_ids_json JSONB,
+        last_truth_hash TEXT,
+        last_process_run_id TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        notes TEXT,
+        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (dataset_name, target_schema, target_table)
+    )
+    '''
+
+    with engine.begin() as conn:
+        conn.exec_driver_sql(sql)
+
+def ensure_handoff_control_table(
+    engine: Engine,
+    *,
+    schema: str = "capstone",
+    table_name: str = "synthetic_bronze_handoff_control",
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+
+    sql = f'''
+    CREATE TABLE IF NOT EXISTS "{safe_schema}"."{safe_table}" (
+        dataset_name TEXT NOT NULL,
+        target_schema TEXT NOT NULL,
+        target_table TEXT NOT NULL,
+        last_loaded_batch_id BIGINT,
+        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
+        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
+        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
+        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
+        next_timestamp TIMESTAMP NOT NULL,
+        last_append_row_count BIGINT NOT NULL DEFAULT 0,
+        last_loaded_batch_ids_json JSONB,
+        last_truth_hash TEXT,
+        last_process_run_id TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        notes TEXT,
+        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (dataset_name, target_schema, target_table)
+    )
+    '''
+
+    with engine.begin() as conn:
+        conn.exec_driver_sql(sql)
+
+def get_effective_handoff_offsets(
+    engine: Engine,
+    *,
+    dataset_name: str,
+    target_schema: str,
+    target_table: str,
+    initial_start_timestamp: str = "2018-04-01 00:00:00",
+    frequency: str = "1min",
+    control_schema: str = "capstone",
+    control_table: str = "synthetic_bronze_handoff_control",
+) -> dict[str, Any]:
+    control_record = get_handoff_control_record(
+        engine,
+        dataset_name=dataset_name,
+        target_schema=target_schema,
+        target_table=target_table,
+        control_schema=control_schema,
+        control_table=control_table,
+    )
+
+    if control_record is not None:
+        return {
+            "offset_source": "control_table",
+            "target_exists": True,
+            "existing_row_count": None,
+            "next_unified_row_id": int(control_record["next_unified_row_id"]),
+            "next_unified_episode_id": int(control_record["next_unified_episode_id"]),
+            "next_observation_time_index": int(control_record["next_observation_time_index"]),
+            "next_timestamp": pd.to_datetime(control_record["next_timestamp"]),
+            "last_loaded_batch_id": control_record.get("last_loaded_batch_id"),
+            "loaded_batch_count": int(control_record.get("loaded_batch_count", 0)),
+        }
+
+    append_offsets = get_handoff_append_offsets(
+        engine,
+        schema=target_schema,
+        table_name=target_table,
+        initial_start_timestamp=initial_start_timestamp,
+        frequency=frequency,
+    )
+
+    append_offsets["offset_source"] = "append_table_scan"
+    return append_offsets
+
+
+
+def upsert_handoff_control_record(
+    engine: Engine,
+    *,
+    dataset_name: str,
+    target_schema: str,
+    target_table: str,
+    last_loaded_batch_id: Optional[int],
+    loaded_batch_count: int,
+    next_unified_row_id: int,
+    next_unified_episode_id: int,
+    next_observation_time_index: int,
+    next_timestamp: Any,
+    last_append_row_count: int,
+    last_loaded_batch_ids: Optional[list[int]] = None,
+    last_truth_hash: Optional[str] = None,
+    last_process_run_id: Optional[str] = None,
+    notes: Optional[str] = None,
+    control_schema: str = "capstone",
+    control_table: str = "synthetic_bronze_handoff_control",
+) -> None:
+    ensure_handoff_control_table(
+        engine,
+        schema=control_schema,
+        table_name=control_table,
+    )
+
+    safe_schema = sanitize_sql_identifier(control_schema)
+    safe_table = sanitize_sql_identifier(control_table)
+
+    sql = f'''
+    INSERT INTO "{safe_schema}"."{safe_table}" (
+        dataset_name,
+        target_schema,
+        target_table,
+        last_loaded_batch_id,
+        loaded_batch_count,
+        next_unified_row_id,
+        next_unified_episode_id,
+        next_observation_time_index,
+        next_timestamp,
+        last_append_row_count,
+        last_loaded_batch_ids_json,
+        last_truth_hash,
+        last_process_run_id,
+        notes,
+        is_active,
+        updated_at_utc
+    )
+    VALUES (
+        :dataset_name,
+        :target_schema,
+        :target_table,
+        :last_loaded_batch_id,
+        :loaded_batch_count,
+        :next_unified_row_id,
+        :next_unified_episode_id,
+        :next_observation_time_index,
+        :next_timestamp,
+        :last_append_row_count,
+        CAST(:last_loaded_batch_ids_json AS JSONB),
+        :last_truth_hash,
+        :last_process_run_id,
+        :notes,
+        TRUE,
+        NOW()
+    )
+    ON CONFLICT (dataset_name, target_schema, target_table)
+    DO UPDATE SET
+        last_loaded_batch_id = EXCLUDED.last_loaded_batch_id,
+        loaded_batch_count = EXCLUDED.loaded_batch_count,
+        next_unified_row_id = EXCLUDED.next_unified_row_id,
+        next_unified_episode_id = EXCLUDED.next_unified_episode_id,
+        next_observation_time_index = EXCLUDED.next_observation_time_index,
+        next_timestamp = EXCLUDED.next_timestamp,
+        last_append_row_count = EXCLUDED.last_append_row_count,
+        last_loaded_batch_ids_json = EXCLUDED.last_loaded_batch_ids_json,
+        last_truth_hash = EXCLUDED.last_truth_hash,
+        last_process_run_id = EXCLUDED.last_process_run_id,
+        notes = EXCLUDED.notes,
+        is_active = TRUE,
+        updated_at_utc = NOW()
+    '''
+
+    params = {
+        "dataset_name": dataset_name,
+        "target_schema": target_schema,
+        "target_table": target_table,
+        "last_loaded_batch_id": last_loaded_batch_id,
+        "loaded_batch_count": int(loaded_batch_count),
+        "next_unified_row_id": int(next_unified_row_id),
+        "next_unified_episode_id": int(next_unified_episode_id),
+        "next_observation_time_index": int(next_observation_time_index),
+        "next_timestamp": pd.to_datetime(next_timestamp).to_pydatetime(),
+        "last_append_row_count": int(last_append_row_count),
+        "last_loaded_batch_ids_json": json.dumps(last_loaded_batch_ids or []),
+        "last_truth_hash": last_truth_hash,
+        "last_process_run_id": last_process_run_id,
+        "notes": notes,
+    }
+
+    with engine.begin() as conn:
+        conn.execute(text(sql), params)
+
+
+
+
+def ensure_handoff_control_table(
+    engine,
+    *,
+    schema: str = "capstone",
+    table_name: str = "synthetic_bronze_handoff_control",
+) -> None:
+    create_sql = f'''
+    CREATE TABLE IF NOT EXISTS "{schema}"."{table_name}" (
+        dataset_name TEXT NOT NULL,
+        target_schema TEXT NOT NULL,
+        target_table TEXT NOT NULL,
+        last_loaded_batch_id BIGINT,
+        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
+        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
+        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
+        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
+        next_timestamp TIMESTAMP NOT NULL,
+        last_append_row_count BIGINT NOT NULL DEFAULT 0,
+        last_loaded_batch_ids_json JSONB,
+        last_truth_hash TEXT,
+        last_process_run_id TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        notes TEXT,
+        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (dataset_name, target_schema, target_table)
+    )
+    '''
+
+    with engine.begin() as conn:
+        conn.execute(text(create_sql))
+
+def get_handoff_control_record(
+    engine: Engine,
+    *,
+    dataset_name: str,
+    target_schema: str,
+    target_table: str,
+    control_schema: str = "capstone",
+    control_table: str = "synthetic_bronze_handoff_control",
+) -> Optional[dict[str, Any]]:
+    ensure_handoff_control_table(
+        engine,
+        schema=control_schema,
+        table_name=control_table,
+    )
+
+    safe_schema = sanitize_sql_identifier(control_schema)
+    safe_table = sanitize_sql_identifier(control_table)
+
+    sql = f'''
+    SELECT *
+    FROM "{safe_schema}"."{safe_table}"
+    WHERE dataset_name = :dataset_name
+      AND target_schema = :target_schema
+      AND target_table = :target_table
+      AND is_active = TRUE
+    '''
+
+    dataframe = read_sql_dataframe(
+        engine,
+        sql,
+        params={
+            "dataset_name": dataset_name,
+            "target_schema": target_schema,
+            "target_table": target_table,
+        },
+    )
+
+    if dataframe.empty:
+        return None
+
+    record = dataframe.iloc[0].to_dict()
+
+    if record.get("next_timestamp") is not None:
+        record["next_timestamp"] = pd.to_datetime(record["next_timestamp"])
+
+    return record
+
+
+
+def get_handoff_append_offsets(
+    engine: Engine,
+    *,
+    schema: str,
+    table_name: str,
+    initial_start_timestamp: str = "2018-04-01 00:00:00",
+    frequency: str = "1min",
+    unified_row_id_column: str = "unified_row_id",
+    unified_episode_id_column: str = "meta__episode_id_unified",
+    time_index_column: str = "observation_time_index",
+    timestamp_column: str = "timestamp",
+) -> dict[str, Any]:
+    """
+    Read the current append target table and return the next starting offsets
+    for ids and time fields.
+    """
+    if not table_exists(engine, schema=schema, table_name=table_name):
+        return {
+            "target_exists": False,
+            "existing_row_count": 0,
+            "next_unified_row_id": 1,
+            "next_unified_episode_id": 0,
+            "next_observation_time_index": 0,
+            "next_timestamp": pd.Timestamp(initial_start_timestamp),
+        }
+
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+    safe_row_id = sanitize_sql_identifier(unified_row_id_column)
+    safe_episode_id = sanitize_sql_identifier(unified_episode_id_column)
+    safe_time_index = sanitize_sql_identifier(time_index_column)
+    safe_timestamp = sanitize_sql_identifier(timestamp_column)
+
+    sql = f'''
+    SELECT
+        COUNT(*) AS existing_row_count,
+        MAX("{safe_row_id}") AS max_unified_row_id,
+        MAX("{safe_episode_id}") AS max_unified_episode_id,
+        MAX("{safe_time_index}") AS max_observation_time_index,
+        MAX("{safe_timestamp}") AS max_timestamp
+    FROM "{safe_schema}"."{safe_table}"
+    '''
+
+    dataframe = read_sql_dataframe(engine, sql)
+    record = dataframe.iloc[0].to_dict()
+
+    max_timestamp = record.get("max_timestamp")
+    if max_timestamp is None or pd.isna(max_timestamp):
+        next_timestamp = pd.Timestamp(initial_start_timestamp)
+    else:
+        next_timestamp = pd.to_datetime(max_timestamp) + to_offset(frequency)
+
+    max_unified_row_id = _int_or_default(record.get("max_unified_row_id"), default=0)
+    max_unified_episode_id = _int_or_default(record.get("max_unified_episode_id"), default=-1)
+    max_observation_time_index = _int_or_default(record.get("max_observation_time_index"), default=-1)
+    existing_row_count = _int_or_default(record.get("existing_row_count"), default=0)
+
+    return {
+        "target_exists": True,
+        "existing_row_count": existing_row_count,
+        "next_unified_row_id": max_unified_row_id + 1,
+        "next_unified_episode_id": max_unified_episode_id + 1,
+        "next_observation_time_index": max_observation_time_index + 1,
+        "next_timestamp": next_timestamp,
+    }
 
 def validate_synthetic_stream_dataframe(
     dataframe: pd.DataFrame,
@@ -484,6 +992,9 @@ def prepare_synthetic_postgres_for_bronze_handoff(
     *,
     start_timestamp: str = "2018-04-01 00:00:00",
     frequency: str = "1min",
+    start_unified_row_id: int = 1,
+    start_unified_episode_id: int = 0,
+    start_observation_time_index: int = 0,
     target_total_rows: Optional[int] = None,
     trim_mode: str = "head",
     keep_lineage_columns: bool = False,
@@ -492,13 +1003,23 @@ def prepare_synthetic_postgres_for_bronze_handoff(
 ) -> pd.DataFrame:
     """
     Full in-memory direct wide-table -> bronze handoff preparation.
+
+    Supports both:
+    - fresh rebuilds
+    - append-aware continuation when offsets are provided
     """
     validate_synthetic_stream_dataframe(raw_dataframe)
 
     dataframe = raw_dataframe.copy()
     dataframe = sort_synthetic_stream_dataframe(dataframe)
-    dataframe = add_unified_row_id(dataframe)
-    dataframe = add_unified_episode_id(dataframe)
+    dataframe = add_unified_row_id(
+        dataframe,
+        start_at=start_unified_row_id,
+    )
+    dataframe = add_unified_episode_id(
+        dataframe,
+        start_at=start_unified_episode_id,
+    )
     dataframe = derive_machine_status(dataframe)
 
     if include_anomaly_flag:
@@ -514,6 +1035,7 @@ def prepare_synthetic_postgres_for_bronze_handoff(
         dataframe,
         start_timestamp=start_timestamp,
         frequency=frequency,
+        start_index_at=start_observation_time_index,
     )
 
     dataframe = select_bronze_handoff_columns(
@@ -561,6 +1083,89 @@ def build_bronze_handoff_from_postgres(
         keep_other_columns=keep_other_columns,
     )
 
+def build_append_aware_bronze_handoff_from_postgres(
+    engine: Engine,
+    *,
+    source_schema: str,
+    source_table: str,
+    target_schema: str,
+    target_table: str,
+    batch_ids: Optional[Iterable[int]] = None,
+    initial_start_timestamp: str = "2018-04-01 00:00:00",
+    frequency: str = "1min",
+    target_total_rows: Optional[int] = None,
+    trim_mode: str = "head",
+    keep_lineage_columns: bool = True,
+    include_anomaly_flag: bool = False,
+    keep_other_columns: bool = False,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """
+    Append-aware builder.
+
+    Behavior:
+    1. Detect source batches not yet loaded into the target append table
+    2. Read target offsets from the append table
+    3. Build only the new rows with continued ids and time fields
+    """
+    batch_plan = get_unloaded_source_batch_ids(
+        engine,
+        source_schema=source_schema,
+        source_table=source_table,
+        target_schema=target_schema,
+        target_table=target_table,
+        requested_batch_ids=batch_ids,
+    )
+
+    offsets = get_effective_handoff_offsets(
+        engine,
+        dataset_name=source_table.replace("synthetic_", "").replace("_stream", ""),
+        target_schema=target_schema,
+        target_table=target_table,
+        initial_start_timestamp=initial_start_timestamp,
+        frequency=frequency,
+    )
+
+    new_batch_ids = batch_plan["new_batch_ids"]
+
+    if not new_batch_ids:
+        empty_dataframe = pd.DataFrame()
+        append_plan = {
+            "load_mode": "append",
+            **batch_plan,
+            **offsets,
+            "appended_row_count": 0,
+        }
+        return empty_dataframe, append_plan
+
+    raw_dataframe = read_synthetic_stream_dataframe(
+        engine,
+        schema=source_schema,
+        table_name=source_table,
+        batch_ids=new_batch_ids,
+    )
+
+    append_dataframe = prepare_synthetic_postgres_for_bronze_handoff(
+        raw_dataframe,
+        start_timestamp=str(offsets["next_timestamp"]),
+        frequency=frequency,
+        start_unified_row_id=offsets["next_unified_row_id"],
+        start_unified_episode_id=offsets["next_unified_episode_id"],
+        start_observation_time_index=offsets["next_observation_time_index"],
+        target_total_rows=target_total_rows,
+        trim_mode=trim_mode,
+        keep_lineage_columns=keep_lineage_columns,
+        include_anomaly_flag=include_anomaly_flag,
+        keep_other_columns=keep_other_columns,
+    )
+
+    append_plan = {
+        "load_mode": "append",
+        **batch_plan,
+        **offsets,
+        "appended_row_count": int(len(append_dataframe)),
+    }
+
+    return append_dataframe, append_plan
 
 def summarize_bronze_handoff_dataframe(dataframe: pd.DataFrame) -> dict[str, Any]:
     """
@@ -628,6 +1233,14 @@ __all__ = [
     "get_table_columns",
     "get_sensor_columns",
     "read_synthetic_stream_dataframe",
+    "get_distinct_batch_ids",
+    "get_unloaded_source_batch_ids",
+    "get_handoff_control_record"
+    "get_handoff_control_record",
+    "get_effective_handoff_offsets",
+    "upsert_handoff_control_record",
+    "ensure_handoff_control_table",
+    "get_handoff_append_offsets",
     "validate_synthetic_stream_dataframe",
     "choose_sort_columns",
     "sort_synthetic_stream_dataframe",
@@ -640,6 +1253,7 @@ __all__ = [
     "select_bronze_handoff_columns",
     "prepare_synthetic_postgres_for_bronze_handoff",
     "build_bronze_handoff_from_postgres",
+    "build_append_aware_bronze_handoff_from_postgres",
     "summarize_bronze_handoff_dataframe",
     "write_bronze_handoff_to_postgres",
     "table_exists",
