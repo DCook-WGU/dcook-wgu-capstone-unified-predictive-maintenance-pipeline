@@ -1,11 +1,8 @@
 {
-  "rows": 220320,
-  "cols": 73,
-  "required_present": {
-    "anomaly_flag": true,
-    "event_step": true,
-    "time_index": true,
-    "meta__asset_id": true,
-    "meta__run_id": true
-  }
+  "row_count": 220320,
+  "column_count": 73,
+  "meta_column_count": 13,
+  "numeric_column_count": 58,
+  "categorical_column_count": 12,
+  "columns_are_unique": true
 }

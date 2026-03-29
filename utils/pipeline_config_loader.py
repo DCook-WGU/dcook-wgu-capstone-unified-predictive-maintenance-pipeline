@@ -262,10 +262,10 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "data_silver_test_dir": str(data_root / roots["silver_test_subdir"]),
         "data_gold_dir": str(data_root / roots["gold_subdir"]),
 
-        # Pipeline Folders:
-        "piplines_bronze_dir": str(pipelines_root / roots["bronze_dir"]),
-        "piplines_silver_dir": str(pipelines_root / roots["silver_dir"]), 
-        "piplines_gold_dir": str(pipelines_root / roots["gold_dir"]), 
+        # Pipeline Folders
+        "pipelines_bronze_dir": str(pipelines_root / roots["bronze_pipeline_subdir"]),
+        "pipelines_silver_dir": str(pipelines_root / roots["silver_pipeline_subdir"]),
+        "pipelines_gold_dir": str(pipelines_root / roots["gold_pipeline_subdir"]),
 
         # Truths
         "truths_dir": str(artifacts_root / "truths"),

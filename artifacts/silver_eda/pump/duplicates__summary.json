@@ -1,4 +1,5 @@
 {
   "duplicate_row_count": 0,
-  "duplicate_meta__event_id_count": 0
+  "duplicate_meta__record_id_count": 0,
+  "duplicate_event_id_count": null
 }

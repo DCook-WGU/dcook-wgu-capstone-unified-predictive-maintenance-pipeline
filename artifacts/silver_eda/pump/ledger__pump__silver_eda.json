@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-22T07:47:31.221004+00:00",
+    "ts_utc": "2026-03-29T22:33:33.083129+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-22T07:47:32.644741+00:00",
+    "ts_utc": "2026-03-29T22:33:34.753523+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -29,7 +29,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-22T07:47:35.245135+00:00",
+    "ts_utc": "2026-03-29T22:33:37.449085+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -44,36 +44,36 @@
     }
   },
   {
-    "ts_utc": "2026-03-22T07:47:42.334308+00:00",
+    "ts_utc": "2026-03-29T22:33:59.396329+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
     "step": "episode_status_state_stats",
-    "message": "Computed global and per-episode status-state statistics from Silver episode IDs.",
+    "message": "Computed global and per-episode normalized state statistics from Silver episode IDs.",
     "why": null,
     "consequence": null,
     "data": {
-      "status_column": "machine_status",
+      "status_column": "machine_status__synthetic",
       "episode_column": "meta__episode_id",
       "episode_count": 8,
       "mean_total_rows_per_episode": 27540.0,
       "mean_rows_normal": 25729.5,
-      "mean_rows_failure": 0.88,
+      "mean_rows_abnormal": 0.88,
       "mean_rows_recovery": 1809.62,
       "mean_percent_normal": 0.9195034173479136,
-      "mean_percent_failure": 7.248551299873191e-05,
+      "mean_percent_abnormal": 7.248551299873191e-05,
       "mean_percent_recovery": 0.08042409713908762,
       "global_count_normal": 205836,
-      "global_count_failure": 7,
+      "global_count_abnormal": 7,
       "global_count_recovery": 14477,
       "global_percent_normal": 93.43,
-      "global_percent_failure": 0.0,
+      "global_percent_abnormal": 0.0,
       "global_percent_recovery": 6.57,
       "episode_status_counts_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_counts.json"
     }
   },
   {
-    "ts_utc": "2026-03-22T07:50:41.653545+00:00",
+    "ts_utc": "2026-03-29T22:36:07.635405+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -94,7 +94,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-22T07:50:42.728129+00:00",
+    "ts_utc": "2026-03-29T22:36:09.346553+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "decision",
@@ -111,16 +111,18 @@
     }
   },
   {
-    "ts_utc": "2026-03-22T07:50:47.034113+00:00",
+    "ts_utc": "2026-03-29T22:36:10.121131+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
     "step": "finalize",
-    "message": "Saved Silver EDA ledger and finalized W&B run.",
+    "message": "Saved Silver EDA ledger and truth record.",
     "why": null,
     "consequence": null,
     "data": {
-      "ledger_path": "/workspace/artifacts/silver_eda/pump/ledger__pump__silver_eda.json"
+      "ledger_path": "/workspace/artifacts/silver_eda/pump/ledger__pump__silver_eda.json",
+      "silver_eda_truth_hash": "74037c3e48da9e244c0a7df4202f337749b67c924b5c5dc79c67ff59737eb8d9",
+      "silver_eda_truth_path": "/workspace/artifacts/truths/silver_eda/pump__silver_eda__truth__74037c3e48da9e244c0a7df4202f337749b67c924b5c5dc79c67ff59737eb8d9.json"
     }
   }
 ]

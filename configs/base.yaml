@@ -24,6 +24,7 @@ paths:
   data_dir: data
   artifacts_dir: artifacts
   models_dir: models
+  pipelines_dir: pipelines
   logs_dir: logs
   wandb_dir: wandb
   raw_subdir: raw
@@ -34,6 +35,10 @@ paths:
   silver_train_subdir: silver/train
   silver_test_subdir: silver/test
   gold_subdir: gold
+
+  bronze_pipeline_subdir: bronze
+  silver_pipeline_subdir: silver
+  gold_pipeline_subdir: gold
 
 wandb:
   enabled: true
