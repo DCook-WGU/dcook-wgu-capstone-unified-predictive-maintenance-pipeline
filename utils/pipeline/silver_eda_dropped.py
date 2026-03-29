@@ -12,7 +12,7 @@ from typing import Optional, Sequence
 import pandas as pd
 
 from utils.file_io import load_data
-from utils.silver_eda_profiles import (
+from utils.pipeline.silver_eda_profiles import (
     build_sensor_profile_comparison,
     build_feature_behavior_effect_size_table,
 )

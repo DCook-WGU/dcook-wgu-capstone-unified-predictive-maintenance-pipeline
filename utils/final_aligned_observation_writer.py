@@ -290,7 +290,7 @@ def build_final_aligned_observations_stage(
         stats["premelt_rows"] += int(len(df_premelt_window))
         stats["rebuilt_rows"] += int(len(rebuilt_window))
 
-        return build_final_aligned_observations_dataframe(
+        return build_final_aligned_observations_stage(
             premelt_dataframe=df_premelt_window,
             rebuilt_dataframe=rebuilt_window,
             n_sensors=n_sensors,
@@ -510,7 +510,7 @@ def build_final_aligned_observations_stage(
         stats["premelt_rows"] += int(len(df_premelt_window))
         stats["rebuilt_rows"] += int(len(rebuilt_window))
 
-        return build_final_aligned_observations_dataframe(
+        return build_final_aligned_observations_stage(
             premelt_dataframe=df_premelt_window,
             rebuilt_dataframe=rebuilt_window,
             n_sensors=n_sensors,

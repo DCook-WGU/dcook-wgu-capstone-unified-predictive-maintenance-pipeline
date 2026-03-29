@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
-from utils.gold_modeling_common import (
+from utils.pipeline.gold_modeling_common import (
     compute_anomaly_scores_isolation_forest,
     choose_threshold_by_percentile,
     build_prediction_flags_from_scores,

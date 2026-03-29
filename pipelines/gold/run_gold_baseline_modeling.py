@@ -13,6 +13,8 @@ import pickle
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import pandas as pd
+
 import wandb
 
 from utils.paths import get_paths

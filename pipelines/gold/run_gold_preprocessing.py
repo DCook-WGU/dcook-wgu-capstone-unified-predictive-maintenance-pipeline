@@ -44,7 +44,7 @@ from utils.pipeline_config_loader import (
 from utils.postgres_util import get_engine_from_env
 from utils.layer_postgres_writer import write_layer_dataframe, prepare_layer_dataframe
 from utils.ledger import Ledger
-from utils.gold_preprocessing import (
+from utils.pipeline.gold_preprocessing import (
     prepare_gold_model_inputs,
     build_gold_support_artifacts,
 )

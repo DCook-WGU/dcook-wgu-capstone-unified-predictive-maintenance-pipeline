@@ -8,7 +8,7 @@ CONSUMER_GROUP_ID = "synthetic-telemetry-consumer-group"
 CONSUMER_WORKER_ID = "consumer_worker_001"
 
 # Keep this small for now so each poll/land/commit cycle finishes faster.
-MAX_MESSAGES = 104
+MAX_MESSAGES = 520
 POLL_TIMEOUT_SECONDS = 1.0
 AUTO_OFFSET_RESET = "earliest"
 

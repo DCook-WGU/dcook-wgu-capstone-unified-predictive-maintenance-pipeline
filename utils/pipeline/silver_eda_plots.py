@@ -12,7 +12,7 @@ from typing import Sequence
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils.silver_eda_profiles import z_score
+from utils.pipeline.silver_eda_profiles import z_score
 
 
 def plot_state_distribution(
