@@ -8,9 +8,8 @@ from decimal import Decimal
 from typing import Any, Mapping, Optional, Sequence
 
 from confluent_kafka import Consumer, KafkaException
-
-
 import pandas as pd
+from sqlalchemy import text
 
 from utils.postgres_util import (
     sanitize_sql_identifier,
@@ -18,7 +17,6 @@ from utils.postgres_util import (
     execute_sql,
     read_sql_dataframe,
 )
-from utils.layer_postgres_writer import write_layer_dataframe
 
 try:
     from confluent_kafka import Consumer
@@ -294,22 +292,72 @@ def ensure_consumed_stage_table_exists(
     return safe_table
 
 
+def _yield_record_batches(records: list[dict[str, Any]], batch_size: int):
+    if batch_size <= 0:
+        raise ValueError("batch_size must be > 0")
+
+    for start in range(0, len(records), batch_size):
+        yield records[start:start + batch_size]
+
+
+def _insert_records_on_conflict_do_nothing(
+    engine,
+    *,
+    schema: str,
+    table_name: str,
+    records: list[dict[str, Any]],
+    chunk_size: int = 1000,
+) -> int:
+    if not records:
+        return 0
+
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+    columns = [sanitize_sql_identifier(column) for column in records[0].keys()]
+
+    column_sql = ", ".join(f'"{column}"' for column in columns)
+    value_sql = ", ".join(f':{column}' for column in columns)
+
+    statement = text(
+        f'''
+        INSERT INTO "{safe_schema}"."{safe_table}" ({column_sql})
+        VALUES ({value_sql})
+        ON CONFLICT (kafka_topic, kafka_partition, kafka_offset) DO NOTHING
+        '''
+    )
+
+    inserted_rows = 0
+
+    with engine.begin() as connection:
+        for batch in _yield_record_batches(records, batch_size=chunk_size):
+            result = connection.execute(statement, batch)
+            if result.rowcount is not None and result.rowcount > 0:
+                inserted_rows += int(result.rowcount)
+
+    return inserted_rows
+
+
 def write_consumed_messages_batch(
     engine,
     dataframe: pd.DataFrame,
     *,
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_consumed_stage",
-) -> str:
+) -> dict[str, Any]:
     """
     Append a consumer batch into the landed message table.
 
-    Deduping is handled before write by kafka topic/partition/offset.
+    Deduping is handled by the Postgres primary key with
+    ON CONFLICT DO NOTHING instead of re-reading the full topic history.
     """
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
     if dataframe.empty:
-        return sanitize_sql_identifier(table_name)
+        return {
+            "table_name": sanitize_sql_identifier(table_name),
+            "input_count": 0,
+            "inserted_count": 0,
+        }
 
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = ensure_consumed_stage_table_exists(
@@ -328,47 +376,22 @@ def write_consumed_messages_batch(
         dataframe=working,
     )
 
-    existing_offsets = read_sql_dataframe(
+    working = working.where(pd.notna(working), None)
+    records = working.to_dict(orient="records")
+
+    inserted_count = _insert_records_on_conflict_do_nothing(
         engine,
-        f"""
-        SELECT kafka_topic, kafka_partition, kafka_offset
-        FROM "{safe_schema}"."{safe_table}"
-        WHERE kafka_topic IN :topic_list
-        """,
-        params={"topic_list": tuple(working["kafka_topic"].dropna().astype(str).unique().tolist())},
-    )
-
-    if not existing_offsets.empty:
-        existing_keys = set(
-            zip(
-                existing_offsets["kafka_topic"].astype(str),
-                existing_offsets["kafka_partition"].astype(int),
-                existing_offsets["kafka_offset"].astype(int),
-            )
-        )
-
-        incoming_keys = list(
-            zip(
-                working["kafka_topic"].astype(str),
-                working["kafka_partition"].astype(int),
-                working["kafka_offset"].astype(int),
-            )
-        )
-
-        keep_mask = [key not in existing_keys for key in incoming_keys]
-        working = working.loc[keep_mask].reset_index(drop=True)
-
-    if working.empty:
-        return safe_table
-
-    return write_layer_dataframe(
-        engine=engine,
-        dataframe=working,
         schema=safe_schema,
         table_name=safe_table,
-        if_exists="append",
-        index=False,
+        records=records,
+        chunk_size=1000,
     )
+
+    return {
+        "table_name": safe_table,
+        "input_count": int(len(working)),
+        "inserted_count": int(inserted_count),
+    }
 
 
 # -----------------------------------------------------------------------------
@@ -434,19 +457,24 @@ def consume_kafka_messages_once(
     poll_timeout_seconds: float = 1.0,
 ) -> list[dict[str, Any]]:
     """
-    Poll a finite batch of Kafka messages from a subscribed topic.
+    Pull a finite batch of Kafka messages from an already-subscribed consumer.
     """
     if max_messages <= 0:
         raise ValueError("max_messages must be > 0")
 
-    #consumer.subscribe([str(topic).strip()])
+    raw_messages = consumer.consume(
+        num_messages=int(max_messages),
+        timeout=float(poll_timeout_seconds),
+    )
+
+    if not raw_messages:
+        return []
 
     messages: list[dict[str, Any]] = []
 
-    while len(messages) < max_messages:
-        msg = consumer.poll(timeout=float(poll_timeout_seconds))
+    for msg in raw_messages:
         if msg is None:
-            break
+            continue
 
         if msg.error():
             raise RuntimeError(str(msg.error()))
@@ -504,7 +532,7 @@ def land_consumed_messages_to_postgres(
 
     dataframe = pd.DataFrame(records)
 
-    table_written = write_consumed_messages_batch(
+    write_result = write_consumed_messages_batch(
         engine=engine,
         dataframe=dataframe,
         schema=schema,
@@ -513,8 +541,8 @@ def land_consumed_messages_to_postgres(
 
     return {
         "received_count": int(len(consumed_messages)),
-        "written_count": int(len(dataframe)),
-        "table_name": table_written,
+        "written_count": int(write_result["inserted_count"]),
+        "table_name": write_result["table_name"],
     }
 
 
@@ -551,6 +579,8 @@ def run_kafka_consumer_to_postgres_once(
                 "session.timeout.ms": 120000,
                 "max.poll.interval.ms": 600000,
                 "heartbeat.interval.ms": 3000,
+                "fetch.max.bytes": 52428800,
+                "max.partition.fetch.bytes": 10485760,
             },
         )
         consumer.subscribe([str(topic).strip()])
@@ -610,7 +640,6 @@ def run_kafka_consumer_to_postgres_once(
             except Exception:
                 pass
 
-            
 
 def run_kafka_consumer_to_postgres_loop(
     engine,
@@ -627,18 +656,25 @@ def run_kafka_consumer_to_postgres_loop(
     max_batches: Optional[int] = None,
     idle_sleep_seconds: float = 0.0,
     stop_on_empty: bool = True,
-) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
+    progress_log_every_batches: int = 25,
+    return_result_history: bool = True,
+) -> dict[str, Any]:
+    result_history: list[dict[str, Any]] = []
 
-    resolved_group_id = consumer_group_id or get_kafka_consumer_group_from_env()
-    '''
-    consumer = create_confluent_consumer(
-        bootstrap_servers=bootstrap_servers,
-        consumer_group_id=resolved_group_id,
-        auto_offset_reset=auto_offset_reset,
-        enable_auto_commit=False,
-    )
-    '''
+    summary: dict[str, Any] = {
+        "topic": str(topic).strip(),
+        "consumer_group_id": consumer_group_id or get_kafka_consumer_group_from_env(),
+        "consumer_worker_id": str(consumer_worker_id).strip(),
+        "batch_count": 0,
+        "empty_batch_count": 0,
+        "received_count": 0,
+        "written_count": 0,
+        "last_status": None,
+        "started_at_utc": pd.Timestamp.utcnow(),
+        "finished_at_utc": None,
+    }
+
+    resolved_group_id = summary["consumer_group_id"]
 
     consumer = create_confluent_consumer(
         bootstrap_servers=bootstrap_servers,
@@ -649,6 +685,9 @@ def run_kafka_consumer_to_postgres_loop(
             "session.timeout.ms": 120000,
             "max.poll.interval.ms": 600000,
             "heartbeat.interval.ms": 3000,
+            "fetch.max.bytes": 52428800,
+            "max.partition.fetch.bytes": 10485760,
+            "client.id": str(consumer_worker_id).strip(),
         },
     )
 
@@ -674,8 +713,31 @@ def run_kafka_consumer_to_postgres_loop(
                 commit_on_success=True,
                 auto_offset_reset=auto_offset_reset,
             )
-            results.append(result)
+
             batch_counter += 1
+            summary["batch_count"] = int(batch_counter)
+            summary["received_count"] = int(summary["received_count"]) + int(result.get("received_count", 0))
+            summary["written_count"] = int(summary["written_count"]) + int(result.get("written_count", 0))
+            summary["last_status"] = result.get("status")
+
+            if result.get("status") == "empty":
+                summary["empty_batch_count"] = int(summary["empty_batch_count"]) + 1
+
+            if return_result_history:
+                result_history.append(result)
+
+            if progress_log_every_batches > 0 and batch_counter % int(progress_log_every_batches) == 0:
+                print(
+                    "[consumer] topic={topic} worker={worker} batches={batches} "
+                    "received={received} written={written} last_status={status}".format(
+                        topic=str(topic).strip(),
+                        worker=str(consumer_worker_id).strip(),
+                        batches=batch_counter,
+                        received=summary["received_count"],
+                        written=summary["written_count"],
+                        status=summary["last_status"],
+                    )
+                )
 
             if result["status"] == "empty" and stop_on_empty:
                 break
@@ -684,12 +746,16 @@ def run_kafka_consumer_to_postgres_loop(
                 time.sleep(float(idle_sleep_seconds))
 
     finally:
+        summary["finished_at_utc"] = pd.Timestamp.utcnow()
+        summary["runtime_seconds"] = float((summary["finished_at_utc"] - summary["started_at_utc"]).total_seconds())
+        if return_result_history:
+            summary["results"] = result_history
         try:
             consumer.close()
         except Exception:
             pass
 
-    return results
+    return summary
 
 
 __all__ = [
