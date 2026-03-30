@@ -1,0 +1,5 @@
+export POSTGRES_HOST=dcook_capstone_postgres
+export POSTGRES_PORT=5432
+export POSTGRES_DB=dcook_capstone_postgres_db
+export POSTGRES_USER=dcook_admin
+export POSTGRES_PASSWORD='V9m!pQ4z@H2eS7wK'
