@@ -1,12 +1,12 @@
 """
-utils/silver_eda_onsets.py
+utils/pipeline/silver_eda_onsets.py
 
 Onset detection and alignment helpers for Silver EDA.
 """
 
 from __future__ import annotations
 
-from typing import List, Sequence
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -85,7 +85,7 @@ def build_aligned_onset_windows(
         return pd.DataFrame()
 
     work = dataframe.copy()
-    rows: List[pd.DataFrame] = []
+    rows: list[pd.DataFrame] = []
 
     for onset_id, onset_row in onsets.reset_index(drop=True).iterrows():
         mask = pd.Series(True, index=work.index)

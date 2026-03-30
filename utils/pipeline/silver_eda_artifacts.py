@@ -1,5 +1,5 @@
 """
-utils/silver_eda_artifacts.py
+utils/pipeline/silver_eda_artifacts.py
 
 Artifact save helpers for Silver EDA.
 """
@@ -7,7 +7,7 @@ Artifact save helpers for Silver EDA.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pandas as pd
 
@@ -29,7 +29,7 @@ def save_eda_table_artifact(
 
 
 def save_eda_json_artifact(
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     output_path: Path,
 ) -> str:
@@ -56,9 +56,9 @@ def save_episode_status_counts_json(
 
 def build_silver_eda_artifact_index(
     *,
-    artifact_paths: Dict[str, str],
-    summary_payload: Dict[str, Any],
-) -> Dict[str, Any]:
+    artifact_paths: dict[str, str],
+    summary_payload: dict[str, Any],
+) -> dict[str, Any]:
     """
     Build a compact artifact index payload.
     """

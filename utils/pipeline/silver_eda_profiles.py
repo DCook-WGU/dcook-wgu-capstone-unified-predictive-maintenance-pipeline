@@ -1,12 +1,12 @@
 """
-utils/silver_eda_profiles.py
+utils/pipeline/silver_eda_profiles.py
 
 Profile/statistics helpers for Silver EDA.
 """
 
 from __future__ import annotations
 
-from typing import List, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -32,9 +32,65 @@ def z_score(series: pd.Series) -> pd.Series:
     return (series - mean_value) / std_value
 
 
+def build_silver_overview_summary(dataframe: pd.DataFrame) -> dict:
+    """
+    Build a quick structural overview of the Silver dataframe.
+    """
+    return {
+        "row_count": int(len(dataframe)),
+        "column_count": int(len(dataframe.columns)),
+        "meta_column_count": int(sum(column.startswith("meta__") for column in dataframe.columns)),
+        "numeric_column_count": int(len(dataframe.select_dtypes(include=[np.number]).columns)),
+        "categorical_column_count": int(
+            len([
+                column for column in dataframe.columns
+                if not pd.api.types.is_numeric_dtype(dataframe[column])
+                and not pd.api.types.is_datetime64_any_dtype(dataframe[column])
+            ])
+        ),
+        "columns_are_unique": bool(dataframe.columns.is_unique),
+    }
+
+
+def build_missingness_audit_table(
+    dataframe: pd.DataFrame,
+    *,
+    include_only_nonzero: bool = False,
+) -> pd.DataFrame:
+    """
+    Build missingness summary by column.
+    """
+    rows = []
+    total_rows = len(dataframe)
+
+    for column_name in dataframe.columns:
+        null_count = int(dataframe[column_name].isna().sum())
+        missing_pct = float((null_count / total_rows) * 100) if total_rows > 0 else 0.0
+
+        if include_only_nonzero and null_count == 0:
+            continue
+
+        rows.append(
+            {
+                "column_name": column_name,
+                "null_count": null_count,
+                "missing_pct": round(missing_pct, 4),
+            }
+        )
+
+    result = pd.DataFrame(rows)
+    if result.empty:
+        return result
+
+    return result.sort_values(
+        ["missing_pct", "column_name"],
+        ascending=[False, True],
+    ).reset_index(drop=True)
+
+
 def build_duplicate_summary(dataframe: pd.DataFrame) -> dict:
     """
-    Build duplicate summary for rows and key identifiers.
+    Summarize duplicate rows and duplicate key identifiers.
     """
     duplicate_row_count = int(dataframe.duplicated().sum())
 
@@ -60,7 +116,7 @@ def build_duplicate_summary(dataframe: pd.DataFrame) -> dict:
 def build_numeric_describe_table(
     dataframe: pd.DataFrame,
     *,
-    include_columns: Sequence[str] | None = None,
+    include_columns: Optional[Sequence[str]] = None,
 ) -> pd.DataFrame:
     """
     Build numeric describe table.
@@ -84,7 +140,7 @@ def build_numeric_describe_table(
 def build_categorical_cardinality_table(
     dataframe: pd.DataFrame,
     *,
-    exclude_columns: Sequence[str] | None = None,
+    exclude_columns: Optional[Sequence[str]] = None,
 ) -> pd.DataFrame:
     """
     Build categorical cardinality table.
@@ -155,7 +211,7 @@ def profile_sensor_state_table(
     return pd.DataFrame(rows)
 
 
-def build_sensor_profile_comparison(
+def build_state_sensor_profile_table(
     dataframe: pd.DataFrame,
     *,
     sensors: Sequence[str],
@@ -184,7 +240,7 @@ def build_feature_behavior_effect_size_table(
     """
     Build effect-size-style summary table using standardized mean shift vs baseline state.
     """
-    rows: List[dict] = []
+    rows = []
 
     if state_column not in dataframe.columns:
         raise KeyError(f"Missing state column: {state_column}")
@@ -226,3 +282,35 @@ def build_feature_behavior_effect_size_table(
             )
 
     return pd.DataFrame(rows)
+
+
+def build_plot_feature_list(
+    effect_size_df: pd.DataFrame,
+    *,
+    max_features: int = 6,
+) -> list[str]:
+    """
+    Build top feature list from effect-size table.
+    """
+    if effect_size_df.empty:
+        return []
+
+    working = effect_size_df.copy()
+    working["abs_standardized_mean_shift"] = working["standardized_mean_shift"].abs()
+    working = working.sort_values(
+        ["abs_standardized_mean_shift", "sensor"],
+        ascending=[False, True],
+    )
+
+    sensors = working["sensor"].dropna().astype(str).tolist()
+    ordered_unique = []
+    seen = set()
+
+    for sensor_name in sensors:
+        if sensor_name not in seen:
+            seen.add(sensor_name)
+            ordered_unique.append(sensor_name)
+        if len(ordered_unique) >= max_features:
+            break
+
+    return ordered_unique

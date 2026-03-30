@@ -1,5 +1,5 @@
 """
-utils/silver_eda_dropped.py
+utils/pipeline/silver_eda_dropped.py
 
 Dropped-feature parquet helpers for Silver EDA.
 """
@@ -7,13 +7,13 @@ Dropped-feature parquet helpers for Silver EDA.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Sequence
 
 import pandas as pd
 
 from utils.file_io import load_data
 from utils.pipeline.silver_eda_profiles import (
-    build_sensor_profile_comparison,
+    build_state_sensor_profile_table,
     build_feature_behavior_effect_size_table,
 )
 
@@ -62,39 +62,34 @@ def attach_state_column_to_dropped_dataframe(
     return merged
 
 
-def build_dropped_sensor_profile_table(
+def build_dropped_sensor_profiles_from_silver_preeda_truth(
     dropped_dataframe: pd.DataFrame,
     *,
     dropped_feature_columns: Sequence[str],
     state_column: str,
     state_values: Sequence[str],
-) -> pd.DataFrame:
+    baseline_state: str = "normal",
+    comparison_states: Sequence[str] = ("abnormal", "recovery"),
+) -> dict:
     """
-    Build dropped-feature profile table by state.
+    Build dropped-feature profile and effect-size tables.
     """
-    return build_sensor_profile_comparison(
+    profile_df = build_state_sensor_profile_table(
         dropped_dataframe,
         sensors=list(dropped_feature_columns),
         state_column=state_column,
         state_values=list(state_values),
     )
 
-
-def build_dropped_sensor_effect_size_table(
-    dropped_dataframe: pd.DataFrame,
-    *,
-    dropped_feature_columns: Sequence[str],
-    state_column: str,
-    baseline_state: str = "normal",
-    comparison_states: Sequence[str] = ("abnormal", "recovery"),
-) -> pd.DataFrame:
-    """
-    Build dropped-feature effect-size table.
-    """
-    return build_feature_behavior_effect_size_table(
+    effect_size_df = build_feature_behavior_effect_size_table(
         dropped_dataframe,
         sensors=list(dropped_feature_columns),
         state_column=state_column,
         baseline_state=baseline_state,
         comparison_states=list(comparison_states),
     )
+
+    return {
+        "profile_df": profile_df,
+        "effect_size_df": effect_size_df,
+    }

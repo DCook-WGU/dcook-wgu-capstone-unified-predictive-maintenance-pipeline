@@ -1,5 +1,5 @@
 """
-utils/silver_eda_status.py
+utils/pipeline/silver_eda_status.py
 
 Status and episode summary helpers for Silver EDA.
 """
@@ -7,7 +7,7 @@ Status and episode summary helpers for Silver EDA.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import json
 import pandas as pd
@@ -244,9 +244,9 @@ def build_status_distribution_tables(
     dataframe: pd.DataFrame,
     *,
     status_column: str,
-) -> Dict[str, pd.DataFrame]:
+) -> dict[str, pd.DataFrame]:
     """
-    Build lightweight row-level status distribution tables.
+    Build row-level status distribution table.
     """
     if status_column not in dataframe.columns:
         raise KeyError(f"Missing status column: {status_column}")

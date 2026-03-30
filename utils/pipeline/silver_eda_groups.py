@@ -1,12 +1,12 @@
 """
-utils/silver_eda_groups.py
+utils/pipeline/silver_eda_groups.py
 
 Correlation grouping helpers for Silver EDA.
 """
 
 from __future__ import annotations
 
-from typing import Dict, Sequence
+from typing import Sequence
 
 import pandas as pd
 
@@ -97,7 +97,7 @@ def build_sensor_group_map_from_correlation(
         return pd.DataFrame()
 
     abs_corr = correlation_matrix.abs()
-    parent: Dict[str, str] = {}
+    parent: dict[str, str] = {}
 
     for sensor_name in abs_corr.columns:
         find(parent, str(sensor_name))
@@ -110,7 +110,7 @@ def build_sensor_group_map_from_correlation(
             if pd.notna(corr_strength) and float(corr_strength) >= float(min_abs_corr_for_group):
                 union(parent, str(sensor_a), str(sensor_b))
 
-    groups: Dict[str, list[str]] = {}
+    groups: dict[str, list[str]] = {}
     for sensor_name in abs_corr.columns:
         root = find(parent, str(sensor_name))
         groups.setdefault(root, []).append(str(sensor_name))
@@ -137,3 +137,26 @@ def build_sensor_group_map_from_correlation(
     return pd.DataFrame(rows).sort_values(
         ["group_priority", "sensor"]
     ).reset_index(drop=True) if len(rows) > 0 else pd.DataFrame()
+
+
+def build_fault_propagation_pairings_from_strong_relationships(
+    correlation_pairs_df: pd.DataFrame,
+    *,
+    min_abs_corr: float = 0.70,
+) -> pd.DataFrame:
+    """
+    Build a simple strong-relationship pairing table.
+    """
+    if correlation_pairs_df.empty:
+        return pd.DataFrame()
+
+    working = correlation_pairs_df.copy()
+    working = working.loc[
+        working["abs_correlation"].fillna(0.0) >= float(min_abs_corr)
+    ].copy()
+
+    if working.empty:
+        return pd.DataFrame()
+
+    working["pairing_method"] = f"abs_corr>={min_abs_corr}"
+    return working.reset_index(drop=True)

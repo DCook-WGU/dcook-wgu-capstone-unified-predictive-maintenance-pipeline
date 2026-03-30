@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pandas as pd
 import wandb
@@ -38,18 +38,23 @@ from utils.pipeline_config_loader import (
     export_config_snapshot,
 )
 from utils.ledger import Ledger
+
 from utils.pipeline.silver_eda_status import (
     resolve_state_column_from_truth,
     build_state_col_synth,
     build_episode_status_payload_and_tables,
     build_status_distribution_tables,
+    pull_episode_status_state_stats_from_truth,
 )
 from utils.pipeline.silver_eda_profiles import (
+    build_silver_overview_summary,
+    build_missingness_audit_table,
     build_duplicate_summary,
     build_numeric_describe_table,
     build_categorical_cardinality_table,
-    build_sensor_profile_comparison,
+    build_state_sensor_profile_table,
     build_feature_behavior_effect_size_table,
+    build_plot_feature_list,
 )
 from utils.pipeline.silver_eda_onsets import (
     find_anomaly_onsets,
@@ -60,18 +65,19 @@ from utils.pipeline.silver_eda_onsets import (
 from utils.pipeline.silver_eda_groups import (
     build_normal_only_correlation_pairs,
     build_sensor_group_map_from_correlation,
+    build_fault_propagation_pairings_from_strong_relationships,
 )
 from utils.pipeline.silver_eda_dropped import (
     load_dropped_sensor_dataframe,
     attach_state_column_to_dropped_dataframe,
-    build_dropped_sensor_profile_table,
-    build_dropped_sensor_effect_size_table,
+    build_dropped_sensor_profiles_from_silver_preeda_truth,
 )
 from utils.pipeline.silver_eda_plots import (
-    plot_state_distribution,
-    plot_sensor_profile_comparison,
+    plot_correlation_heatmap,
+    plot_state_distribution_histograms,
+    plot_top_feature_overlay,
+    plot_feature_timeseries_with_flag_spans,
     plot_aligned_onset_series,
-    plot_normal_correlation_heatmap,
 )
 from utils.pipeline.silver_eda_artifacts import (
     save_eda_table_artifact,
@@ -79,12 +85,20 @@ from utils.pipeline.silver_eda_artifacts import (
     save_episode_status_counts_json,
     build_silver_eda_artifact_index,
 )
+from utils.pipeline.silver_eda_addons import (
+    build_missingness_by_group_table,
+    build_missingness_group_artifacts,
+    build_state_transition_artifacts,
+    build_robust_feature_comparison_artifacts,
+    build_pca_diagnostics_artifacts,
+    build_outlier_audit_artifacts,
+)
 
 
 def _build_default_runtime_inputs(
     *,
-    config: Dict[str, Any],
-) -> Dict[str, Any]:
+    config: dict[str, Any],
+) -> dict[str, Any]:
     silver_cfg = config["silver_eda"]
     paths_cfg = config["resolved_paths"]
     filenames = config["filenames"]
@@ -127,13 +141,14 @@ def _build_default_runtime_inputs(
         "onset_post_window": int(silver_cfg.get("onset_post_window", 20)),
         "top_feature_count": int(silver_cfg.get("top_feature_count", 6)),
         "min_abs_corr_for_group": float(silver_cfg.get("min_abs_corr_for_group", 0.60)),
+        "strong_relationship_min_abs_corr": float(silver_cfg.get("strong_relationship_min_abs_corr", 0.70)),
         "dropped_parquet_file_name": silver_cfg.get("dropped_parquet_file_name"),
         "join_key": silver_cfg.get("join_key", "meta__record_id"),
     }
 
 
 def _apply_runtime_overrides(
-    runtime_inputs: Dict[str, Any],
+    runtime_inputs: dict[str, Any],
     *,
     silver_train_data_file_name: Optional[str] = None,
     feature_registry_file_name: Optional[str] = None,
@@ -143,7 +158,7 @@ def _apply_runtime_overrides(
     top_feature_count: Optional[int] = None,
     dropped_parquet_file_name: Optional[str] = None,
     join_key: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     updated = dict(runtime_inputs)
 
     if silver_train_data_file_name:
@@ -166,7 +181,7 @@ def _apply_runtime_overrides(
     return updated
 
 
-def _ensure_stage_directories(runtime_inputs: Dict[str, Any]) -> None:
+def _ensure_stage_directories(runtime_inputs: dict[str, Any]) -> None:
     runtime_inputs["silver_artifacts_path"].mkdir(parents=True, exist_ok=True)
     runtime_inputs["truths_path"].mkdir(parents=True, exist_ok=True)
     runtime_inputs["logs_path"].mkdir(parents=True, exist_ok=True)
@@ -181,7 +196,7 @@ def _initialize_logger(paths) -> logging.Logger:
     return logger
 
 
-def _initialize_wandb_run(runtime_inputs: Dict[str, Any]):
+def _initialize_wandb_run(runtime_inputs: dict[str, Any]):
     return wandb.init(
         project=runtime_inputs["wandb_project"],
         entity=runtime_inputs["wandb_entity"],
@@ -190,7 +205,7 @@ def _initialize_wandb_run(runtime_inputs: Dict[str, Any]):
     )
 
 
-def _load_inputs(runtime_inputs: Dict[str, Any], logger: logging.Logger):
+def _load_inputs(runtime_inputs: dict[str, Any], logger: logging.Logger):
     silver_path = runtime_inputs["silver_train_data_path"] / runtime_inputs["silver_train_data_file_name"]
     registry_path = runtime_inputs["silver_artifacts_path"] / runtime_inputs["feature_registry_file_name"]
 
@@ -208,7 +223,7 @@ def _load_inputs(runtime_inputs: Dict[str, Any], logger: logging.Logger):
     return dataframe, feature_registry, silver_path, registry_path
 
 
-def _resolve_parent_truth(dataframe, runtime_inputs: Dict[str, Any]):
+def _resolve_parent_truth(dataframe, runtime_inputs: dict[str, Any]):
     parent_truth_hash = extract_truth_hash(dataframe)
     if parent_truth_hash is None:
         raise ValueError("Silver EDA input dataframe missing readable meta__truth_hash.")
@@ -237,7 +252,7 @@ def _resolve_parent_truth(dataframe, runtime_inputs: Dict[str, Any]):
 
 def _pick_top_features(
     dataframe: pd.DataFrame,
-    feature_registry: Dict[str, Any],
+    feature_registry: dict[str, Any],
     *,
     top_feature_count: int,
 ) -> list[str]:
@@ -268,7 +283,7 @@ def run_silver_eda(
     top_feature_count: Optional[int] = None,
     dropped_parquet_file_name: Optional[str] = None,
     join_key: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     paths = get_paths()
 
     config_root = config_root or paths.configs
@@ -356,17 +371,12 @@ def run_silver_eda(
         top_feature_count=runtime_inputs["top_feature_count"],
     )
 
-    # 1. duplicate summary
+    overview_summary = build_silver_overview_summary(dataframe)
+    missingness_df = build_missingness_audit_table(dataframe)
     duplicates_summary = build_duplicate_summary(dataframe)
-
-    # 2. broad profiling
     numeric_describe_df = build_numeric_describe_table(dataframe)
-    categorical_cardinality_df = build_categorical_cardinality_table(
-        dataframe,
-        exclude_columns=top_features,
-    )
+    categorical_cardinality_df = build_categorical_cardinality_table(dataframe, exclude_columns=[])
 
-    # 3. episode/status/state summaries
     episode_payload_bundle = build_episode_status_payload_and_tables(
         dataframe,
         status_column=status_column,
@@ -378,8 +388,7 @@ def run_silver_eda(
         status_column=status_column,
     )
 
-    # 4. profile tables
-    profile_df = build_sensor_profile_comparison(
+    profile_df = build_state_sensor_profile_table(
         dataframe,
         sensors=top_features,
         state_column=state_col_synth,
@@ -395,7 +404,6 @@ def run_silver_eda(
         comparison_states=comparison_states,
     )
 
-    # 5. normal-only correlation pairs and group map
     corr_payload = build_normal_only_correlation_pairs(
         dataframe,
         feature_columns=top_features,
@@ -410,23 +418,31 @@ def run_silver_eda(
         min_abs_corr_for_group=runtime_inputs["min_abs_corr_for_group"],
     )
 
-    # 6. onsets and aligned summaries
+    strong_relationships_df = build_fault_propagation_pairings_from_strong_relationships(
+        correlation_pairs_df,
+        min_abs_corr=runtime_inputs["strong_relationship_min_abs_corr"],
+    )
+
+    plot_features = build_plot_feature_list(
+        effect_size_df,
+        max_features=runtime_inputs["top_feature_count"],
+    )
+
     onsets_table = find_anomaly_onsets(dataframe)
     onsets_table = sample_onsets_evenly(onsets_table, runtime_inputs["max_onsets_to_use"])
 
     aligned_windows_df = build_aligned_onset_windows(
         dataframe,
         onsets=onsets_table,
-        feature_columns=top_features,
+        feature_columns=plot_features,
         pre_window=runtime_inputs["onset_pre_window"],
         post_window=runtime_inputs["onset_post_window"],
     )
     onset_summary_df = summarize_onset_windows(
         aligned_windows_df,
-        feature_columns=top_features,
+        feature_columns=plot_features,
     )
 
-    # 7. dropped parquet flow
     dropped_profile_df = pd.DataFrame()
     dropped_effect_size_df = pd.DataFrame()
     dropped_artifact_present = False
@@ -454,23 +470,30 @@ def run_silver_eda(
             ]
 
             if len(dropped_feature_columns) > 0:
-                dropped_profile_df = build_dropped_sensor_profile_table(
+                dropped_outputs = build_dropped_sensor_profiles_from_silver_preeda_truth(
                     dropped_df,
                     dropped_feature_columns=dropped_feature_columns,
                     state_column=state_col_synth,
                     state_values=state_values,
-                )
-                dropped_effect_size_df = build_dropped_sensor_effect_size_table(
-                    dropped_df,
-                    dropped_feature_columns=dropped_feature_columns,
-                    state_column=state_col_synth,
                     baseline_state="normal",
                     comparison_states=comparison_states,
                 )
+                dropped_profile_df = dropped_outputs["profile_df"]
+                dropped_effect_size_df = dropped_outputs["effect_size_df"]
                 dropped_artifact_present = True
 
-    # 8. save artifacts
-    artifact_paths: Dict[str, str] = {}
+    artifact_paths: dict[str, str] = {}
+
+    artifact_paths["overview_summary_path"] = save_eda_json_artifact(
+        overview_summary,
+        output_path=runtime_inputs["silver_artifacts_path"] / "silver_overview__summary.json",
+    )
+
+    artifact_paths["missingness_path"] = save_eda_table_artifact(
+        missingness_df,
+        output_dir=runtime_inputs["silver_artifacts_path"],
+        file_name="missingness__audit.csv",
+    )
 
     artifact_paths["duplicates_summary_path"] = save_eda_json_artifact(
         duplicates_summary,
@@ -536,22 +559,30 @@ def run_silver_eda(
         file_name="feature_behavior__effect_size.csv",
     )
 
-    artifact_paths["correlation_matrix_normal_path"] = save_eda_table_artifact(
-        correlation_matrix_df.reset_index(),
-        output_dir=runtime_inputs["silver_artifacts_path"],
-        file_name="correlation__normal.csv",
-    ) if not correlation_matrix_df.empty else ""
+    if not correlation_matrix_df.empty:
+        artifact_paths["correlation_matrix_normal_path"] = save_eda_table_artifact(
+            correlation_matrix_df.reset_index(),
+            output_dir=runtime_inputs["silver_artifacts_path"],
+            file_name="correlation__normal.csv",
+        )
 
-    artifact_paths["correlation_pairs_normal_path"] = save_eda_table_artifact(
-        correlation_pairs_df,
-        output_dir=runtime_inputs["silver_artifacts_path"],
-        file_name="sensor_correlation_pairs_normal.csv",
-    ) if not correlation_pairs_df.empty else ""
+    if not correlation_pairs_df.empty:
+        artifact_paths["correlation_pairs_normal_path"] = save_eda_table_artifact(
+            correlation_pairs_df,
+            output_dir=runtime_inputs["silver_artifacts_path"],
+            file_name="sensor_correlation_pairs_normal.csv",
+        )
 
     artifact_paths["sensor_group_map_normal_path"] = save_eda_table_artifact(
         sensor_group_map_normal_df,
         output_dir=runtime_inputs["silver_artifacts_path"],
         file_name="sensor_group_map_normal.csv",
+    )
+
+    artifact_paths["fault_propagation_pairings_path"] = save_eda_table_artifact(
+        strong_relationships_df,
+        output_dir=runtime_inputs["silver_artifacts_path"],
+        file_name="fault_propagation_pairings.csv",
     )
 
     artifact_paths["anomaly_onsets_path"] = save_eda_table_artifact(
@@ -584,50 +615,54 @@ def run_silver_eda(
             file_name="dropped_feature_behavior__effect_size.csv",
         )
 
-    # 9. plots
-    status_plot_path = runtime_inputs["silver_artifacts_path"] / "status_distribution.png"
-    fig = plot_state_distribution(status_tables["status_counts"], output_path=status_plot_path)
-    if fig is not None:
-        artifact_paths["status_distribution_plot_path"] = str(status_plot_path)
-
-    profile_plot_dir = runtime_inputs["silver_artifacts_path"] / "profiles"
-    plot_sensor_profile_comparison(
-        dataframe,
-        sensors=top_features,
-        state_column=state_col_synth,
-        state_values=state_values,
-        output_dir=profile_plot_dir,
-        use_z_score=True,
-    )
-    artifact_paths["profile_plot_dir"] = str(profile_plot_dir)
-
     if not correlation_matrix_df.empty:
         heatmap_path = runtime_inputs["silver_artifacts_path"] / "correlation__normal__heatmap.png"
-        fig = plot_normal_correlation_heatmap(
-            correlation_matrix_df,
-            output_path=heatmap_path,
-        )
-        if fig is not None:
+        figure = plot_correlation_heatmap(correlation_matrix_df, output_path=heatmap_path)
+        if figure is not None:
             artifact_paths["correlation_heatmap_normal_path"] = str(heatmap_path)
 
-    for feature_name in top_features:
+    distribution_dir = runtime_inputs["silver_artifacts_path"] / "distributions"
+    plot_state_distribution_histograms(
+        dataframe,
+        features=plot_features,
+        state_column=state_col_synth,
+        state_values=state_values,
+        output_dir=distribution_dir,
+    )
+    artifact_paths["distribution_plot_dir"] = str(distribution_dir)
+
+    overlay_path = runtime_inputs["silver_artifacts_path"] / "top_feature_overlay.png"
+    figure = plot_top_feature_overlay(dataframe, features=plot_features, output_path=overlay_path)
+    if figure is not None:
+        artifact_paths["top_feature_overlay_path"] = str(overlay_path)
+
+    timeseries_dir = runtime_inputs["silver_artifacts_path"] / "timeseries"
+    plot_feature_timeseries_with_flag_spans(
+        dataframe,
+        features=plot_features,
+        output_dir=timeseries_dir,
+    )
+    artifact_paths["timeseries_plot_dir"] = str(timeseries_dir)
+
+    for feature_name in plot_features:
         onset_plot_path = runtime_inputs["silver_artifacts_path"] / f"aligned_onset__mean__{feature_name}.png"
-        fig = plot_aligned_onset_series(
+        figure = plot_aligned_onset_series(
             onset_summary_df,
             feature_name=feature_name,
             output_path=onset_plot_path,
         )
-        if fig is not None:
+        if figure is not None:
             artifact_paths[f"aligned_onset_plot__{feature_name}"] = str(onset_plot_path)
 
-    # 10. artifact index
     summary_payload = {
         "dataset_name": dataset_name,
         "state_column": status_column,
         "synthetic_state_column": state_col_synth,
         "top_features": top_features,
+        "plot_features": plot_features,
         "state_values": state_values,
         "sensor_group_count": int(sensor_group_map_normal_df["group_name"].nunique()) if not sensor_group_map_normal_df.empty else 0,
+        "strong_relationship_count": int(len(strong_relationships_df)),
         "anomaly_onset_count": int(len(onsets_table)),
         "episode_count": int(episode_payload_bundle["payload"]["episode_count"]),
         "duplicates_summary": duplicates_summary,
@@ -642,7 +677,6 @@ def run_silver_eda(
         output_path=runtime_inputs["silver_artifacts_path"] / f"{dataset_name}__silver_eda__artifact_index.json",
     )
 
-    # 11. truth
     silver_truth = initialize_layer_truth(
         truth_version=runtime_inputs["truth_version"],
         dataset_name=dataset_name,
@@ -663,7 +697,9 @@ def run_silver_eda(
             "onset_pre_window": runtime_inputs["onset_pre_window"],
             "onset_post_window": runtime_inputs["onset_post_window"],
             "top_features": top_features,
+            "plot_features": plot_features,
             "min_abs_corr_for_group": runtime_inputs["min_abs_corr_for_group"],
+            "strong_relationship_min_abs_corr": runtime_inputs["strong_relationship_min_abs_corr"],
             "pipeline_mode": pipeline_mode,
         },
     )
@@ -678,8 +714,10 @@ def run_silver_eda(
             "state_column": status_column,
             "state_col_synth": state_col_synth,
             "top_features": top_features,
+            "plot_features": plot_features,
             "state_values": state_values,
             "sensor_group_count": int(sensor_group_map_normal_df["group_name"].nunique()) if not sensor_group_map_normal_df.empty else 0,
+            "strong_relationship_count": int(len(strong_relationships_df)),
             "anomaly_onset_count": int(len(onsets_table)),
             "episode_status_state_stats": episode_payload_bundle["payload"],
         },
@@ -711,16 +749,21 @@ def run_silver_eda(
         truth_index_path=runtime_inputs["truth_index_path"],
     )
 
+    saved_episode_status_payload = pull_episode_status_state_stats_from_truth(truth_record)
+
     final_summary_payload = {
         "dataset_name": dataset_name,
         "state_column": status_column,
         "synthetic_state_column": state_col_synth,
         "top_features": top_features,
+        "plot_features": plot_features,
         "state_values": state_values,
         "sensor_group_count": int(sensor_group_map_normal_df["group_name"].nunique()) if not sensor_group_map_normal_df.empty else 0,
+        "strong_relationship_count": int(len(strong_relationships_df)),
         "anomaly_onset_count": int(len(onsets_table)),
         "episode_count": int(episode_payload_bundle["payload"]["episode_count"]),
         "artifact_paths": artifact_paths,
+        "saved_episode_status_payload": saved_episode_status_payload,
         "truth_hash": truth_hash,
         "truth_path": str(truth_path),
     }
@@ -769,7 +812,9 @@ def run_silver_eda(
         "artifact_paths": artifact_paths,
         "ledger_path": str(saved_ledger_path),
         "top_features": top_features,
+        "plot_features": plot_features,
         "sensor_group_count": int(sensor_group_map_normal_df["group_name"].nunique()) if not sensor_group_map_normal_df.empty else 0,
+        "strong_relationship_count": int(len(strong_relationships_df)),
         "anomaly_onset_count": int(len(onsets_table)),
         "episode_count": int(episode_payload_bundle["payload"]["episode_count"]),
     }
@@ -815,44 +860,16 @@ if __name__ == "__main__":
 
     print(result)
 
+
+
 '''
-#Example commands
-
-#Default run:
-
+# Default Run
 python -m pipelines.silver.run_silver_eda \
   --dataset pump \
   --mode train \
   --profile default
 
-#Explicit Silver input and registry:
-
-python -m pipelines.silver.run_silver_eda \
-  --dataset pump \
-  --mode train \
-  --profile default \
-  --silver-train-data-file-name pump__silver__train.parquet \
-  --feature-registry-file-name pump__silver__feature_registry.json
-
-#Change onset sampling window:
-
-python -m pipelines.silver.run_silver_eda \
-  --dataset pump \
-  --mode train \
-  --profile default \
-  --max-onsets-to-use 15 \
-  --onset-pre-window 25 \
-  --onset-post-window 25
-
-#Use more top features:
-
-python -m pipelines.silver.run_silver_eda \
-  --dataset pump \
-  --mode train \
-  --profile default \
-  --top-feature-count 10
-
-#Enable dropped parquet profiling:
+#With dropped parquet review:
 
 python -m pipelines.silver.run_silver_eda \
   --dataset pump \
@@ -860,5 +877,8 @@ python -m pipelines.silver.run_silver_eda \
   --profile default \
   --dropped-parquet-file-name pump__silver__dropped_features.parquet \
   --join-key meta__record_id
+
+
+
 
 '''
