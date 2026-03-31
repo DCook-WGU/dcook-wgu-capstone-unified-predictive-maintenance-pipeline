@@ -345,8 +345,21 @@ def run_send_queue_producer_once(
             flush_timeout_seconds=flush_timeout_seconds,
         )
 
-        if publish_result["error_count"] > 0:
-            error_message = " | ".join(publish_result["errors"])[:4000]
+        expected_count = int(len(claimed_dataframe))
+        delivered_count = int(publish_result.get("delivered_count", 0))
+        error_count = int(publish_result.get("error_count", 0))
+
+        if error_count > 0 or delivered_count != expected_count:
+            mismatch_message = (
+                f"Producer delivery mismatch for claim_token={claim_token}. "
+                f"expected={expected_count}, delivered={delivered_count}, error_count={error_count}"
+            )
+
+            all_errors = list(publish_result.get("errors", []))
+            all_errors.append(mismatch_message)
+
+            error_message = " | ".join(all_errors)[:4000]
+
             failed_df = mark_claimed_batch_failed(
                 engine=engine,
                 claim_token=claim_token,
@@ -356,12 +369,14 @@ def run_send_queue_producer_once(
             )
             return {
                 "status": "failed",
-                "claimed_rows": int(len(claimed_dataframe)),
+                "claimed_rows": expected_count,
                 "sent_rows": 0,
                 "failed_rows": int(len(failed_df)),
                 "topic": resolved_topic,
                 "claim_token": claim_token,
-                "errors": publish_result["errors"],
+                "errors": all_errors,
+                "delivered_count": delivered_count,
+                "expected_count": expected_count,
             }
 
         sent_df = mark_claimed_batch_sent(
@@ -372,14 +387,16 @@ def run_send_queue_producer_once(
         )
 
         return {
-            "status": "sent",
-            "claimed_rows": int(len(claimed_dataframe)),
-            "sent_rows": int(len(sent_df)),
-            "failed_rows": 0,
-            "topic": resolved_topic,
-            "claim_token": claim_token,
-            "errors": [],
-        }
+                    "status": "sent",
+                    "claimed_rows": int(len(claimed_dataframe)),
+                    "sent_rows": int(len(sent_df)),
+                    "failed_rows": 0,
+                    "topic": resolved_topic,
+                    "claim_token": claim_token,
+                    "errors": [],
+                    "delivered_count": delivered_count,
+                    "expected_count": expected_count,
+                }
 
     except Exception as exc:
         failed_df = mark_claimed_batch_failed(
@@ -398,6 +415,7 @@ def run_send_queue_producer_once(
             "claim_token": claim_token,
             "errors": [str(exc)],
         }
+    
     finally:
         if created_producer:
             try:

@@ -511,8 +511,9 @@ def build_final_aligned_observations_stage(
         stats["rebuilt_rows"] += int(len(rebuilt_window))
 
         return build_final_aligned_observations_stage(
-            premelt_dataframe=df_premelt_window,
-            rebuilt_dataframe=rebuilt_window,
+            engine, 
+            premelt_table=df_premelt_window,
+            rebuilt_table=rebuilt_window,
             n_sensors=n_sensors,
             prefer_rebuilt_sensor_values=prefer_rebuilt_sensor_values,
         )
