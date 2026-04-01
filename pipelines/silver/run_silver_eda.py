@@ -853,6 +853,7 @@ def run_silver_eda(
         silver_truth,
         "config_snapshot",
         {
+            **truthed_config,
             "silver_version": runtime_inputs["silver_version"],
             "status_column": status_column,
             "episode_column": runtime_inputs["episode_column"],
@@ -903,12 +904,24 @@ def run_silver_eda(
         artifact_paths,
     )
 
+    truth_feature_columns = [
+        column_name
+        for column_name in feature_registry.get("feature_columns", [])
+        if column_name in dataframe.columns
+    ]
+
+    truth_meta_columns = [
+        column_name
+        for column_name in dataframe.columns
+        if str(column_name).startswith("meta__")
+    ]
+
     truth_record = build_truth_record(
         truth_base=silver_truth,
-        row_count=0,
-        column_count=0,
-        meta_columns=[],
-        feature_columns=[],
+        row_count=int(len(dataframe)),
+        column_count=int(len(dataframe.columns)),
+        meta_columns=truth_meta_columns,
+        feature_columns=truth_feature_columns,
     )
 
     truth_hash = truth_record["truth_hash"]
