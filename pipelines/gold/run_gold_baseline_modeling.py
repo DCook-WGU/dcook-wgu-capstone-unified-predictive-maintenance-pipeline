@@ -47,7 +47,7 @@ from utils.postgres_util import get_engine_from_env
 from utils.layer_postgres_writer import write_layer_dataframe, prepare_layer_dataframe
 from utils.ledger import Ledger
 from utils.pipeline.gold_baseline_modeling import run_baseline_pipeline
-
+from utils.cascade_row_tracking import ensure_stable_row_id
 
 def _build_default_runtime_inputs(
     *,

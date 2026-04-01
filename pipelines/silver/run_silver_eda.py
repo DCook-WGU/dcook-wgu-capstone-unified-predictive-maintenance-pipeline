@@ -482,6 +482,119 @@ def run_silver_eda(
                 dropped_effect_size_df = dropped_outputs["effect_size_df"]
                 dropped_artifact_present = True
 
+    feature_columns = list(feature_registry.get("feature_columns", []))
+
+    missingness_group_artifacts = build_missingness_group_artifacts(
+        dataframe,
+        feature_columns=feature_columns,
+        artifacts_dir=runtime_inputs["silver_artifacts_path"],
+        state_column=state_col_synth,
+        episode_column=runtime_inputs["episode_column"],
+        top_feature_count_for_heatmap=25,
+        top_episode_count_for_heatmap=25,
+    )
+    ledger.add(
+        kind="step",
+        step="build_missingness_group_artifacts",
+        message="Built missingness by state and episode artifacts",
+        data={
+            "missingness_by_state_rows": int(len(missingness_group_artifacts["missingness_by_state_df"])),
+            "missingness_by_episode_rows": int(len(missingness_group_artifacts["missingness_by_episode_df"])),
+            "missingness_by_state_path": missingness_group_artifacts["missingness_by_state_path"],
+            "missingness_by_episode_path": missingness_group_artifacts["missingness_by_episode_path"],
+        },
+        logger=logger,
+    )
+
+    state_transition_artifacts = build_state_transition_artifacts(
+        dataframe,
+        state_column=state_col_synth,
+        artifacts_dir=runtime_inputs["silver_artifacts_path"],
+        episode_column=runtime_inputs["episode_column"],
+        state_order=state_values,
+    )
+    ledger.add(
+        kind="step",
+        step="build_state_transition_artifacts",
+        message="Built state transition and dwell artifacts",
+        data={
+            "transition_count_rows": int(len(state_transition_artifacts["transition_counts_df"])),
+            "transition_probability_rows": int(len(state_transition_artifacts["transition_probability_df"])),
+            "dwell_event_rows": int(len(state_transition_artifacts["dwell_events_df"])),
+            "dwell_summary_rows": int(len(state_transition_artifacts["dwell_summary_df"])),
+        },
+        logger=logger,
+    )
+
+    robust_feature_comparison_artifacts = build_robust_feature_comparison_artifacts(
+        dataframe,
+        feature_columns=feature_columns,
+        state_column=state_col_synth,
+        artifacts_dir=runtime_inputs["silver_artifacts_path"],
+        baseline_state="normal",
+        comparison_states=("abnormal", "recovery"),
+        plot_features=plot_features,
+        state_plot_order=state_values,
+        max_plot_features=max(6, runtime_inputs["top_feature_count"]),
+    )
+    ledger.add(
+        kind="step",
+        step="build_robust_feature_comparison_artifacts",
+        message="Built robust feature comparison artifacts",
+        data={
+            "comparison_rows": int(len(robust_feature_comparison_artifacts["comparison_table"])),
+            "comparison_path": robust_feature_comparison_artifacts["comparison_path"],
+            "boxplot_count": int(len(robust_feature_comparison_artifacts["boxplot_paths"])),
+            "ecdf_count": int(len(robust_feature_comparison_artifacts["ecdf_paths"])),
+            "top_features": robust_feature_comparison_artifacts["top_features"],
+        },
+        logger=logger,
+    )
+
+    pca_diagnostics_artifacts = build_pca_diagnostics_artifacts(
+        dataframe,
+        feature_columns=feature_columns,
+        artifacts_dir=runtime_inputs["silver_artifacts_path"],
+        sample_row_count=20000,
+        use_robust_scaler=True,
+        top_loading_count=15,
+    )
+    ledger.add(
+        kind="step",
+        step="build_pca_diagnostics_artifacts",
+        message="Built PCA diagnostics artifacts",
+        data={
+            "explained_variance_rows": int(len(pca_diagnostics_artifacts["explained_variance_df"])),
+            "loadings_rows": int(len(pca_diagnostics_artifacts["loadings_df"])),
+            "explained_variance_path": pca_diagnostics_artifacts["explained_variance_path"],
+            "loadings_path": pca_diagnostics_artifacts["loadings_path"],
+        },
+        logger=logger,
+    )
+
+    outlier_audit_artifacts = build_outlier_audit_artifacts(
+        dataframe,
+        feature_columns=feature_columns,
+        artifacts_dir=runtime_inputs["silver_artifacts_path"],
+        state_column=state_col_synth,
+        iqr_multiplier=1.5,
+        robust_z_threshold=3.5,
+        max_plot_features=20,
+    )
+    ledger.add(
+        kind="step",
+        step="build_outlier_audit_artifacts",
+        message="Built outlier audit artifacts",
+        data={
+            "overall_rows": int(len(outlier_audit_artifacts["overall_df"])),
+            "state_rows": int(len(outlier_audit_artifacts["state_df"])),
+            "overall_path": outlier_audit_artifacts["overall_path"],
+            "state_path": outlier_audit_artifacts["state_path"],
+            "outlier_plot_path": outlier_audit_artifacts["outlier_plot_path"],
+        },
+        logger=logger,
+    )
+
     artifact_paths: dict[str, str] = {}
 
     artifact_paths["overview_summary_path"] = save_eda_json_artifact(
@@ -668,6 +781,56 @@ def run_silver_eda(
         "duplicates_summary": duplicates_summary,
     }
 
+    if missingness_group_artifacts["missingness_by_state_path"] is not None:
+        artifact_paths["missingness_by_state_path"] = missingness_group_artifacts["missingness_by_state_path"]
+    if missingness_group_artifacts["missingness_by_state_heatmap_path"] is not None:
+        artifact_paths["missingness_by_state_heatmap_path"] = missingness_group_artifacts["missingness_by_state_heatmap_path"]
+
+    if missingness_group_artifacts["missingness_by_episode_path"] is not None:
+        artifact_paths["missingness_by_episode_path"] = missingness_group_artifacts["missingness_by_episode_path"]
+    if missingness_group_artifacts["missingness_by_episode_heatmap_path"] is not None:
+        artifact_paths["missingness_by_episode_heatmap_path"] = missingness_group_artifacts["missingness_by_episode_heatmap_path"]
+
+    if state_transition_artifacts["transition_counts_path"] is not None:
+        artifact_paths["state_transition_counts_path"] = state_transition_artifacts["transition_counts_path"]
+    if state_transition_artifacts["transition_probability_path"] is not None:
+        artifact_paths["state_transition_probability_path"] = state_transition_artifacts["transition_probability_path"]
+    if state_transition_artifacts["dwell_events_path"] is not None:
+        artifact_paths["state_dwell_events_path"] = state_transition_artifacts["dwell_events_path"]
+    if state_transition_artifacts["dwell_summary_path"] is not None:
+        artifact_paths["state_dwell_summary_path"] = state_transition_artifacts["dwell_summary_path"]
+    if state_transition_artifacts["transition_heatmap_path"] is not None:
+        artifact_paths["state_transition_heatmap_path"] = state_transition_artifacts["transition_heatmap_path"]
+    if state_transition_artifacts["dwell_plot_path"] is not None:
+        artifact_paths["state_dwell_histogram_path"] = state_transition_artifacts["dwell_plot_path"]
+
+    if robust_feature_comparison_artifacts["comparison_path"] is not None:
+        artifact_paths["robust_feature_comparison_path"] = robust_feature_comparison_artifacts["comparison_path"]
+
+    for idx, boxplot_path in enumerate(robust_feature_comparison_artifacts["boxplot_paths"], start=1):
+        artifact_paths[f"robust_state_boxplot_{idx:02d}_path"] = boxplot_path
+
+    for idx, ecdf_path in enumerate(robust_feature_comparison_artifacts["ecdf_paths"], start=1):
+        artifact_paths[f"robust_state_ecdf_{idx:02d}_path"] = ecdf_path
+
+    if pca_diagnostics_artifacts["explained_variance_path"] is not None:
+        artifact_paths["pca_explained_variance_path"] = pca_diagnostics_artifacts["explained_variance_path"]
+    if pca_diagnostics_artifacts["loadings_path"] is not None:
+        artifact_paths["pca_loadings_path"] = pca_diagnostics_artifacts["loadings_path"]
+    if pca_diagnostics_artifacts["scree_plot_path"] is not None:
+        artifact_paths["pca_scree_plot_path"] = pca_diagnostics_artifacts["scree_plot_path"]
+    if pca_diagnostics_artifacts["pc1_loading_plot_path"] is not None:
+        artifact_paths["pca_pc1_loading_plot_path"] = pca_diagnostics_artifacts["pc1_loading_plot_path"]
+    if pca_diagnostics_artifacts["pc2_loading_plot_path"] is not None:
+        artifact_paths["pca_pc2_loading_plot_path"] = pca_diagnostics_artifacts["pc2_loading_plot_path"]
+
+    if outlier_audit_artifacts["overall_path"] is not None:
+        artifact_paths["outlier_feature_summary_path"] = outlier_audit_artifacts["overall_path"]
+    if outlier_audit_artifacts["state_path"] is not None:
+        artifact_paths["outlier_by_state_path"] = outlier_audit_artifacts["state_path"]
+    if outlier_audit_artifacts["outlier_plot_path"] is not None:
+        artifact_paths["outlier_top_iqr_rate_plot_path"] = outlier_audit_artifacts["outlier_plot_path"]
+
     artifact_index_payload = build_silver_eda_artifact_index(
         artifact_paths=artifact_paths,
         summary_payload=summary_payload,
@@ -720,6 +883,17 @@ def run_silver_eda(
             "strong_relationship_count": int(len(strong_relationships_df)),
             "anomaly_onset_count": int(len(onsets_table)),
             "episode_status_state_stats": episode_payload_bundle["payload"],
+            "missingness_by_state_row_count": int(len(missingness_group_artifacts["missingness_by_state_df"])),
+            "missingness_by_episode_row_count": int(len(missingness_group_artifacts["missingness_by_episode_df"])),
+            "state_transition_row_count": int(len(state_transition_artifacts["transition_counts_df"])),
+            "state_transition_probability_row_count": int(len(state_transition_artifacts["transition_probability_df"])),
+            "state_dwell_event_row_count": int(len(state_transition_artifacts["dwell_events_df"])),
+            "state_dwell_summary_row_count": int(len(state_transition_artifacts["dwell_summary_df"])),
+            "robust_feature_comparison_row_count": int(len(robust_feature_comparison_artifacts["comparison_table"])),
+            "pca_explained_variance_row_count": int(len(pca_diagnostics_artifacts["explained_variance_df"])),
+            "pca_loadings_row_count": int(len(pca_diagnostics_artifacts["loadings_df"])),
+            "outlier_feature_summary_row_count": int(len(outlier_audit_artifacts["overall_df"])),
+            "outlier_by_state_row_count": int(len(outlier_audit_artifacts["state_df"])),
         },
     )
 

@@ -48,7 +48,7 @@ from utils.pipeline.gold_preprocessing import (
     prepare_gold_model_inputs,
     build_gold_support_artifacts,
 )
-
+from utils.cascade_row_tracking import ensure_stable_row_id
 
 def _build_default_runtime_inputs(
     *,

@@ -45,7 +45,7 @@ from utils.pipeline.gold_comparison import (
     build_comparison_summary,
     build_baseline_vs_best_cascade_delta,
 )
-
+from utils.cascade_row_tracking import ensure_stable_row_id
 
 def _build_default_runtime_inputs(
     *,
