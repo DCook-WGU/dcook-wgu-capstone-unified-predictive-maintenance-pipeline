@@ -1,9 +1,12 @@
-import numpy as np
+from __future__ import annotations
+
+from typing import Optional, Sequence
+
 import pandas as pd
+import numpy as np
 
 
 DEFAULT_ROW_ID_COLUMN = "meta__row_id"
-
 
 def ensure_stable_row_id(
     dataframe: pd.DataFrame,
@@ -124,7 +127,7 @@ def merge_stage_results_back(
     """
     Merge row-level stage results back onto the full master dataframe.
     """
-    out = ensure_stable_row_id(master_dataframe, row_id_col=row_id_column)
+    out = ensure_stable_row_id(master_dataframe, row_id_column=row_id_column)
 
     stage_columns = [
         row_id_column,
@@ -172,21 +175,12 @@ def finalize_stage_flag_columns(
     return out
 
 
-from __future__ import annotations
-
-from typing import Optional, Sequence
-
-import pandas as pd
-
-
-DEFAULT_ROW_ID_COL = "meta__row_id"
-
 
 def get_detected_rows_dataframe(
     dataframe: pd.DataFrame,
     *,
     target_flag_column: str,
-    row_id_col: str = DEFAULT_ROW_ID_COL,
+    row_id_column: str = DEFAULT_ROW_ID_COLUMN,
     score_column: Optional[str] = None,
     decision_column: Optional[str] = None,
     pred_column: Optional[str] = None,
@@ -210,7 +204,7 @@ def get_detected_rows_dataframe(
     target_flag_column:
         Column used to filter detected rows (for example 'baseline_flag',
         'stage1_flag', 'stage2_flag', or 'cascade_final_flag').
-    row_id_col:
+    row_id_column:
         Stable row identity column.
     score_column:
         Optional score column to include.
@@ -244,7 +238,7 @@ def get_detected_rows_dataframe(
 
     if preferred_identity_columns is None:
         preferred_identity_columns = [
-            row_id_col,
+            row_id_column,
             "meta__record_id",
             "event_id",
             "time_index",
@@ -258,21 +252,21 @@ def get_detected_rows_dataframe(
 
     candidate_columns: list[str] = []
 
-    for col in preferred_identity_columns:
-        if col in dataframe.columns and col not in candidate_columns:
-            candidate_columns.append(col)
+    for column in preferred_identity_columns:
+        if column in dataframe.columns and column not in candidate_columns:
+            candidate_columns.append(column)
 
     if target_flag_column in dataframe.columns and target_flag_column not in candidate_columns:
         candidate_columns.append(target_flag_column)
 
-    for optional_col in [score_column, decision_column, pred_column]:
-        if optional_col and optional_col in dataframe.columns and optional_col not in candidate_columns:
-            candidate_columns.append(optional_col)
+    for optional_column in [score_column, decision_column, pred_column]:
+        if optional_column and optional_column in dataframe.columns and optional_column not in candidate_columns:
+            candidate_columns.append(optional_column)
 
     if include_columns is not None:
-        for col in include_columns:
-            if col in dataframe.columns and col not in candidate_columns:
-                candidate_columns.append(col)
+        for column in include_columns:
+            if column in dataframe.columns and column not in candidate_columns:
+                candidate_columns.append(column)
 
     detected_rows_dataframe = (
         dataframe.loc[
@@ -295,7 +289,7 @@ def get_stage_detected_rows_dataframe(
     dataframe: pd.DataFrame,
     *,
     stage_name: str,
-    row_id_col: str = DEFAULT_ROW_ID_COL,
+    row_id_column: str = DEFAULT_ROW_ID_COLUMN,
     include_columns: Optional[Sequence[str]] = None,
     sort_by: Optional[str] = "time_index",
     ascending: bool = True,
@@ -348,7 +342,7 @@ def get_stage_detected_rows_dataframe(
     return get_detected_rows_dataframe(
         dataframe,
         target_flag_column=target_flag_column,
-        row_id_col=row_id_col,
+        row_id_column=row_id_column,
         score_column=score_column,
         decision_column=decision_column,
         pred_column=pred_column,

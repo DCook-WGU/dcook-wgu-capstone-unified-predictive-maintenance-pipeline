@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-03-29T22:33:33.083129+00:00",
+    "ts_utc": "2026-04-05T04:10:51.175784+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-03-29T22:33:34.753523+00:00",
+    "ts_utc": "2026-04-05T04:10:56.397941+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -29,7 +29,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-29T22:33:37.449085+00:00",
+    "ts_utc": "2026-04-05T04:11:13.385000+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -44,7 +44,7 @@
     }
   },
   {
-    "ts_utc": "2026-03-29T22:33:59.396329+00:00",
+    "ts_utc": "2026-04-05T04:12:09.849991+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -73,7 +73,55 @@
     }
   },
   {
-    "ts_utc": "2026-03-29T22:36:07.635405+00:00",
+    "ts_utc": "2026-04-05T04:12:17.139683+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "missingness_by_group",
+    "message": "Built missingness-by-state and missingness-by-episode artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "missingness_by_state_rows": 78,
+      "missingness_by_episode_rows": 209,
+      "missingness_by_state_path": "/workspace/artifacts/silver_eda/pump/missingness__by_state.csv",
+      "missingness_by_episode_path": "/workspace/artifacts/silver_eda/pump/missingness__by_episode.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-05T04:12:21.573607+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "state_transitions",
+    "message": "Built transition and dwell summary artifacts from normalized state sequences.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "transition_count_rows": 3,
+      "dwell_event_rows": 22,
+      "state_transition_probability_path": "/workspace/artifacts/silver_eda/pump/state_transition__probabilities.csv",
+      "state_dwell_summary_path": "/workspace/artifacts/silver_eda/pump/state_dwell__summary.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-05T04:13:08.929541+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "robust_state_comparison",
+    "message": "Built robust state-comparison table plus boxplot and ECDF artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "robust_rows": 100,
+      "robust_effect_path": "/workspace/artifacts/silver_eda/pump/feature_behavior__robust_comparison.csv",
+      "state_boxplot_count": 12,
+      "state_ecdf_count": 12
+    }
+  },
+  {
+    "ts_utc": "2026-04-05T04:15:28.945230+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -94,7 +142,22 @@
     }
   },
   {
-    "ts_utc": "2026-03-29T22:36:09.346553+00:00",
+    "ts_utc": "2026-04-05T04:15:34.023556+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "pca_diagnostics",
+    "message": "Built PCA scree and loading diagnostics.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "pca_component_count": 10,
+      "pca_explained_variance_path": "/workspace/artifacts/silver_eda/pump/pca__explained_variance.csv",
+      "pca_loadings_path": "/workspace/artifacts/silver_eda/pump/pca__loadings.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-05T04:15:37.391635+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "decision",
@@ -111,7 +174,22 @@
     }
   },
   {
-    "ts_utc": "2026-03-29T22:36:10.121131+00:00",
+    "ts_utc": "2026-04-05T04:15:46.988892+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "outlier_audit",
+    "message": "Built outlier summary artifacts overall and by state.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "outlier_summary_rows": 50,
+      "outlier_by_state_rows": 150,
+      "outlier_summary_path": "/workspace/artifacts/silver_eda/pump/outliers__feature_summary.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-05T04:15:49.024527+00:00",
     "stage": "silver_eda",
     "recipe": "silver_eda__v001",
     "kind": "step",
@@ -121,8 +199,8 @@
     "consequence": null,
     "data": {
       "ledger_path": "/workspace/artifacts/silver_eda/pump/ledger__pump__silver_eda.json",
-      "silver_eda_truth_hash": "74037c3e48da9e244c0a7df4202f337749b67c924b5c5dc79c67ff59737eb8d9",
-      "silver_eda_truth_path": "/workspace/artifacts/truths/silver_eda/pump__silver_eda__truth__74037c3e48da9e244c0a7df4202f337749b67c924b5c5dc79c67ff59737eb8d9.json"
+      "silver_eda_truth_hash": "a338fe683b00924e9cab15aeb4bdeb911c2c12b6c65e053c91befd06dcee8090",
+      "silver_eda_truth_path": "/workspace/artifacts/truths/silver_eda/pump__silver_eda__truth__a338fe683b00924e9cab15aeb4bdeb911c2c12b6c65e053c91befd06dcee8090.json"
     }
   }
 ]

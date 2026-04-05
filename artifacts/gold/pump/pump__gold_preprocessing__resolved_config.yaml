@@ -18,6 +18,7 @@ paths:
   data_dir: data
   artifacts_dir: artifacts
   models_dir: models
+  pipelines_dir: pipelines
   logs_dir: logs
   wandb_dir: wandb
   raw_subdir: raw
@@ -28,6 +29,9 @@ paths:
   silver_train_subdir: silver/train
   silver_test_subdir: silver/test
   gold_subdir: gold
+  bronze_pipeline_subdir: bronze
+  silver_pipeline_subdir: silver
+  gold_pipeline_subdir: gold
 wandb:
   enabled: true
   project: capstone
@@ -122,6 +126,14 @@ filenames:
   cascade_tuned_reference_profile_file_name: pump__gold__cascade_tuned_reference_profile.csv
   cascade_tuned_stage1_model_file_name: pump__gold__cascade_tuned_stage1_isolation_forest.joblib
   cascade_tuned_stage2_model_file_name: pump__gold__cascade_tuned_stage2_isolation_forest.joblib
+  cascade_stage3_improved_results_file_name_csv: pump__gold__cascade_stage3_improved_results.csv
+  cascade_stage3_improved_results_file_name_pickle: pump__gold__cascade_stage3_improved_results.pkl
+  cascade_stage3_improved_thresholds_file_name: pump__gold__cascade_stage3_improved_thresholds.json
+  cascade_stage3_improved_summary_file_name: pump__gold__cascade_stage3_improved_summary.json
+  cascade_stage3_improved_metadata_file_name: pump__gold__cascade_stage3_improved_metadata.json
+  cascade_stage3_improved_reference_profile_file_name: pump__gold__cascade_stage3_improved_reference_profile.csv
+  cascade_stage3_improved_stage1_model_file_name: pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib
+  cascade_stage3_improved_stage2_model_file_name: pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib
   comparison_file_name: pump__gold__comparison__model_comparison.csv
   model_comparison_file_name: pump__gold__model_comparison.csv
   model_comparison_summary_file_name: pump__gold__model_comparison_summary.json
@@ -134,7 +146,9 @@ filenames:
   silver_eda_ledger_file_name: ledger__pump__silver_eda.json
   gold_preprocessing_ledger_file_name: ledger__pump__gold_preprocessing.json
   gold_baseline_ledger_file_name: ledger__pump__gold_baseline_modeling.json
-  gold_cascade_ledger_file_name: ledger__pump__gold_cascade_modeling.json
+  gold_cascade_defaults_ledger_file_name: ledger__pump__gold_cascade_defaults_modeling.json
+  gold_cascade_tuned_ledger_file_name: ledger__pump__gold_cascade_tuned_modeling.json
+  gold_cascade_stage3_imporved_ledger_file_name: ledger__pump__gold_cascade_stage3_improved_modeling.json
   gold_comparison_ledger_file_name: ledger__pump__gold_comparison.json
   bronze_version: bronze__001
   silver_version: silver__001
@@ -147,6 +161,7 @@ resolved_paths:
   models_root: /workspace/models
   logs_root: /workspace/logs
   wandb_root: /workspace/wandb
+  pipelines_root: /workspace/pipelines
   data_raw_dir: /workspace/data/raw
   data_bronze_dir: /workspace/data/bronze
   data_bronze_train_dir: /workspace/data/bronze/train
@@ -155,6 +170,9 @@ resolved_paths:
   data_silver_train_dir: /workspace/data/silver/train
   data_silver_test_dir: /workspace/data/silver/test
   data_gold_dir: /workspace/data/gold
+  pipelines_bronze_dir: /workspace/pipelines/bronze
+  pipelines_silver_dir: /workspace/pipelines/silver
+  pipelines_gold_dir: /workspace/pipelines/gold
   truths_dir: /workspace/artifacts/truths
   truth_index_path: /workspace/artifacts/truths/truth_index.jsonl
   bronze_artifacts_dir: /workspace/artifacts/bronze/pump
@@ -205,6 +223,16 @@ resolved_paths:
   cascade_tuned_stage2_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_tuned_stage2_isolation_forest.joblib
   cascade_tuned_stage1_models_path: /workspace/models/pump/pump__gold__cascade_tuned_stage1_isolation_forest.joblib
   cascade_tuned_stage2_models_path: /workspace/models/pump/pump__gold__cascade_tuned_stage2_isolation_forest.joblib
+  cascade_stage3_improved_results_path_csv: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.csv
+  cascade_stage3_improved_results_path_pickle: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.pkl
+  cascade_stage3_improved_thresholds_path: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_thresholds.json
+  cascade_stage3_improved_summary_path: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_summary.json
+  cascade_stage3_improved_metadata_path: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_metadata.json
+  cascade_stage3_improved_reference_profile_path: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_reference_profile.csv
+  cascade_stage3_improved_stage1_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib
+  cascade_stage3_improved_stage2_model_artifact_path: /workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib
+  cascade_stage3_improved_stage1_models_path: /workspace/models/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib
+  cascade_stage3_improved_stage2_models_path: /workspace/models/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib
   comparison_path: /workspace/artifacts/gold/pump/pump__gold__comparison__model_comparison.csv
   model_comparison_path: /workspace/artifacts/gold/pump/pump__gold__model_comparison.csv
   model_comparison_summary_path: /workspace/artifacts/gold/pump/pump__gold__model_comparison_summary.json
@@ -217,7 +245,7 @@ resolved_paths:
   silver_eda_log_path: /workspace/logs/silver_eda.log
   gold_preprocessing_log_path: /workspace/logs/gold_preprocessing.log
   gold_baseline_log_path: /workspace/logs/gold_modeling_baseline.log
-  gold_cascade_log_path: /workspace/logs/gold_modeling_cascade.log
+  gold_cascade_log_path: /workspace/logs/gold_modeling_cascade_stage3_improved.log
   gold_comparison_log_path: /workspace/logs/gold_model_comparison.log
 config_meta:
   source_files:
@@ -226,4 +254,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/gold_preprocessing.yaml
   project_root: /workspace
-  config_hash: 8ebbe442a1f65e0fda1975fe53a14899c3e151c256ee87beabc3a1c59375c101
+  config_hash: 078dc46807910c58a8c8b94b7c7cedd2cb3e672cf78e044e1fd18db1ddbf620b

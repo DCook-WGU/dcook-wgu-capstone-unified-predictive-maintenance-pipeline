@@ -14,6 +14,61 @@ from utils.postgres_util import (
 
 
 # -----------------------------------------------------------------------------
+# Internal permission/bootstrap helpers
+# -----------------------------------------------------------------------------
+
+def _grant_schema_usage_create(
+    engine,
+    *,
+    schema: str,
+    role_name: str,
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_role = sanitize_sql_identifier(role_name)
+
+    execute_sql(
+        engine,
+        f'''
+        GRANT USAGE, CREATE ON SCHEMA "{safe_schema}" TO {safe_role};
+        '''
+    )
+
+
+def _apply_table_owner_and_grants(
+    engine,
+    *,
+    schema: str,
+    table_name: str,
+    owner_role: str,
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+    safe_owner = sanitize_sql_identifier(owner_role)
+
+    _grant_schema_usage_create(
+        engine,
+        schema=safe_schema,
+        role_name=safe_owner,
+    )
+
+    execute_sql(
+        engine,
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}" OWNER TO {safe_owner};
+        '''
+    )
+
+    execute_sql(
+        engine,
+        f'''
+        GRANT SELECT, INSERT, UPDATE, DELETE
+        ON TABLE "{safe_schema}"."{safe_table}"
+        TO {safe_owner};
+        '''
+    )
+
+
+# -----------------------------------------------------------------------------
 # Queue table runtime column helpers
 # -----------------------------------------------------------------------------
 
@@ -27,6 +82,10 @@ def ensure_send_queue_runtime_columns(
     Ensure the send queue table has the runtime columns needed by the producer.
 
     This is safe to run repeatedly.
+
+    Important:
+    This function assumes the queue table was already created with the correct
+    owner/grants by the queue-stage builder or bootstrap logic.
     """
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
@@ -85,7 +144,15 @@ def ensure_simulation_state_control_table(
     *,
     schema: str = "capstone",
     table_name: str = "simulation_state_control",
+    owner_role: Optional[str] = None,
+    apply_owner_and_grants: bool = False,
 ) -> str:
+    """
+    Ensure the simulation-state control table exists.
+
+    If apply_owner_and_grants=True, this function will also assign ownership
+    and grants. That should only be used from an admin/bootstrap step.
+    """
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -113,6 +180,17 @@ def ensure_simulation_state_control_table(
         ON "{safe_schema}"."{safe_table}" (dataset_id, run_id);
         '''
     )
+
+    if apply_owner_and_grants:
+        if owner_role is None or str(owner_role).strip() == "":
+            raise ValueError("owner_role must be provided when apply_owner_and_grants=True")
+
+        _apply_table_owner_and_grants(
+            engine,
+            schema=safe_schema,
+            table_name=safe_table,
+            owner_role=owner_role,
+        )
 
     return safe_table
 

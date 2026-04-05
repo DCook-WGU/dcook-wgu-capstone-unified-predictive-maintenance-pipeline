@@ -1,0 +1,4 @@
+from_state,normal,abnormal,recovery
+normal,0.0,7.0,0.0
+abnormal,0.0,0.0,7.0
+recovery,0.0,0.0,0.0

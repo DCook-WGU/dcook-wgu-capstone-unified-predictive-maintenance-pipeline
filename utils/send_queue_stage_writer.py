@@ -32,6 +32,125 @@ def _validate_source_columns(dataframe: pd.DataFrame, required_columns: Sequence
 
 
 # -----------------------------------------------------------------------------
+# Queue runtime bootstrap helpers
+# -----------------------------------------------------------------------------
+
+def _ensure_send_queue_runtime_columns(
+    engine,
+    *,
+    schema: str,
+    table_name: str,
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+
+    statements = [
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}"
+        ADD COLUMN IF NOT EXISTS claim_token TEXT;
+        ''',
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}"
+        ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
+        ''',
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}"
+        ADD COLUMN IF NOT EXISTS producer_topic TEXT;
+        ''',
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}"
+        ADD COLUMN IF NOT EXISTS producer_worker_id TEXT;
+        ''',
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}"
+        ADD COLUMN IF NOT EXISTS producer_ack_at TIMESTAMPTZ;
+        ''',
+    ]
+
+    for sql in statements:
+        execute_sql(engine, sql)
+
+
+def _ensure_send_queue_indexes(
+    engine,
+    *,
+    schema: str,
+    table_name: str,
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+
+    index_statements = [
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_queue_status"
+        ON "{safe_schema}"."{safe_table}" (queue_status);
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_producer_order"
+        ON "{safe_schema}"."{safe_table}" (observation_index, message_sequence_index, sensor_index);
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_message_key"
+        ON "{safe_schema}"."{safe_table}" (message_key);
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_producer_sent_at"
+        ON "{safe_schema}"."{safe_table}" (producer_sent_at);
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_claim_token"
+        ON "{safe_schema}"."{safe_table}" (claim_token);
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_queue_claim_order"
+        ON "{safe_schema}"."{safe_table}" (queue_status, observation_index, message_sequence_index, sensor_index);
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_claimed_at"
+        ON "{safe_schema}"."{safe_table}" (claimed_at);
+        ''',
+    ]
+
+    for sql in index_statements:
+        execute_sql(engine, sql)
+
+
+def _apply_send_queue_owner_and_grants(
+    engine,
+    *,
+    schema: str,
+    table_name: str,
+    owner_role: str,
+) -> None:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+    safe_owner_role = sanitize_sql_identifier(owner_role)
+
+    execute_sql(
+        engine,
+        f'''
+        GRANT USAGE, CREATE ON SCHEMA "{safe_schema}" TO {safe_owner_role};
+        '''
+    )
+
+    execute_sql(
+        engine,
+        f'''
+        ALTER TABLE "{safe_schema}"."{safe_table}" OWNER TO {safe_owner_role};
+        '''
+    )
+
+    execute_sql(
+        engine,
+        f'''
+        GRANT SELECT, INSERT, UPDATE, DELETE
+        ON TABLE "{safe_schema}"."{safe_table}"
+        TO {safe_owner_role};
+        '''
+    )
+
+
+# -----------------------------------------------------------------------------
 # Stage builder
 # -----------------------------------------------------------------------------
 
@@ -44,6 +163,8 @@ def build_sensor_messages_send_queue(
     if_exists: str = "replace",
     queue_status_default: str = "pending",
     chunk_size: int = 10000,
+    queue_owner_role: str = "kafka_producer",
+    apply_owner_and_grants: bool = True,
 ) -> str:
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
@@ -118,14 +239,24 @@ def build_sensor_messages_send_queue(
         "producer_send_attempt",
         "queue_status",
         "queued_at",
+        "claim_token",
+        "claimed_at",
+        "producer_topic",
+        "producer_worker_id",
         "producer_sent_at",
+        "producer_ack_at",
         "producer_delivery_status",
         "producer_delivery_error",
     ]
 
     has_written_first_chunk = False
 
-    def transform_chunk_func(df_chunk: pd.DataFrame, chunk_number: int, start_row: int, end_row: int) -> pd.DataFrame:
+    def transform_chunk_func(
+        df_chunk: pd.DataFrame,
+        chunk_number: int,
+        start_row: int,
+        end_row: int,
+    ) -> pd.DataFrame:
         dataframe = df_chunk.copy()
 
         dataframe = dataframe.sort_values(
@@ -137,7 +268,14 @@ def build_sensor_messages_send_queue(
 
         dataframe["queue_status"] = str(queue_status_default).strip()
         dataframe["queued_at"] = queue_built_at
+
+        dataframe["claim_token"] = None
+        dataframe["claimed_at"] = pd.NaT
+        dataframe["producer_topic"] = None
+        dataframe["producer_worker_id"] = None
+
         dataframe["producer_sent_at"] = pd.NaT
+        dataframe["producer_ack_at"] = pd.NaT
         dataframe["producer_delivery_status"] = None
         dataframe["producer_delivery_error"] = None
 
@@ -156,7 +294,12 @@ def build_sensor_messages_send_queue(
         dataframe = dataframe[ordered_columns + remaining_columns]
         return dataframe
 
-    def write_chunk_func(df_out: pd.DataFrame, chunk_number: int, start_row: int, end_row: int) -> None:
+    def write_chunk_func(
+        df_out: pd.DataFrame,
+        chunk_number: int,
+        start_row: int,
+        end_row: int,
+    ) -> None:
         nonlocal has_written_first_chunk
 
         write_layer_dataframe(
@@ -182,37 +325,25 @@ def build_sensor_messages_send_queue(
         chunk_size=chunk_size,
     )
 
-    execute_sql(
+    _ensure_send_queue_runtime_columns(
         engine,
-        f'''
-        CREATE INDEX IF NOT EXISTS "idx_{safe_target_table}_queue_status"
-        ON "{safe_schema}"."{safe_target_table}" (queue_status);
-        '''
+        schema=safe_schema,
+        table_name=safe_target_table,
     )
 
-    execute_sql(
+    _ensure_send_queue_indexes(
         engine,
-        f'''
-        CREATE INDEX IF NOT EXISTS "idx_{safe_target_table}_producer_order"
-        ON "{safe_schema}"."{safe_target_table}" (observation_index, message_sequence_index, sensor_index);
-        '''
+        schema=safe_schema,
+        table_name=safe_target_table,
     )
 
-    execute_sql(
-        engine,
-        f'''
-        CREATE INDEX IF NOT EXISTS "idx_{safe_target_table}_message_key"
-        ON "{safe_schema}"."{safe_target_table}" (message_key);
-        '''
-    )
-
-    execute_sql(
-        engine,
-        f'''
-        CREATE INDEX IF NOT EXISTS "idx_{safe_target_table}_producer_sent_at"
-        ON "{safe_schema}"."{safe_target_table}" (producer_sent_at);
-        '''
-    )
+    if apply_owner_and_grants:
+        _apply_send_queue_owner_and_grants(
+            engine,
+            schema=safe_schema,
+            table_name=safe_target_table,
+            owner_role=queue_owner_role,
+        )
 
     return safe_target_table
 

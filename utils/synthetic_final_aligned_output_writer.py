@@ -163,6 +163,7 @@ def _normalize_machine_status_value(
 
     mapping = {
         "normal": "NORMAL",
+        "buildup": "NORMAL",
         "broken": "BROKEN",
         "abnormal": "BROKEN",
         "failure": "BROKEN",

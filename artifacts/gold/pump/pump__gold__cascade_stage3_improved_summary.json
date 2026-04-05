@@ -4,10 +4,10 @@
   "stage3_variant": "confirmation_and_priority_layer",
   "cascade_metrics": {
     "model": "3-Stage Cascade",
-    "stage1_alert_count_all_rows": 22742,
+    "stage1_alert_count_all_rows": 35615,
     "stage2_alert_count_all_rows": 13898,
     "final_alert_count_all_rows": 13898,
-    "stage1_alert_count_test_rows": 2288,
+    "stage1_alert_count_test_rows": 6215,
     "stage2_alert_count_test_rows": 648,
     "final_alert_count_test_rows": 648,
     "stage3_relaxed_alert_count_test_rows": 646,
@@ -26,10 +26,10 @@
     "stage3_strict_recall": 0.22033898305084745,
     "stage3_strict_f1": 0.22707423580786026
   },
-  "stage1_alert_count_all_rows": 22742,
+  "stage1_alert_count_all_rows": 35615,
   "stage2_alert_count_all_rows": 13898,
   "final_cascade_alert_count_all_rows": 13898,
-  "stage1_alert_count_test_rows": 2288,
+  "stage1_alert_count_test_rows": 6215,
   "stage2_alert_count_test_rows": 648,
   "final_cascade_alert_count_test_rows": 648,
   "stage3_relaxed_alert_count_all_rows": 13880,
@@ -87,11 +87,11 @@
     "low_priority_rows_all": 894,
     "low_priority_rows_test": 105
   },
-  "cascade_truth_hash": "8651506f574fef8a7f32e8c200914afa1b2ac66a1f72fa487993f2a1df01a6ca",
-  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__8651506f574fef8a7f32e8c200914afa1b2ac66a1f72fa487993f2a1df01a6ca.json",
-  "cascade_process_run_id": "gold_cascade_process__20260324T230641Z",
-  "gold_truth_hash": "8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117",
-  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8a62f44686a717446607a3d0303285188fa60d19339eef92a626f729f6333117.json",
-  "gold_process_run_id": "gold_process__20260322T081446Z",
+  "cascade_truth_hash": "0278e56e65c16c12de78e2d5f55d33d68aaac97fc4f94858ed1dfb596174cda9",
+  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__0278e56e65c16c12de78e2d5f55d33d68aaac97fc4f94858ed1dfb596174cda9.json",
+  "cascade_process_run_id": "gold_cascade_process__20260405T060357Z",
+  "gold_truth_hash": "d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e.json",
+  "gold_process_run_id": "gold_process__20260405T042429Z",
   "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40"
 }

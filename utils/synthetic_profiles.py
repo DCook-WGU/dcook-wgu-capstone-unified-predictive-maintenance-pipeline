@@ -42,6 +42,7 @@ def _require_columns(dataframe: pd.DataFrame, required: list[str], name: str) ->
     missing = [column for column in required if column not in dataframe.columns]
     if missing:
         raise ValueError(f"{name} missing required columns: {missing}")
+    
 
 
 def load_rich_profile_csv(path: str, state_scope: str) -> Dict[str, SensorRichProfile]:
@@ -90,8 +91,48 @@ def load_rich_profile_csv(path: str, state_scope: str) -> Dict[str, SensorRichPr
 
 def load_correlation_pairs_csv(path: str) -> pd.DataFrame:
     dataframe = pd.read_csv(path)
-    _require_columns(dataframe, ["sensor_a", "sensor_b", "pearson_corr", "spearman_corr"], "correlation_pairs")
-    return dataframe
+
+    required_base = ["sensor_a", "sensor_b"]
+
+    missing_base = [column for column in required_base if column not in dataframe.columns]
+    if missing_base:
+        raise ValueError(f"correlation_pairs missing required columns: {missing_base}")
+
+    # Accept either:
+    # 1) pearson_corr / spearman_corr
+    # 2) correlation / abs_correlation  (older Silver EDA export shape)
+    columns = set(dataframe.columns.astype(str).tolist())
+
+    if {"pearson_corr", "spearman_corr"}.issubset(columns):
+        out = dataframe.copy()
+
+    elif "correlation" in columns:
+        out = dataframe.copy()
+        out["pearson_corr"] = pd.to_numeric(out["correlation"], errors="coerce")
+
+        if "spearman_corr" not in out.columns:
+            # fallback: keep the contract stable even if Silver EDA only exported one signed correlation
+            out["spearman_corr"] = out["pearson_corr"]
+
+    else:
+        raise ValueError(
+            "correlation_pairs must contain either "
+            "['sensor_a', 'sensor_b', 'pearson_corr', 'spearman_corr'] "
+            "or ['sensor_a', 'sensor_b', 'correlation']"
+        )
+
+    out["sensor_a"] = out["sensor_a"].astype(str)
+    out["sensor_b"] = out["sensor_b"].astype(str)
+    out["pearson_corr"] = pd.to_numeric(out["pearson_corr"], errors="coerce")
+    out["spearman_corr"] = pd.to_numeric(out["spearman_corr"], errors="coerce")
+
+    out = out.loc[
+        out["sensor_a"].notna()
+        & out["sensor_b"].notna()
+        & out["pearson_corr"].notna()
+    ].copy()
+
+    return out.reset_index(drop=True)
 
 
 def load_group_map_csv(path: str) -> pd.DataFrame:

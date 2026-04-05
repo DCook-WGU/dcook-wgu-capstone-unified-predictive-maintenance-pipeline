@@ -1,0 +1,4 @@
+state,dwell_event_count,mean_dwell_length_rows,median_dwell_length_rows,max_dwell_length_rows
+normal,8,25729.5,21211.0,53804
+recovery,7,2068.1428571428573,944.0,8390
+abnormal,7,1.0,1.0,1
