@@ -23,23 +23,50 @@ class MissingnessSpec:
 
 
 def build_missingness_spec_from_truth_payload(payload: Dict[str, object]) -> MissingnessSpec:
+    """
+    Build MissingnessSpec from truth.runtime_facts.missingness_quarantine.
+
+    Permanent fix:
+    - merge dropped-sensor global missingness from `dropped_missing_pct`
+      back into `missingness_pct_all`
+    - ensure dropped sensors receive a default dependency flag
+    """
     pct_all = dict(payload.get("missingness_pct_all") or {})
     pct_by_state = dict(payload.get("missingness_pct_by_state") or {})
     dep = dict(payload.get("missingness_state_dependent_flag") or {})
     gate = dict(payload.get("missingness_state_gate_params") or {})
 
-    state_list = list(gate.get("state_list") or ["normal", "abnormal", "recovery"])
-    state_col_synth = str(gate.get("state_col_synth") or "machine_status__synthetic")
+    dropped_missing_pct = dict(payload.get("dropped_missing_pct") or {})
+    dropped_features = list(payload.get("dropped_features") or [])
 
-    # normalize nested dict
+    for sensor_name in dropped_features:
+        sensor_name = str(sensor_name).strip()
+        if sensor_name == "":
+            continue
+
+        if sensor_name in dropped_missing_pct:
+            pct_all[sensor_name] = float(dropped_missing_pct[sensor_name])
+
+        if sensor_name not in dep:
+            dep[sensor_name] = False
+
+    state_list = list(gate.get("state_list") or ["normal", "abnormal", "recovery"])
+
+    state_col_synth = str(gate.get("state_col_synth") or "machine_status__synthetic")
+    if state_col_synth == "machine_status__synethic":
+        state_col_synth = "machine_status__synthetic"
+
     pct_by_state_norm: Dict[str, Dict[str, float]] = {}
     for st in state_list:
-        pct_by_state_norm[st] = dict(pct_by_state.get(st) or {})
+        pct_by_state_norm[str(st)] = dict(pct_by_state.get(st) or {})
 
     return MissingnessSpec(
         missingness_pct_all={str(k): float(v) for k, v in pct_all.items()},
         missingness_pct_by_state={
-            str(st): {str(k): float(v) for k, v in (pct_by_state_norm.get(st) or {}).items()}
+            str(st): {
+                str(k): float(v)
+                for k, v in (pct_by_state_norm.get(str(st)) or {}).items()
+            }
             for st in state_list
         },
         missingness_state_dependent_flag={str(k): bool(v) for k, v in dep.items()},

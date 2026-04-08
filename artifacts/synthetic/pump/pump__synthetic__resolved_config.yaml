@@ -82,6 +82,15 @@ synthetic:
   process_run_id_prefix: synthetic
   random_seed: 42
   normal_batch_size: 50
+  generator:
+    mode: batch
+    target_rows: 225000
+    max_episodes: 1000000
+    episode_max_rows: 12000
+    allow_overshoot: false
+    rows_per_failure: 32000
+    write_mode: reset
+    append_mode: renumber
   episode:
     normal_before_range:
     - 800
@@ -317,4 +326,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: 113f098b3dadd35faa242d50702667aba16fe93600c10182f27395c3c7431fef
+  config_hash: b486542d4377ed942807ca7887b6b01d7b413b87b5207ab820f96a071c4290eb
