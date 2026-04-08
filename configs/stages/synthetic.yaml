@@ -6,6 +6,17 @@ synthetic:
   # batch sizes
   normal_batch_size: 50
 
+  # Mode
+  generator:
+    mode: "batch"
+    target_rows: 225_000
+    max_episodes: 1_000_000
+    episode_max_rows: 12_000
+    allow_overshoot: False
+    rows_per_failure: 32_000
+    write_mode: "reset"
+    append_mode: "renumber"
+
   # episode defaults
   episode:
     normal_before_range: [800, 1800]

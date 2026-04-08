@@ -550,6 +550,124 @@ class SyntheticGenerator:
 
         return self._derive_hotspot_clusters_from_corr()
 
+    
+    def _smooth_vector(self, values: np.ndarray, alpha: float = 0.90) -> np.ndarray:
+        values = np.asarray(values, dtype=float).copy()
+        if values.size <= 1:
+            return values
+
+        for i in range(1, values.size):
+            values[i] = alpha * values[i - 1] + (1.0 - alpha) * values[i]
+        return values
+
+
+    def _choose_cluster_anchor_sensor(
+        self,
+        cluster: List[str],
+    ) -> Optional[str]:
+        valid = [sensor for sensor in cluster if sensor in self.sensors]
+        if len(valid) == 0:
+            return None
+        if len(valid) == 1:
+            return valid[0]
+
+        best_sensor = None
+        best_score = -1.0
+
+        for sensor in valid:
+            score = 0.0
+            for other in valid:
+                if other == sensor:
+                    continue
+                score += abs(float(self.corr.get((sensor, other), 0.0)))
+
+            if score > best_score:
+                best_score = score
+                best_sensor = sensor
+
+        return best_sensor
+
+
+    def _apply_anchor_cluster_generation(
+        self,
+        dataframe: pd.DataFrame,
+        profiles: Dict[str, SensorRichProfile],
+        *,
+        clusters: List[List[str]],
+        blend: float = 0.85,
+        min_abs_corr: float = 0.20,
+        residual_floor: float = 0.08,
+        smooth_alpha: float = 0.90,
+    ) -> None:
+        """
+        Strengthen hotspot clusters by choosing an anchor sensor path and
+        generating other cluster members from that anchor using the pairwise
+        correlation structure.
+        """
+        if len(dataframe) == 0:
+            return
+
+        for cluster in clusters:
+            sensors = [
+                sensor
+                for sensor in cluster
+                if sensor in dataframe.columns and sensor in profiles
+            ]
+            if len(sensors) < 2:
+                continue
+
+            anchor_sensor = self._choose_cluster_anchor_sensor(sensors)
+            if anchor_sensor is None:
+                continue
+
+            anchor_profile = profiles[anchor_sensor]
+            anchor_values = pd.to_numeric(
+                dataframe[anchor_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            anchor_mask = np.isfinite(anchor_values)
+            if anchor_mask.sum() < 3:
+                continue
+
+            anchor_current = anchor_values[anchor_mask]
+            anchor_mean = float(np.mean(anchor_current))
+            anchor_std = float(np.std(anchor_current, ddof=1)) if anchor_current.size > 1 else 0.0
+            anchor_std = max(anchor_std, max(float(anchor_profile.std), 1e-6))
+
+            anchor_z = (anchor_values - anchor_mean) / anchor_std
+            anchor_z = self._smooth_vector(anchor_z, alpha=smooth_alpha)
+
+            for sensor in sensors:
+                if sensor == anchor_sensor:
+                    continue
+
+                target_corr = float(self.corr.get((anchor_sensor, sensor), 0.0))
+                target_corr = float(np.clip(target_corr, -0.98, 0.98))
+
+                if abs(target_corr) < min_abs_corr:
+                    continue
+
+                prof = profiles[sensor]
+                existing = pd.to_numeric(
+                    dataframe[sensor],
+                    errors="coerce",
+                ).to_numpy(dtype=float, copy=True)
+
+                eps = self.rng.normal(0.0, 1.0, size=len(existing))
+                eps = self._smooth_vector(eps, alpha=smooth_alpha)
+
+                residual_scale = max(1.0 - target_corr**2, residual_floor**2) ** 0.5
+                member_z = target_corr * anchor_z + residual_scale * eps
+
+                generated = float(prof.mean) + member_z * max(float(prof.std), 1e-6)
+
+                combined = (1.0 - float(blend)) * existing + float(blend) * generated
+                combined = np.clip(combined, float(prof.lower_bound), float(prof.upper_bound))
+                combined = np.clip(combined, float(prof.min_value), float(prof.max_value))
+
+                dataframe[sensor] = combined
+
     def _is_fault_excluded_sensor(self, sensor_name: str) -> bool:
         return str(sensor_name).strip() in self.fault_excluded_sensors
 
@@ -811,12 +929,14 @@ class SyntheticGenerator:
             )
 
             if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
+                self._apply_anchor_cluster_generation(
                     dataframe,
                     self.normal,
                     clusters=self.correlation_hotspot_clusters,
-                    strength=0.42,
-                    smooth_alpha=0.94,
+                    blend=0.88,
+                    min_abs_corr=0.20,
+                    residual_floor=0.06,
+                    smooth_alpha=0.92,
                 )
 
         
@@ -1194,14 +1314,16 @@ class SyntheticGenerator:
                 strength=0.20,
                 smooth_alpha=0.92,
             )
-            self._apply_named_cluster_overlay(
-                df_window,
-                self.normal,
-                #clusters=CORRELATION_HOTSPOT_CLUSTERS,
-                clusters=self.correlation_hotspot_clusters,
-                strength=0.34,
-                smooth_alpha=0.95,
-            )
+            if self.correlation_hotspot_clusters:
+                self._apply_anchor_cluster_generation(
+                    df_window,
+                    self.normal,
+                    clusters=self.correlation_hotspot_clusters,
+                    blend=0.82,
+                    min_abs_corr=0.20,
+                    residual_floor=0.06,
+                    smooth_alpha=0.94,
+                )
             dataframe.loc[df_window.index, df_window.columns] = df_window
 
         buildup_idx = dataframe.index[dataframe["phase"].astype(str).eq("buildup")].to_numpy()
@@ -1250,12 +1372,14 @@ class SyntheticGenerator:
                 smooth_alpha=0.90,
             )
             if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
+                self._apply_anchor_cluster_generation(
                     df_window,
                     self.recovery,
                     clusters=self.correlation_hotspot_clusters,
-                    strength=0.28,
-                    smooth_alpha=0.93,
+                    blend=0.72,
+                    min_abs_corr=0.20,
+                    residual_floor=0.10,
+                    smooth_alpha=0.90,
                 )
             dataframe.loc[df_window.index, df_window.columns] = df_window
 
