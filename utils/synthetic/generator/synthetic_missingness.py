@@ -106,6 +106,65 @@ def apply_exact_missingness_mask(
 
     return out
 
+def apply_clustered_missingness_mask(
+    df: pd.DataFrame,
+    *,
+    sensor_cols: Sequence[str],
+    rng: np.random.Generator,
+    present_counts: Dict[str, int],
+    eligible_row_idx: np.ndarray,
+    mean_gap_len: int = 3,
+    long_gap_probability: float = 0.15,
+) -> pd.DataFrame:
+    """
+    Forces approximate clustered missingness within eligible rows while still
+    respecting the exact present_count target per sensor.
+    """
+    out = df.copy()
+
+    idx = np.asarray(sorted(eligible_row_idx), dtype=int)
+    n = int(idx.shape[0])
+    if n == 0:
+        return out
+
+    for sensor in sensor_cols:
+        if sensor not in out.columns:
+            continue
+
+        keep_n = int(present_counts.get(sensor, n))
+        keep_n = max(0, min(n, keep_n))
+        drop_n = n - keep_n
+
+        if drop_n <= 0:
+            continue
+        if drop_n >= n:
+            out.loc[idx, sensor] = np.nan
+            continue
+
+        selected_drop_positions: list[int] = []
+        used = np.zeros(n, dtype=bool)
+
+        while len(selected_drop_positions) < drop_n:
+            start = int(rng.integers(0, n))
+            if used[start]:
+                continue
+
+            if rng.random() < long_gap_probability:
+                gap_len = int(max(2, round(rng.normal(mean_gap_len * 2.0, 1.5))))
+            else:
+                gap_len = int(max(1, round(rng.normal(mean_gap_len, 1.0))))
+
+            for pos in range(start, min(start + gap_len, n)):
+                if not used[pos]:
+                    used[pos] = True
+                    selected_drop_positions.append(pos)
+                    if len(selected_drop_positions) >= drop_n:
+                        break
+
+        drop_idx = idx[np.array(sorted(selected_drop_positions[:drop_n]), dtype=int)]
+        out.loc[drop_idx, sensor] = np.nan
+
+    return out
 
 def build_present_counts_for_block(
     *,

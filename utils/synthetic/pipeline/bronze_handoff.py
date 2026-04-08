@@ -10,7 +10,9 @@ from utils.postgres_util import (
     create_schema_if_not_exists,
     execute_sql,
     read_sql_dataframe,
+    table_exists,
 )
+
 from utils.layer_postgres_writer import write_layer_dataframe
 
 
@@ -136,6 +138,12 @@ def ensure_final_aligned_runtime_columns(
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(source_table)
 
+    if not table_exists(engine, schema=safe_schema, table_name=safe_table):
+        raise ValueError(
+            f'Source table "{safe_schema}"."{safe_table}" does not exist. '
+            "Run the final aligned output stage first, or pass the correct source_table."
+        )
+
     statements = [
         f'''
         ALTER TABLE "{safe_schema}"."{safe_table}"
@@ -200,7 +208,6 @@ def ensure_final_aligned_runtime_columns(
         ON "{safe_schema}"."{safe_table}" (batch_id, row_in_batch);
         '''
     )
-
 
 # -----------------------------------------------------------------------------
 # Target table helpers

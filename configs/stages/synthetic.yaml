@@ -8,15 +8,14 @@ synthetic:
 
   # episode defaults
   episode:
-    normal_before_range: [200, 600]
-    buildup_range: [100, 600]
+    normal_before_range: [800, 1800]
+    buildup_range: [1000, 1800]
     failure_range: [1, 1]
-    recovery_range: [50, 200]
-    normal_after_range: [200, 600]
+    recovery_range: [900, 1300]
+    normal_after_range: [300, 900]
     magnitude_range: [0.75, 2.0]
     buildup_fraction: 0.20
 
-    
   # fault selection behavior
   faults:
     allowed:
@@ -39,14 +38,14 @@ synthetic:
     corr_pairs_normal: "sensor_correlation_pairs_normal_path"
     group_map_normal: "sensor_group_map_normal_path"
     fault_pairings_normal: "sensor_fault_pairings_normal_path"
+    hotspot_clusters_normal: "sensor_correlation_hotspot_clusters_normal_path"
 
-
-  output_mode: "postgres_batch"   # later: "kafka_publish"
+  output_mode: "postgres_batch"
 
   postgres:
     schema: "capstone"
     table_artifact_name: "stream"
-    
+
   export:
     enabled: true
     export_dir_key: "artifacts_root"
@@ -55,3 +54,24 @@ synthetic:
     enabled: false
     topic: "synthetic_pump"
     checkpoint_table: "synthetic_pump_kafka_checkpoint"
+
+  calibration:
+    enabled: true
+    mean_within_k_std: 1.00
+    std_ratio_bounds: [0.90, 1.35]
+
+  # manual override; leave empty to use Silver EDA artifact first
+  correlation_hotspot_clusters: []
+
+  # fallback only when no explicit override / no artifact is available
+  correlation_cluster_derivation:
+    enabled: true
+    min_abs_corr: 0.20
+    top_n_pairs: 80
+    min_cluster_size: 2
+    max_cluster_size: 8
+
+  # top-level config-driven fault exclusions
+  fault_excluded_sensors:
+    - sensor_15
+    - sensor_50

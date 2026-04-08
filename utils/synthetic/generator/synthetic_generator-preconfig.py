@@ -35,7 +35,6 @@ StateCalibrationTargets = Dict[str, Dict[str, Dict[str, float]]]
 #   "buildup": { ... optional ... }
 # }
 
-'''
 CORRELATION_HOTSPOT_CLUSTERS = [
     ["sensor_19", "sensor_20", "sensor_21", "sensor_22", "sensor_23", "sensor_24", "sensor_25"],
     ["sensor_14", "sensor_16"],
@@ -44,7 +43,6 @@ CORRELATION_HOTSPOT_CLUSTERS = [
     ["sensor_34", "sensor_35"],
     ["sensor_00", "sensor_04", "sensor_10", "sensor_11", "sensor_12", "sensor_50", "sensor_51"],
 ]
-'''
 
 @dataclass(frozen=True)
 class EpisodeSpec:
@@ -69,7 +67,7 @@ class SyntheticGenerator:
     """
 
 
-        
+    
     def __init__(
         self,
         *,
@@ -80,8 +78,6 @@ class SyntheticGenerator:
         group_map_dataframe: pd.DataFrame,
         fault_pairings_dataframe: pd.DataFrame,
         correlation_hotspot_clusters: Optional[List[List[str]]] = None,
-        correlation_cluster_derivation: Optional[Dict[str, object]] = None,
-        fault_excluded_sensors: Optional[List[str]] = None,
         random_seed: int = 42,
         missingness_spec: Optional[MissingnessSpec] = None,
         state_calibration_targets: Optional[StateCalibrationTargets] = None,
@@ -100,12 +96,6 @@ class SyntheticGenerator:
         self.mean_within_k_std = float(mean_within_k_std)
         self.std_ratio_bounds = (float(std_ratio_bounds[0]), float(std_ratio_bounds[1]))
 
-        self.fault_excluded_sensors: set[str] = {
-            str(sensor_name).strip()
-            for sensor_name in (fault_excluded_sensors or ["sensor_15", "sensor_50"])
-            if str(sensor_name).strip()
-        }
-
         # sensor -> group
         self.sensor_to_group: Dict[str, str] = {}
         for _, row in group_map_dataframe.iterrows():
@@ -116,6 +106,12 @@ class SyntheticGenerator:
         for sensor, group in self.sensor_to_group.items():
             self.group_to_sensors.setdefault(group, []).append(sensor)
 
+        self.correlation_hotspot_clusters: List[List[str]] = [
+            [str(sensor_name) for sensor_name in cluster if str(sensor_name).strip()]
+            for cluster in (correlation_hotspot_clusters or [])
+            if cluster
+        ]
+
         # correlation lookup (pearson preferred)
         self.corr: Dict[Tuple[str, str], float] = {}
         for _, row in correlation_pairs_dataframe.iterrows():
@@ -125,12 +121,6 @@ class SyntheticGenerator:
             if np.isfinite(c):
                 self.corr[(a, b)] = c
                 self.corr[(b, a)] = c
-
-        self.correlation_cluster_derivation = dict(correlation_cluster_derivation or {})
-
-        self.correlation_hotspot_clusters: List[List[str]] = self._resolve_hotspot_clusters(
-            configured_clusters=correlation_hotspot_clusters
-        )
 
         # propagation lookup: primary -> [{secondary, strength, lag}]
         self.propagation: Dict[str, List[dict]] = {}
@@ -409,160 +399,6 @@ class SyntheticGenerator:
                 x = np.clip(x, float(prof.min_value), float(prof.max_value))
                 dataframe[sensor] = x
 
-    def _normalize_cluster_list(
-        self,
-        clusters: Optional[List[List[str]]],
-    ) -> List[List[str]]:
-        cleaned: List[List[str]] = []
-
-        for cluster in (clusters or []):
-            deduped: List[str] = []
-            seen: set[str] = set()
-
-            for sensor_name in cluster:
-                sensor = str(sensor_name).strip()
-                if not sensor:
-                    continue
-                if sensor not in self.sensors:
-                    continue
-                if sensor in seen:
-                    continue
-                deduped.append(sensor)
-                seen.add(sensor)
-
-            if len(deduped) >= 2:
-                cleaned.append(deduped)
-
-        return cleaned
-
-
-    def _derive_hotspot_clusters_from_corr(self) -> List[List[str]]:
-        cfg = dict(self.correlation_cluster_derivation or {})
-
-        if not bool(cfg.get("enabled", True)):
-            return []
-
-        min_abs_corr = float(cfg.get("min_abs_corr", 0.20))
-        top_n_pairs = int(cfg.get("top_n_pairs", 80))
-        min_cluster_size = int(cfg.get("min_cluster_size", 2))
-        max_cluster_size = int(cfg.get("max_cluster_size", 8))
-
-        pairs: List[Tuple[str, str, float]] = []
-        seen_pairs: set[Tuple[str, str]] = set()
-
-        for (a, b), corr_value in self.corr.items():
-            if a == b:
-                continue
-
-            key = tuple(sorted((a, b)))
-            if key in seen_pairs:
-                continue
-            seen_pairs.add(key)
-
-            if a not in self.sensors or b not in self.sensors:
-                continue
-            if not np.isfinite(corr_value):
-                continue
-            if abs(float(corr_value)) < min_abs_corr:
-                continue
-
-            pairs.append((a, b, float(corr_value)))
-
-        if not pairs:
-            return []
-
-        pairs.sort(key=lambda x: abs(x[2]), reverse=True)
-        pairs = pairs[:top_n_pairs]
-
-        adjacency: Dict[str, set[str]] = {sensor: set() for sensor in self.sensors}
-        edge_strength: Dict[Tuple[str, str], float] = {}
-
-        for a, b, corr_value in pairs:
-            adjacency[a].add(b)
-            adjacency[b].add(a)
-            edge_strength[tuple(sorted((a, b)))] = abs(float(corr_value))
-
-        visited: set[str] = set()
-        raw_clusters: List[List[str]] = []
-
-        candidate_nodes = [sensor for sensor, neighbors in adjacency.items() if neighbors]
-
-        for start in candidate_nodes:
-            if start in visited:
-                continue
-
-            stack = [start]
-            component: List[str] = []
-
-            while stack:
-                node = stack.pop()
-                if node in visited:
-                    continue
-                visited.add(node)
-                component.append(node)
-
-                for neighbor in adjacency[node]:
-                    if neighbor not in visited:
-                        stack.append(neighbor)
-
-            if len(component) < min_cluster_size:
-                continue
-
-            if len(component) <= max_cluster_size:
-                raw_clusters.append(sorted(component))
-                continue
-
-            # split oversized connected components greedily by strongest nodes
-            node_strength = {
-                node: sum(
-                    edge_strength.get(tuple(sorted((node, neighbor))), 0.0)
-                    for neighbor in adjacency[node]
-                    if neighbor in component
-                )
-                for node in component
-            }
-
-            remaining = set(component)
-            ordered_nodes = sorted(component, key=lambda s: (-node_strength[s], s))
-
-            for seed in ordered_nodes:
-                if seed not in remaining:
-                    continue
-
-                cluster = [seed]
-                remaining.remove(seed)
-
-                neighbors = sorted(
-                    [n for n in adjacency[seed] if n in remaining],
-                    key=lambda n: (-edge_strength.get(tuple(sorted((seed, n))), 0.0), n),
-                )
-
-                for neighbor in neighbors:
-                    if len(cluster) >= max_cluster_size:
-                        break
-                    cluster.append(neighbor)
-                    remaining.remove(neighbor)
-
-                if len(cluster) >= min_cluster_size:
-                    raw_clusters.append(cluster)
-
-        return self._normalize_cluster_list(raw_clusters)
-
-
-    def _resolve_hotspot_clusters(
-        self,
-        configured_clusters: Optional[List[List[str]]],
-    ) -> List[List[str]]:
-        cleaned = self._normalize_cluster_list(configured_clusters)
-
-        if cleaned:
-            return cleaned
-
-        return self._derive_hotspot_clusters_from_corr()
-
-    def _is_fault_excluded_sensor(self, sensor_name: str) -> bool:
-        return str(sensor_name).strip() in self.fault_excluded_sensors
-
     def _apply_local_normal_noise(
         self,
         dataframe: pd.DataFrame,
@@ -820,16 +656,16 @@ class SyntheticGenerator:
                 smooth_alpha=0.90,
             )
 
-            if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
-                    dataframe,
-                    self.normal,
-                    clusters=self.correlation_hotspot_clusters,
-                    strength=0.42,
-                    smooth_alpha=0.94,
-                )
+            self._apply_named_cluster_overlay(
+                dataframe,
+                self.normal,
+                #clusters=CORRELATION_HOTSPOT_CLUSTERS,
+                clusters=self.correlation_hotspot_clusters,
+                strength=0.42,
+                smooth_alpha=0.94,
+            )
+            
 
-        
         return dataframe
 
     # -------------------------
@@ -1006,11 +842,8 @@ class SyntheticGenerator:
         if spec.primary_sensor not in self.sensors:
             raise ValueError(f"Unknown primary sensor: {spec.primary_sensor}")
 
-        if self._is_fault_excluded_sensor(spec.primary_sensor):
-            raise ValueError(
-                f"Primary fault sensor '{spec.primary_sensor}' is excluded "
-                f"(configured fault_excluded_sensors)."
-            )
+        if spec.primary_sensor in {"sensor_15", "sensor_50"}:
+            raise ValueError(f"Primary fault sensor '{spec.primary_sensor}' is excluded (all-null / high-missing).")
 
         is_fault_episode = int(spec.failure) > 0
 
@@ -1102,10 +935,15 @@ class SyntheticGenerator:
             prop_start_base = b0
             prop_end_base = r0
 
+            FAULT_EXCLUDED = {"sensor_15", "sensor_50"}
+
             for link in self.propagation.get(spec.primary_sensor, []):
                 sec = str(link["secondary"])
 
-                if self._is_fault_excluded_sensor(sec):
+                if sec in FAULT_EXCLUDED:
+                    continue
+
+                if sec not in dataframe.columns:
                     continue
 
                 strength = float(link["strength"])
@@ -1205,7 +1043,7 @@ class SyntheticGenerator:
                 df_window,
                 self.normal,
                 #clusters=CORRELATION_HOTSPOT_CLUSTERS,
-                clusters=self.correlation_hotspot_clusters,
+                clusters=self.correlation_hotspot_clusters
                 strength=0.34,
                 smooth_alpha=0.95,
             )
@@ -1256,14 +1094,14 @@ class SyntheticGenerator:
                 strength=0.18,
                 smooth_alpha=0.90,
             )
-            if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
-                    df_window,
-                    self.recovery,
-                    clusters=self.correlation_hotspot_clusters,
-                    strength=0.28,
-                    smooth_alpha=0.93,
-                )
+            self._apply_named_cluster_overlay(
+                df_window,
+                self.recovery,
+                #clusters=CORRELATION_HOTSPOT_CLUSTERS,
+                clusters=self.correlation_hotspot_clusters
+                strength=0.28,
+                smooth_alpha=0.93,
+            )
             dataframe.loc[df_window.index, df_window.columns] = df_window
 
         abnormal_idx = dataframe.index[dataframe["phase"].astype(str).eq("abnormal")].to_numpy()

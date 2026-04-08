@@ -83,20 +83,20 @@ synthetic:
   normal_batch_size: 50
   episode:
     normal_before_range:
-    - 200
-    - 600
+    - 800
+    - 1800
     buildup_range:
-    - 100
-    - 600
+    - 1000
+    - 1800
     failure_range:
     - 1
     - 1
     recovery_range:
-    - 50
-    - 200
+    - 1100
+    - 1500
     normal_after_range:
-    - 200
-    - 600
+    - 300
+    - 900
     magnitude_range:
     - 0.75
     - 2.0
@@ -131,6 +131,28 @@ synthetic:
     enabled: false
     topic: synthetic_pump
     checkpoint_table: synthetic_pump_kafka_checkpoint
+  calibration:
+    enabled: true
+    mean_within_k_std: 1.0
+    std_ratio_bounds:
+    - 0.9
+    - 1.35
+  correlation_hotspot_clusters: []
+  correlation_cluster_derivation:
+    enabled: true
+    min_abs_corr: 0.2
+    top_n_pairs: 80
+    min_cluster_size: 2
+    max_cluster_size: 8
+    missingness_overrides:
+      sensor_51: 0.02
+      sensor_09: 0.02
+      sensor_06: 0.35
+      sensor_07: 1.0
+      sensor_08: 0.95
+    fault_excluded_sensors:
+    - sensor_15
+    - sensor_50
 filenames:
   raw_file_name: sensor.csv
   bronze_train_file_name: pump__bronze__train.parquet
@@ -298,4 +320,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: 49379da5eadfb278ad0ec7c7397c7ab25c8ea8282e21fc6d19d8c4b56da22f5a
+  config_hash: 7c4a42171a8a6ebf0d098b99f5e89b08c8a27bcdb500443bbbac5c691da3abd1
