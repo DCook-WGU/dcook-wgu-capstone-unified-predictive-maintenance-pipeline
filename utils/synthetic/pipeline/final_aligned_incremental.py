@@ -16,7 +16,7 @@ from utils.chunk_stage_util import (
     get_table_columns,
     read_table_for_observation_window,
 )
-from utils.final_aligned_observation_writer import (
+from utils.final_aligned_observation_writer_fixed import (
     build_final_aligned_observations_dataframe,
     ensure_final_aligned_table_exists,
 )

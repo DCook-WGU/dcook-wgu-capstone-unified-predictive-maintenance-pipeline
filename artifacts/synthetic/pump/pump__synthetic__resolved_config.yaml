@@ -29,6 +29,7 @@ paths:
   silver_train_subdir: silver/train
   silver_test_subdir: silver/test
   gold_subdir: gold
+  synthetic_subdir: synthetic
   bronze_pipeline_subdir: bronze
   silver_pipeline_subdir: silver
   gold_pipeline_subdir: gold
@@ -92,8 +93,8 @@ synthetic:
     - 1
     - 1
     recovery_range:
-    - 1100
-    - 1500
+    - 900
+    - 1300
     normal_after_range:
     - 300
     - 900
@@ -120,6 +121,7 @@ synthetic:
     corr_pairs_normal: sensor_correlation_pairs_normal_path
     group_map_normal: sensor_group_map_normal_path
     fault_pairings_normal: sensor_fault_pairings_normal_path
+    hotspot_clusters_normal: sensor_correlation_hotspot_clusters_normal_path
   output_mode: postgres_batch
   postgres:
     schema: capstone
@@ -144,15 +146,9 @@ synthetic:
     top_n_pairs: 80
     min_cluster_size: 2
     max_cluster_size: 8
-    missingness_overrides:
-      sensor_51: 0.02
-      sensor_09: 0.02
-      sensor_06: 0.35
-      sensor_07: 1.0
-      sensor_08: 0.95
-    fault_excluded_sensors:
-    - sensor_15
-    - sensor_50
+  fault_excluded_sensors:
+  - sensor_15
+  - sensor_50
 filenames:
   raw_file_name: sensor.csv
   bronze_train_file_name: pump__bronze__train.parquet
@@ -236,6 +232,7 @@ resolved_paths:
   data_silver_train_dir: /workspace/data/silver/train
   data_silver_test_dir: /workspace/data/silver/test
   data_gold_dir: /workspace/data/gold
+  data_synthetic_dir: /workspace/data/synthetic
   pipelines_bronze_dir: /workspace/pipelines/bronze
   pipelines_silver_dir: /workspace/pipelines/silver
   pipelines_gold_dir: /workspace/pipelines/gold
@@ -320,4 +317,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: 7c4a42171a8a6ebf0d098b99f5e89b08c8a27bcdb500443bbbac5c691da3abd1
+  config_hash: 113f098b3dadd35faa242d50702667aba16fe93600c10182f27395c3c7431fef

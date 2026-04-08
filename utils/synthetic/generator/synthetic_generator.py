@@ -35,16 +35,6 @@ StateCalibrationTargets = Dict[str, Dict[str, Dict[str, float]]]
 #   "buildup": { ... optional ... }
 # }
 
-'''
-CORRELATION_HOTSPOT_CLUSTERS = [
-    ["sensor_19", "sensor_20", "sensor_21", "sensor_22", "sensor_23", "sensor_24", "sensor_25"],
-    ["sensor_14", "sensor_16"],
-    ["sensor_17", "sensor_18"],
-    ["sensor_29", "sensor_30", "sensor_33"],
-    ["sensor_34", "sensor_35"],
-    ["sensor_00", "sensor_04", "sensor_10", "sensor_11", "sensor_12", "sensor_50", "sensor_51"],
-]
-'''
 
 @dataclass(frozen=True)
 class EpisodeSpec:
@@ -1104,6 +1094,9 @@ class SyntheticGenerator:
 
             for link in self.propagation.get(spec.primary_sensor, []):
                 sec = str(link["secondary"])
+
+                if sec not in dataframe.columns:
+                    continue
 
                 if self._is_fault_excluded_sensor(sec):
                     continue

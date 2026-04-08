@@ -35,6 +35,7 @@ paths:
   silver_train_subdir: silver/train
   silver_test_subdir: silver/test
   gold_subdir: gold
+  synthetic_subdir: synthetic
 
   bronze_pipeline_subdir: bronze
   silver_pipeline_subdir: silver

@@ -261,6 +261,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "data_silver_train_dir": str(data_root / roots["silver_train_subdir"]),
         "data_silver_test_dir": str(data_root / roots["silver_test_subdir"]),
         "data_gold_dir": str(data_root / roots["gold_subdir"]),
+        "data_synthetic_dir": str(data_root / roots["synthetic_subdir"]),
 
         # Pipeline Folders
         "pipelines_bronze_dir": str(pipelines_root / roots["bronze_pipeline_subdir"]),

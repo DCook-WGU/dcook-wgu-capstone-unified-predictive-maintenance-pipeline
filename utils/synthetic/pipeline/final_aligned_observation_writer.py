@@ -83,6 +83,16 @@ def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
+def _coalesce_left_then_right(left: pd.Series, right: pd.Series) -> pd.Series:
+    return left.combine_first(right)
+
+
+def _require_columns(dataframe: pd.DataFrame, required_columns: list[str], frame_name: str) -> None:
+    missing = [column for column in required_columns if column not in dataframe.columns]
+    if missing:
+        raise ValueError(f"{frame_name} is missing required columns: " + ", ".join(missing))
+
+
 # -----------------------------------------------------------------------------
 # Validation helpers
 # -----------------------------------------------------------------------------
@@ -104,13 +114,7 @@ def _validate_premelt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
         "meta_primary_fault_type",
         "meta_magnitude",
     ] + _build_sensor_columns(n_sensors)
-
-    missing = [column for column in required_columns if column not in dataframe.columns]
-    if missing:
-        raise ValueError(
-            "Premelt table is missing required columns: "
-            + ", ".join(missing)
-        )
+    _require_columns(dataframe, required_columns, "Premelt dataframe")
 
 
 def _validate_rebuilt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
@@ -131,13 +135,7 @@ def _validate_rebuilt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
         "rebuild_completed_at",
         "rebuild_notes",
     ] + _build_sensor_columns(n_sensors)
-
-    missing = [column for column in required_columns if column not in dataframe.columns]
-    if missing:
-        raise ValueError(
-            "Rebuilt table is missing required columns: "
-            + ", ".join(missing)
-        )
+    _require_columns(dataframe, required_columns, "Rebuilt dataframe")
 
 
 # -----------------------------------------------------------------------------
@@ -219,117 +217,110 @@ def load_rebuilt_for_final_alignment(
 
 
 # -----------------------------------------------------------------------------
-# Final alignment builder
+# Final alignment dataframe builder
 # -----------------------------------------------------------------------------
 
-def build_final_aligned_observations_stage(
-    engine,
+def build_final_aligned_observations_dataframe(
     *,
-    schema: str = "capstone",
-    premelt_table: str = "synthetic_observations_premelt_stage",
-    rebuilt_table: str = "synthetic_sensor_observations_rebuilt_stage",
-    target_table: str = "synthetic_sensor_observations_final_aligned_stage",
-    dataset_id: Optional[str] = None,
-    run_id: Optional[str] = None,
+    premelt_dataframe: pd.DataFrame,
+    rebuilt_dataframe: pd.DataFrame,
     n_sensors: int = 52,
-    complete_only: bool = True,
     prefer_rebuilt_sensor_values: bool = True,
-    if_exists: str = "replace",
-    observation_window_size: int = 2500,
-) -> dict:
-    safe_schema = sanitize_sql_identifier(schema)
-    safe_premelt_table = sanitize_sql_identifier(premelt_table)
-    safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
-    safe_target_table = sanitize_sql_identifier(target_table)
+) -> pd.DataFrame:
+    if premelt_dataframe.empty or rebuilt_dataframe.empty:
+        return pd.DataFrame()
 
-    resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
-        engine,
-        schema_name=safe_schema,
-        table_name=safe_premelt_table,
-        dataset_id=dataset_id,
-        run_id=run_id,
+    _validate_premelt_columns(premelt_dataframe, n_sensors)
+    _validate_rebuilt_columns(rebuilt_dataframe, n_sensors)
+
+    sensor_columns = _build_sensor_columns(n_sensors=n_sensors)
+    key_columns = ["dataset_id", "run_id", "asset_id", "observation_index"]
+
+    premelt = premelt_dataframe.copy()
+    rebuilt = rebuilt_dataframe.copy()
+
+    premelt = premelt.drop_duplicates(subset=key_columns, keep="last").reset_index(drop=True)
+    rebuilt = rebuilt.drop_duplicates(subset=key_columns, keep="last").reset_index(drop=True)
+
+    merged = premelt.merge(
+        rebuilt,
+        on=key_columns,
+        how="inner",
+        suffixes=("_premelt", "_rebuilt"),
     )
 
-    premelt_columns = get_table_columns(
-        engine,
-        schema_name=safe_schema,
-        table_name=safe_premelt_table,
-    )
-    rebuilt_columns = get_table_columns(
-        engine,
-        schema_name=safe_schema,
-        table_name=safe_rebuilt_table,
-    )
+    if merged.empty:
+        return pd.DataFrame()
 
-    has_written_first_chunk = False
+    out = merged[key_columns].copy()
 
-    stats = {
-        "status": "empty",
-        "premelt_rows": 0,
-        "rebuilt_rows": 0,
-        "final_rows": 0,
-        "target_table": safe_target_table,
-    }
+    premelt_preferred_fields = [
+        "batch_id",
+        "row_in_batch",
+        "global_cycle_id",
+        "created_at",
+    ]
+    rebuilt_preferred_fields = [
+        "generated_row_id",
+        "stream_state",
+        "phase",
+        "meta_episode_id",
+        "meta_primary_fault_type",
+        "meta_magnitude",
+        "observation_timestamp",
+        "rebuild_sensor_count",
+        "rebuild_is_complete",
+        "rebuild_completed_at",
+        "rebuild_notes",
+    ]
 
-    rebuilt_extra_where_sql = " AND rebuild_is_complete = TRUE" if complete_only else ""
+    for column in premelt_preferred_fields:
+        out[column] = merged.get(f"{column}_premelt")
 
-    def transform_chunk_func(df_premelt_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> pd.DataFrame:
-        rebuilt_window = read_table_for_observation_window(
-            engine,
-            schema_name=safe_schema,
-            table_name=safe_rebuilt_table,
-            select_columns=rebuilt_columns,
-            dataset_id=resolved_dataset_id,
-            run_id=resolved_run_id,
-            observation_index_min=obs_min,
-            observation_index_max=obs_max,
-            extra_where_sql=rebuilt_extra_where_sql,
-            order_by_sql="observation_index",
-        )
+    for column in rebuilt_preferred_fields:
+        left = merged.get(f"{column}_rebuilt")
+        right = merged.get(f"{column}_premelt")
+        out[column] = _coalesce_left_then_right(left, right) if right is not None else left
 
-        stats["premelt_rows"] += int(len(df_premelt_window))
-        stats["rebuilt_rows"] += int(len(rebuilt_window))
+    for sensor_column in sensor_columns:
+        premelt_series = merged.get(f"{sensor_column}_premelt")
+        rebuilt_series = merged.get(f"{sensor_column}_rebuilt")
 
-        return build_final_aligned_observations_stage(
-            premelt_dataframe=df_premelt_window,
-            rebuilt_dataframe=rebuilt_window,
-            n_sensors=n_sensors,
-            prefer_rebuilt_sensor_values=prefer_rebuilt_sensor_values,
-        )
+        if prefer_rebuilt_sensor_values:
+            out[sensor_column] = _coalesce_left_then_right(rebuilt_series, premelt_series)
+        else:
+            out[sensor_column] = _coalesce_left_then_right(premelt_series, rebuilt_series)
 
-    def write_chunk_func(df_out: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> None:
-        nonlocal has_written_first_chunk
+    ordered_columns = [
+        "dataset_id",
+        "run_id",
+        "asset_id",
+        "generated_row_id",
+        "observation_index",
+        "batch_id",
+        "row_in_batch",
+        "global_cycle_id",
+        "stream_state",
+        "phase",
+        "created_at",
+        "meta_episode_id",
+        "meta_primary_fault_type",
+        "meta_magnitude",
+        "observation_timestamp",
+    ] + sensor_columns + [
+        "rebuild_sensor_count",
+        "rebuild_is_complete",
+        "rebuild_completed_at",
+        "rebuild_notes",
+    ]
 
-        if df_out.empty:
-            return
+    out = out[ordered_columns]
+    out = out.sort_values(
+        by=["dataset_id", "run_id", "asset_id", "observation_index"],
+        kind="stable",
+    ).reset_index(drop=True)
 
-        written_table = write_final_aligned_observations(
-            engine=engine,
-            dataframe=df_out,
-            schema=schema,
-            table_name=target_table,
-            if_exists=if_exists if not has_written_first_chunk else "append",
-        )
-
-        has_written_first_chunk = True
-        stats["status"] = "built"
-        stats["final_rows"] += int(len(df_out))
-        stats["target_table"] = written_table
-
-    process_observation_index_windows(
-        engine,
-        schema_name=safe_schema,
-        table_name=safe_premelt_table,
-        select_columns=premelt_columns,
-        dataset_id=resolved_dataset_id,
-        run_id=resolved_run_id,
-        transform_chunk_func=transform_chunk_func,
-        write_chunk_func=write_chunk_func,
-        window_size=observation_window_size,
-        order_by_sql="observation_index",
-    )
-
-    return stats
+    return out
 
 
 # -----------------------------------------------------------------------------
@@ -510,10 +501,9 @@ def build_final_aligned_observations_stage(
         stats["premelt_rows"] += int(len(df_premelt_window))
         stats["rebuilt_rows"] += int(len(rebuilt_window))
 
-        return build_final_aligned_observations_stage(
-            engine, 
-            premelt_table=df_premelt_window,
-            rebuilt_table=rebuilt_window,
+        return build_final_aligned_observations_dataframe(
+            premelt_dataframe=df_premelt_window,
+            rebuilt_dataframe=rebuilt_window,
             n_sensors=n_sensors,
             prefer_rebuilt_sensor_values=prefer_rebuilt_sensor_values,
         )
