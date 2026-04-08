@@ -26,39 +26,73 @@ def build_missingness_spec_from_truth_payload(payload: Dict[str, object]) -> Mis
     """
     Build MissingnessSpec from truth.runtime_facts.missingness_quarantine.
 
-    Permanent fix:
+    Permanent behavior:
+    - use missingness_pct_all / missingness_pct_by_state / dependency flags when present
     - merge dropped-sensor global missingness from `dropped_missing_pct`
-      back into `missingness_pct_all`
-    - ensure dropped sensors receive a default dependency flag
+    - optionally merge dropped-sensor state missingness from `dropped_missing_pct_by_state`
+      if that key is added to the payload later
+    - ensure dropped sensors get a default dependency flag
+    - normalize the historical typo in state_col_synth
     """
     pct_all = dict(payload.get("missingness_pct_all") or {})
     pct_by_state = dict(payload.get("missingness_pct_by_state") or {})
     dep = dict(payload.get("missingness_state_dependent_flag") or {})
     gate = dict(payload.get("missingness_state_gate_params") or {})
 
+    dropped_features = [str(s).strip() for s in (payload.get("dropped_features") or []) if str(s).strip()]
     dropped_missing_pct = dict(payload.get("dropped_missing_pct") or {})
-    dropped_features = list(payload.get("dropped_features") or [])
+    dropped_missing_pct_by_state = dict(payload.get("dropped_missing_pct_by_state") or {})
 
+    state_list = list(gate.get("state_list") or ["normal", "abnormal", "recovery"])
+    state_col_synth = str(gate.get("state_col_synth") or "machine_status__synthetic")
+
+    # normalize the historical typo
+    if state_col_synth == "machine_status__synethic":
+        state_col_synth = "machine_status__synthetic"
+
+    # normalize nested by-state dict first
+    pct_by_state_norm: Dict[str, Dict[str, float]] = {}
+    for st in state_list:
+        pct_by_state_norm[str(st)] = dict(pct_by_state.get(st) or {})
+
+    # ------------------------------------------------------------
+    # Permanent fix 1:
+    # merge dropped-sensor overall missingness back into pct_all
+    # ------------------------------------------------------------
     for sensor_name in dropped_features:
-        sensor_name = str(sensor_name).strip()
-        if sensor_name == "":
-            continue
-
         if sensor_name in dropped_missing_pct:
             pct_all[sensor_name] = float(dropped_missing_pct[sensor_name])
 
         if sensor_name not in dep:
             dep[sensor_name] = False
 
-    state_list = list(gate.get("state_list") or ["normal", "abnormal", "recovery"])
-
-    state_col_synth = str(gate.get("state_col_synth") or "machine_status__synthetic")
-    if state_col_synth == "machine_status__synethic":
-        state_col_synth = "machine_status__synthetic"
-
-    pct_by_state_norm: Dict[str, Dict[str, float]] = {}
+    # ------------------------------------------------------------
+    # Permanent fix 2:
+    # if dropped-sensor by-state missingness is available in the future,
+    # merge it too and mark those sensors as state-dependent
+    #
+    # expected shape:
+    # dropped_missing_pct_by_state = {
+    #   "normal": {"sensor_50": 12.3, ...},
+    #   "abnormal": {"sensor_50": 0.0, ...},
+    #   "recovery": {"sensor_50": 55.0, ...},
+    # }
+    # ------------------------------------------------------------
     for st in state_list:
-        pct_by_state_norm[str(st)] = dict(pct_by_state.get(st) or {})
+        st_key = str(st)
+        dropped_state_map = dict(dropped_missing_pct_by_state.get(st_key) or {})
+
+        if not dropped_state_map:
+            continue
+
+        for sensor_name, pct_value in dropped_state_map.items():
+            sensor_name = str(sensor_name).strip()
+            if sensor_name == "":
+                continue
+
+            pct_by_state_norm.setdefault(st_key, {})
+            pct_by_state_norm[st_key][sensor_name] = float(pct_value)
+            dep[sensor_name] = True
 
     return MissingnessSpec(
         missingness_pct_all={str(k): float(v) for k, v in pct_all.items()},
