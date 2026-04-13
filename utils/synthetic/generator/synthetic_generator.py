@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, Sequence
 
 import numpy as np
 import pandas as pd
@@ -35,6 +35,7 @@ StateCalibrationTargets = Dict[str, Dict[str, Dict[str, float]]]
 #   "buildup": { ... optional ... }
 # }
 
+BRIDGE_PAIRS = [("sensor_25", "sensor_26")]
 
 @dataclass(frozen=True)
 class EpisodeSpec:
@@ -72,6 +73,7 @@ class SyntheticGenerator:
         correlation_hotspot_clusters: Optional[List[List[str]]] = None,
         correlation_cluster_derivation: Optional[Dict[str, object]] = None,
         fault_excluded_sensors: Optional[List[str]] = None,
+        correlation_tuning: Optional[Dict[str, object]] = None,
         random_seed: int = 42,
         missingness_spec: Optional[MissingnessSpec] = None,
         state_calibration_targets: Optional[StateCalibrationTargets] = None,
@@ -117,6 +119,8 @@ class SyntheticGenerator:
                 self.corr[(b, a)] = c
 
         self.correlation_cluster_derivation = dict(correlation_cluster_derivation or {})
+        
+        self.correlation_tuning = dict(correlation_tuning or {})
 
         self.correlation_hotspot_clusters: List[List[str]] = self._resolve_hotspot_clusters(
             configured_clusters=correlation_hotspot_clusters
@@ -550,6 +554,253 @@ class SyntheticGenerator:
 
         return self._derive_hotspot_clusters_from_corr()
 
+
+    def _get_corr_tuning_section(
+        self,
+        section_name: str,
+    ) -> Dict[str, object]:
+        return dict((self.correlation_tuning or {}).get(str(section_name), {}) or {})
+
+    def _get_corr_tuning_block(
+        self,
+        section_name: str,
+        block_name: str,
+        defaults: Dict[str, object],
+    ) -> Dict[str, object]:
+        section = self._get_corr_tuning_section(section_name)
+        block = dict(section.get(block_name, {}) or {})
+        merged = dict(defaults)
+        merged.update(block)
+        return merged
+
+    def _get_chain_family_split_threshold(self) -> float:
+        """
+        Threshold used to split 3-sensor clusters into strong vs weak chain families.
+        Pulled from correlation_tuning.family_split_rules.chain_cluster_avg_abs_corr_threshold.
+        """
+        rules = dict((self.correlation_tuning or {}).get("family_split_rules", {}) or {})
+        return float(rules.get("chain_cluster_avg_abs_corr_threshold", 0.75))
+
+    def _cluster_avg_abs_corr(
+        self,
+        cluster: Sequence[str],
+    ) -> float:
+        """
+        Average absolute pairwise correlation inside a cluster, using self.corr.
+        Missing pairs contribute 0.0.
+        """
+        sensors = [sensor for sensor in cluster if sensor in self.sensors]
+        if len(sensors) < 2:
+            return 0.0
+
+        values: List[float] = []
+
+        for i, a in enumerate(sensors):
+            for b in sensors[i + 1:]:
+                values.append(abs(float(self.corr.get((a, b), 0.0))))
+
+        if not values:
+            return 0.0
+
+        return float(np.mean(values))
+
+
+    def _classify_cluster_family(
+        self,
+        cluster: Sequence[str],
+    ) -> str:
+        """
+        Classify hotspot clusters into family types.
+
+        Rules:
+        - 2 sensors  -> tight_pair
+        - 3 sensors  -> strong_chain_cluster or weak_chain_cluster
+                        based on average internal absolute correlation
+        - 4+ sensors -> dense_cluster
+        """
+        valid = [sensor for sensor in cluster if sensor in self.sensors]
+        n = len(valid)
+
+        if n <= 2:
+            return "tight_pair"
+
+        if n == 3:
+            avg_abs_corr = self._cluster_avg_abs_corr(valid)
+            threshold = self._get_chain_family_split_threshold()
+            if avg_abs_corr >= threshold:
+                return "strong_chain_cluster"
+            return "weak_chain_cluster"
+
+        return "dense_cluster"
+    
+    def _get_family_corr_tuning_block(
+        self,
+        section_name: str,
+        family_name: str,
+        block_name: str,
+        defaults: Dict[str, object],
+    ) -> Dict[str, object]:
+        base_block = self._get_corr_tuning_block(
+            section_name,
+            block_name,
+            defaults=defaults,
+        )
+
+        section = self._get_corr_tuning_section(section_name)
+        family_overrides = dict(section.get("family_overrides", {}) or {})
+        family_block = dict(
+            (family_overrides.get(str(family_name), {}) or {}).get(block_name, {}) or {}
+        )
+
+        merged = dict(base_block)
+        merged.update(family_block)
+        return merged
+
+
+    def _get_bridge_pairs_from_tuning(
+        self,
+        section_name: str,
+    ) -> List[Tuple[str, str]]:
+        block = self._get_corr_tuning_block(
+            section_name,
+            "bridge_pair_generation",
+            defaults={"bridge_pairs": BRIDGE_PAIRS},
+        )
+
+        bridge_pairs_raw = list(block.get("bridge_pairs", BRIDGE_PAIRS) or [])
+        cleaned: List[Tuple[str, str]] = []
+
+        for pair in bridge_pairs_raw:
+            if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+                continue
+
+            a = str(pair[0]).strip()
+            b = str(pair[1]).strip()
+
+            if not a or not b:
+                continue
+
+            cleaned.append((a, b))
+
+        return cleaned or list(BRIDGE_PAIRS)
+
+
+    def _get_priority_pair_specs_from_tuning(
+        self,
+        section_name: str,
+    ) -> List[Dict[str, object]]:
+        block = self._get_corr_tuning_block(
+            section_name,
+            "priority_pair_generation",
+            defaults={
+                "enabled": False,
+                "pair_specs": [],
+            },
+        )
+
+        if not bool(block.get("enabled", False)):
+            return []
+
+        pair_specs_raw = list(block.get("pair_specs", []) or [])
+        cleaned: List[Dict[str, object]] = []
+
+        for raw in pair_specs_raw:
+            if not isinstance(raw, dict):
+                continue
+
+            anchor_sensor = str(raw.get("anchor_sensor", "")).strip()
+            member_sensor = str(raw.get("member_sensor", "")).strip()
+
+            if not anchor_sensor or not member_sensor:
+                continue
+
+            cleaned.append(
+                {
+                    "anchor_sensor": anchor_sensor,
+                    "member_sensor": member_sensor,
+                    "blend": float(raw.get("blend", 0.985)),
+                    "min_abs_corr": float(raw.get("min_abs_corr", 0.05)),
+                    "residual_floor": float(raw.get("residual_floor", 0.010)),
+                    "smooth_alpha": float(raw.get("smooth_alpha", 0.985)),
+                }
+            )
+
+        return cleaned
+
+
+    def _apply_priority_pair_generation(
+        self,
+        dataframe: pd.DataFrame,
+        profiles: Dict[str, SensorRichProfile],
+        *,
+        pair_specs: List[Dict[str, object]],
+    ) -> None:
+        """
+        Pair-specific post-bridge reinforcement for a small set of stubborn target pairs.
+        This is intentionally narrower than hotspot/bridge family logic.
+        """
+        if len(dataframe) == 0 or not pair_specs:
+            return
+
+        for spec in pair_specs:
+            anchor_sensor = str(spec["anchor_sensor"])
+            member_sensor = str(spec["member_sensor"])
+
+            if anchor_sensor not in dataframe.columns or member_sensor not in dataframe.columns:
+                continue
+            if anchor_sensor not in profiles or member_sensor not in profiles:
+                continue
+
+            target_corr = float(self.corr.get((anchor_sensor, member_sensor), 0.0))
+            target_corr = float(np.clip(target_corr, -0.98, 0.98))
+
+            min_abs_corr = float(spec["min_abs_corr"])
+            if abs(target_corr) < min_abs_corr:
+                continue
+
+            blend = float(spec["blend"])
+            residual_floor = float(spec["residual_floor"])
+            smooth_alpha = float(spec["smooth_alpha"])
+
+            anchor_profile = profiles[anchor_sensor]
+            member_profile = profiles[member_sensor]
+
+            anchor_values = pd.to_numeric(
+                dataframe[anchor_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            anchor_mask = np.isfinite(anchor_values)
+            if anchor_mask.sum() < 3:
+                continue
+
+            anchor_current = anchor_values[anchor_mask]
+            anchor_mean = float(np.mean(anchor_current))
+            anchor_std = float(np.std(anchor_current, ddof=1)) if anchor_current.size > 1 else 0.0
+            anchor_std = max(anchor_std, max(float(anchor_profile.std), 1e-6))
+
+            anchor_z = (anchor_values - anchor_mean) / anchor_std
+            anchor_z = self._smooth_vector(anchor_z, alpha=smooth_alpha)
+
+            eps = self.rng.normal(0.0, 1.0, size=len(anchor_values))
+            eps = self._smooth_vector(eps, alpha=smooth_alpha)
+
+            residual_scale = max(1.0 - target_corr**2, residual_floor**2) ** 0.5
+            member_z = target_corr * anchor_z + residual_scale * eps
+
+            generated = float(member_profile.mean) + member_z * max(float(member_profile.std), 1e-6)
+
+            existing = pd.to_numeric(
+                dataframe[member_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            combined = (1.0 - blend) * existing + blend * generated
+            combined = np.clip(combined, float(member_profile.lower_bound), float(member_profile.upper_bound))
+            combined = np.clip(combined, float(member_profile.min_value), float(member_profile.max_value))
+
+            dataframe[member_sensor] = combined
+    
     def _pick_cluster_anchor(
         self,
         cluster: List[str],
@@ -781,6 +1032,78 @@ class SyntheticGenerator:
 
                 dataframe[sensor] = combined
 
+    def _apply_bridge_pair_generation(
+        self,
+        dataframe: pd.DataFrame,
+        profiles: Dict[str, SensorRichProfile],
+        *,
+        bridge_pairs: List[Tuple[str, str]],
+        blend: float = 0.94,
+        min_abs_corr: float = 0.20,
+        residual_floor: float = 0.03,
+        smooth_alpha: float = 0.94,
+    ) -> None:
+        """
+        Strongly tie selected bridge-pair sensors together without forcing the
+        secondary sensor into the full hotspot cluster.
+
+        Example use:
+            ("sensor_25", "sensor_26")
+        """
+        if len(dataframe) == 0:
+            return
+
+        for anchor_sensor, member_sensor in bridge_pairs:
+            if anchor_sensor not in dataframe.columns or member_sensor not in dataframe.columns:
+                continue
+            if anchor_sensor not in profiles or member_sensor not in profiles:
+                continue
+
+            target_corr = float(self.corr.get((anchor_sensor, member_sensor), 0.0))
+            target_corr = float(np.clip(target_corr, -0.98, 0.98))
+
+            if abs(target_corr) < float(min_abs_corr):
+                continue
+
+            anchor_profile = profiles[anchor_sensor]
+            member_profile = profiles[member_sensor]
+
+            anchor_values = pd.to_numeric(
+                dataframe[anchor_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            anchor_mask = np.isfinite(anchor_values)
+            if anchor_mask.sum() < 3:
+                continue
+
+            anchor_current = anchor_values[anchor_mask]
+            anchor_mean = float(np.mean(anchor_current))
+            anchor_std = float(np.std(anchor_current, ddof=1)) if anchor_current.size > 1 else 0.0
+            anchor_std = max(anchor_std, max(float(anchor_profile.std), 1e-6))
+
+            anchor_z = (anchor_values - anchor_mean) / anchor_std
+            anchor_z = self._smooth_vector(anchor_z, alpha=smooth_alpha)
+
+            eps = self.rng.normal(0.0, 1.0, size=len(anchor_values))
+            eps = self._smooth_vector(eps, alpha=smooth_alpha)
+
+            residual_scale = max(1.0 - target_corr**2, residual_floor**2) ** 0.5
+            member_z = target_corr * anchor_z + residual_scale * eps
+
+            generated = float(member_profile.mean) + member_z * max(float(member_profile.std), 1e-6)
+
+            existing = pd.to_numeric(
+                dataframe[member_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            combined = (1.0 - float(blend)) * existing + float(blend) * generated
+            combined = np.clip(combined, float(member_profile.lower_bound), float(member_profile.upper_bound))
+            combined = np.clip(combined, float(member_profile.min_value), float(member_profile.max_value))
+
+            dataframe[member_sensor] = combined
+
     def _is_fault_excluded_sensor(self, sensor_name: str) -> bool:
         return str(sensor_name).strip() in self.fault_excluded_sensors
 
@@ -980,6 +1303,169 @@ class SyntheticGenerator:
         out = np.clip(out, float(profile.min_value), float(profile.max_value))
         return out
 
+    def _first_consecutive_true_index(
+        self,
+        mask: np.ndarray,
+        min_run: int = 3,
+    ) -> Optional[int]:
+        """
+        Return the first index where a boolean mask is True for `min_run`
+        consecutive rows. Returns None if no such run exists.
+        """
+        run_len = 0
+        for idx, flag in enumerate(np.asarray(mask, dtype=bool)):
+            if bool(flag):
+                run_len += 1
+                if run_len >= int(min_run):
+                    return int(idx - run_len + 1)
+            else:
+                run_len = 0
+        return None
+
+    def _build_episode_truth_columns(
+        self,
+        dataframe: pd.DataFrame,
+        *,
+        spec: EpisodeSpec,
+        episode_id: Optional[int],
+        buildup_start_idx: int,
+        failure_start_idx: int,
+        is_fault_episode: bool,
+        observable_zscore_threshold: float = 2.5,
+        observable_min_consecutive: int = 3,
+    ) -> pd.DataFrame:
+        """
+        Stamp row-level truth and observable-onset metadata for a generated episode.
+
+        Definitions:
+        - fault_onset_truth_row: first row where generator begins injected buildup behavior
+        - failure_truth_row: first BROKEN / abnormal row
+        - observable_onset_row: first row where the primary sensor exceeds the
+          configured z-score threshold for N consecutive rows
+        """
+        out = dataframe.copy()
+        n_rows = len(out)
+        row_idx = np.arange(n_rows, dtype=int)
+
+        # primary-sensor observable thresholding vs normal profile
+        primary_profile = self.normal[spec.primary_sensor]
+        primary_values = pd.to_numeric(
+            out[spec.primary_sensor],
+            errors="coerce",
+        ).to_numpy(dtype=float, copy=True)
+
+        normal_mean = float(primary_profile.mean)
+        normal_std = max(float(primary_profile.std), 1e-6)
+
+        primary_abs_z = np.abs((primary_values - normal_mean) / normal_std)
+        primary_threshold_crossed = np.isfinite(primary_abs_z) & (
+            primary_abs_z >= float(observable_zscore_threshold)
+        )
+
+        observable_onset_row: Optional[int] = None
+        if is_fault_episode:
+            search_mask = row_idx >= int(buildup_start_idx)
+            observable_onset_row = self._first_consecutive_true_index(
+                primary_threshold_crossed & search_mask,
+                min_run=int(observable_min_consecutive),
+            )
+
+        # repeated scalar metadata
+        if episode_id is not None:
+            out["meta__episode_id"] = pd.Series(
+                [int(episode_id)] * n_rows,
+                index=out.index,
+                dtype="Int64",
+            )
+        else:
+            out["meta__episode_id"] = pd.Series(
+                [pd.NA] * n_rows,
+                index=out.index,
+                dtype="Int64",
+            )
+
+        out["meta__is_fault_episode"] = bool(is_fault_episode)
+        out["meta__phase_truth"] = out["phase"].astype(str)
+        out["meta__primary_sensor"] = str(spec.primary_sensor)
+        out["meta__primary_fault_type"] = str(spec.primary_fault_type)
+        out["meta__primary_magnitude"] = float(spec.magnitude)
+
+        # row-level primary-sensor observability
+        out["meta__primary_sensor_abs_zscore"] = primary_abs_z
+        out["meta__primary_sensor_threshold_crossed"] = primary_threshold_crossed
+
+        # generator-truth onset
+        out["meta__fault_onset_truth_flag"] = False
+        out["meta__fault_onset_truth_row"] = pd.Series(
+            [int(buildup_start_idx)] * n_rows if is_fault_episode else [pd.NA] * n_rows,
+            index=out.index,
+            dtype="Int64",
+        )
+
+        if is_fault_episode and 0 <= int(buildup_start_idx) < n_rows:
+            out.loc[out.index[int(buildup_start_idx)], "meta__fault_onset_truth_flag"] = True
+
+        # failure row
+        out["meta__failure_truth_flag"] = False
+        out["meta__failure_truth_row"] = pd.Series(
+            [int(failure_start_idx)] * n_rows if is_fault_episode else [pd.NA] * n_rows,
+            index=out.index,
+            dtype="Int64",
+        )
+
+        if is_fault_episode and 0 <= int(failure_start_idx) < n_rows:
+            out.loc[out.index[int(failure_start_idx)], "meta__failure_truth_flag"] = True
+
+        # observable onset row
+        out["meta__observable_onset_flag"] = False
+        out["meta__observable_onset_row"] = pd.Series(
+            [int(observable_onset_row)] * n_rows if observable_onset_row is not None else [pd.NA] * n_rows,
+            index=out.index,
+            dtype="Int64",
+        )
+
+        if observable_onset_row is not None and 0 <= int(observable_onset_row) < n_rows:
+            out.loc[out.index[int(observable_onset_row)], "meta__observable_onset_flag"] = True
+
+        # buildup progress only inside buildup window
+        buildup_progress = np.zeros(n_rows, dtype=float)
+        if is_fault_episode and int(failure_start_idx) > int(buildup_start_idx):
+            buildup_len = int(failure_start_idx) - int(buildup_start_idx)
+            buildup_progress[int(buildup_start_idx):int(failure_start_idx)] = np.linspace(
+                0.0,
+                1.0,
+                buildup_len,
+                endpoint=False,
+            )
+        out["meta__buildup_progress"] = buildup_progress
+
+        # lead-time style helpers
+        rows_until_failure = pd.Series([pd.NA] * n_rows, index=out.index, dtype="Int64")
+        rows_since_truth_onset = pd.Series([pd.NA] * n_rows, index=out.index, dtype="Int64")
+        rows_since_observable_onset = pd.Series([pd.NA] * n_rows, index=out.index, dtype="Int64")
+
+        if is_fault_episode:
+            pre_failure_mask = row_idx <= int(failure_start_idx)
+            rows_until_failure.loc[out.index[pre_failure_mask]] = (
+                int(failure_start_idx) - row_idx[pre_failure_mask]
+            ).astype(int)
+
+            post_truth_mask = row_idx >= int(buildup_start_idx)
+            rows_since_truth_onset.loc[out.index[post_truth_mask]] = (
+                row_idx[post_truth_mask] - int(buildup_start_idx)
+            ).astype(int)
+
+            if observable_onset_row is not None:
+                post_observable_mask = row_idx >= int(observable_onset_row)
+                rows_since_observable_onset.loc[out.index[post_observable_mask]] = (
+                    row_idx[post_observable_mask] - int(observable_onset_row)
+                ).astype(int)
+
+        out["meta__rows_until_failure"] = rows_until_failure
+        out["meta__rows_since_truth_onset"] = rows_since_truth_onset
+        out["meta__rows_since_observable_onset"] = rows_since_observable_onset
+
+        return out
 
     # -------------------------
     # Normal batch
@@ -1032,34 +1518,92 @@ class SyntheticGenerator:
                 trigger_std_mult=0.30,
             )
 
-            if self.correlation_hotspot_clusters:
-                self._apply_anchor_cluster_generation(
-                    dataframe,
-                    self.normal,
-                    clusters=self.correlation_hotspot_clusters,
-                    blend=0.78,
-                    min_abs_corr=0.20,
-                    residual_floor=0.08,
-                    smooth_alpha=0.92,
-                )
+            normal_top_pair_cfg = self._get_corr_tuning_block(
+                "normal",
+                "top_pairwise_overlay",
+                defaults={
+                    "strength": 0.16,
+                    "top_n": 120,
+                    "min_abs_corr": 0.08,
+                    "smooth_alpha": 0.90,
+                },
+            )
+
+            normal_bridge_cfg = self._get_corr_tuning_block(
+                "normal",
+                "bridge_pair_generation",
+                defaults={
+                    "bridge_pairs": BRIDGE_PAIRS,
+                    "blend": 0.96,
+                    "min_abs_corr": 0.20,
+                    "residual_floor": 0.03,
+                    "smooth_alpha": 0.95,
+                },
+            )
 
             self._apply_top_pairwise_overlay(
                 dataframe,
                 self.normal,
-                min_abs_corr=0.08,
-                top_n=120,
-                strength=0.16,
-                smooth_alpha=0.90,
+                min_abs_corr=float(normal_top_pair_cfg["min_abs_corr"]),
+                top_n=int(normal_top_pair_cfg["top_n"]),
+                strength=float(normal_top_pair_cfg["strength"]),
+                smooth_alpha=float(normal_top_pair_cfg["smooth_alpha"]),
             )
 
             if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
-                    dataframe,
-                    self.normal,
-                    clusters=self.correlation_hotspot_clusters,
-                    strength=0.16,
-                    smooth_alpha=0.94,
-                )
+                for cluster in self.correlation_hotspot_clusters:
+                    family_name = self._classify_cluster_family(cluster)
+
+                    named_cfg = self._get_family_corr_tuning_block(
+                        "normal",
+                        family_name,
+                        "named_cluster_overlay",
+                        defaults={
+                            "strength": 0.16,
+                            "smooth_alpha": 0.94,
+                        },
+                    )
+
+                    anchor_cfg = self._get_family_corr_tuning_block(
+                        "normal",
+                        family_name,
+                        "anchor_cluster_generation",
+                        defaults={
+                            "blend": 0.90,
+                            "min_abs_corr": 0.15,
+                            "residual_floor": 0.04,
+                            "smooth_alpha": 0.94,
+                        },
+                    )
+
+                    self._apply_named_cluster_overlay(
+                        dataframe,
+                        self.normal,
+                        clusters=[cluster],
+                        strength=float(named_cfg["strength"]),
+                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                    )
+
+                    self._apply_anchor_cluster_generation(
+                        dataframe,
+                        self.normal,
+                        clusters=[cluster],
+                        blend=float(anchor_cfg["blend"]),
+                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
+                        residual_floor=float(anchor_cfg["residual_floor"]),
+                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                    )
+
+            self._apply_bridge_pair_generation(
+                dataframe,
+                self.normal,
+                bridge_pairs=self._get_bridge_pairs_from_tuning("normal"),
+                blend=float(normal_bridge_cfg["blend"]),
+                min_abs_corr=float(normal_bridge_cfg["min_abs_corr"]),
+                residual_floor=float(normal_bridge_cfg["residual_floor"]),
+                smooth_alpha=float(normal_bridge_cfg["smooth_alpha"]),
+            )
+            
 
         
         return dataframe
@@ -1234,7 +1778,15 @@ class SyntheticGenerator:
     # -------------------------
     # Abnormal episode (buildup + failure + recovery)
     # -------------------------
-    def generate_episode(self, spec: EpisodeSpec) -> pd.DataFrame:
+    def generate_episode(
+        self,
+        spec: EpisodeSpec,
+        *,
+        episode_id: Optional[int] = None,
+        observable_zscore_threshold: float = 2.5,
+        observable_min_consecutive: int = 3,
+    ) -> pd.DataFrame:
+        
         if spec.primary_sensor not in self.sensors:
             raise ValueError(f"Unknown primary sensor: {spec.primary_sensor}")
 
@@ -1430,34 +1982,97 @@ class SyntheticGenerator:
 
             df_window = dataframe.loc[normal_idx].copy()
 
-            if self.correlation_hotspot_clusters:
-                self._apply_anchor_cluster_generation(
-                    df_window,
-                    self.normal,
-                    clusters=self.correlation_hotspot_clusters,
-                    blend=0.82,
-                    min_abs_corr=0.20,
-                    residual_floor=0.06,
-                    smooth_alpha=0.94,
-                )
+            normal_top_pair_cfg = self._get_corr_tuning_block(
+                "normal",
+                "top_pairwise_overlay",
+                defaults={
+                    "strength": 0.16,
+                    "top_n": 120,
+                    "min_abs_corr": 0.08,
+                    "smooth_alpha": 0.92,
+                },
+            )
+
+            normal_bridge_cfg = self._get_corr_tuning_block(
+                "normal",
+                "bridge_pair_generation",
+                defaults={
+                    "bridge_pairs": BRIDGE_PAIRS,
+                    "blend": 0.97,
+                    "min_abs_corr": 0.20,
+                    "residual_floor": 0.03,
+                    "smooth_alpha": 0.96,
+                },
+            )
 
             self._apply_top_pairwise_overlay(
                 df_window,
                 self.normal,
-                min_abs_corr=0.08,
-                top_n=120,
-                strength=0.16,
-                smooth_alpha=0.92,
+                min_abs_corr=float(normal_top_pair_cfg["min_abs_corr"]),
+                top_n=int(normal_top_pair_cfg["top_n"]),
+                strength=float(normal_top_pair_cfg["strength"]),
+                smooth_alpha=float(normal_top_pair_cfg["smooth_alpha"]),
             )
 
             if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
-                    df_window,
-                    self.normal,
-                    clusters=self.correlation_hotspot_clusters,
-                    strength=0.18,
-                    smooth_alpha=0.95,
-                )
+                for cluster in self.correlation_hotspot_clusters:
+                    family_name = self._classify_cluster_family(cluster)
+
+                    named_cfg = self._get_family_corr_tuning_block(
+                        "normal",
+                        family_name,
+                        "named_cluster_overlay",
+                        defaults={
+                            "strength": 0.18,
+                            "smooth_alpha": 0.95,
+                        },
+                    )
+
+                    anchor_cfg = self._get_family_corr_tuning_block(
+                        "normal",
+                        family_name,
+                        "anchor_cluster_generation",
+                        defaults={
+                            "blend": 0.92,
+                            "min_abs_corr": 0.15,
+                            "residual_floor": 0.04,
+                            "smooth_alpha": 0.95,
+                        },
+                    )
+
+                    self._apply_named_cluster_overlay(
+                        df_window,
+                        self.normal,
+                        clusters=[cluster],
+                        strength=float(named_cfg["strength"]),
+                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                    )
+
+                    self._apply_anchor_cluster_generation(
+                        df_window,
+                        self.normal,
+                        clusters=[cluster],
+                        blend=float(anchor_cfg["blend"]),
+                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
+                        residual_floor=float(anchor_cfg["residual_floor"]),
+                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                    )
+
+            self._apply_bridge_pair_generation(
+                df_window,
+                self.normal,
+                bridge_pairs=self._get_bridge_pairs_from_tuning("normal"),
+                blend=float(normal_bridge_cfg["blend"]),
+                min_abs_corr=float(normal_bridge_cfg["min_abs_corr"]),
+                residual_floor=float(normal_bridge_cfg["residual_floor"]),
+                smooth_alpha=float(normal_bridge_cfg["smooth_alpha"]),
+            )
+
+            self._apply_priority_pair_generation(
+                df_window,
+                self.normal,
+                pair_specs=self._get_priority_pair_specs_from_tuning("normal"),
+            )
 
             dataframe.loc[df_window.index, df_window.columns] = df_window
 
@@ -1470,15 +2085,101 @@ class SyntheticGenerator:
                 std_floor_ratio=0.96,
                 max_extra_noise_ratio=0.25,
             )
+
             df_window = dataframe.loc[buildup_idx].copy()
+
+            buildup_top_pair_cfg = self._get_corr_tuning_block(
+                "normal",
+                "top_pairwise_overlay",
+                defaults={
+                    "strength": 0.16,
+                    "top_n": 80,
+                    "min_abs_corr": 0.08,
+                    "smooth_alpha": 0.90,
+                },
+            )
+
+            buildup_bridge_cfg = self._get_corr_tuning_block(
+                "normal",
+                "bridge_pair_generation",
+                defaults={
+                    "bridge_pairs": BRIDGE_PAIRS,
+                    "blend": 0.97,
+                    "min_abs_corr": 0.20,
+                    "residual_floor": 0.03,
+                    "smooth_alpha": 0.96,
+                },
+            )
+
             self._apply_top_pairwise_overlay(
                 df_window,
                 self.normal,
-                min_abs_corr=0.08,
-                top_n=80,
-                strength=0.16,
-                smooth_alpha=0.90,
+                min_abs_corr=float(buildup_top_pair_cfg["min_abs_corr"]),
+                top_n=int(buildup_top_pair_cfg["top_n"]),
+                strength=float(buildup_top_pair_cfg["strength"]),
+                smooth_alpha=float(buildup_top_pair_cfg["smooth_alpha"]),
             )
+
+            if self.correlation_hotspot_clusters:
+                for cluster in self.correlation_hotspot_clusters:
+                    family_name = self._classify_cluster_family(cluster)
+
+                    named_cfg = self._get_family_corr_tuning_block(
+                        "normal",
+                        family_name,
+                        "named_cluster_overlay",
+                        defaults={
+                            "strength": 0.18,
+                            "smooth_alpha": 0.95,
+                        },
+                    )
+
+                    anchor_cfg = self._get_family_corr_tuning_block(
+                        "normal",
+                        family_name,
+                        "anchor_cluster_generation",
+                        defaults={
+                            "blend": 0.92,
+                            "min_abs_corr": 0.15,
+                            "residual_floor": 0.04,
+                            "smooth_alpha": 0.95,
+                        },
+                    )
+
+                    self._apply_named_cluster_overlay(
+                        df_window,
+                        self.normal,
+                        clusters=[cluster],
+                        strength=float(named_cfg["strength"]),
+                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                    )
+
+                    self._apply_anchor_cluster_generation(
+                        df_window,
+                        self.normal,
+                        clusters=[cluster],
+                        blend=float(anchor_cfg["blend"]),
+                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
+                        residual_floor=float(anchor_cfg["residual_floor"]),
+                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                    )
+
+            self._apply_bridge_pair_generation(
+                df_window,
+                self.normal,
+                bridge_pairs=self._get_bridge_pairs_from_tuning("normal"),
+                blend=float(buildup_bridge_cfg["blend"]),
+                min_abs_corr=float(buildup_bridge_cfg["min_abs_corr"]),
+                residual_floor=float(buildup_bridge_cfg["residual_floor"]),
+                smooth_alpha=float(buildup_bridge_cfg["smooth_alpha"]),
+            )
+
+            self._apply_priority_pair_generation(
+                df_window,
+                self.normal,
+                pair_specs=self._get_priority_pair_specs_from_tuning("normal"),
+            )
+
             dataframe.loc[df_window.index, df_window.columns] = df_window
 
         recovery_idx = dataframe.index[dataframe["phase"].astype(str).eq("recovery")].to_numpy()
@@ -1500,34 +2201,97 @@ class SyntheticGenerator:
 
             df_window = dataframe.loc[recovery_idx].copy()
 
-            if self.correlation_hotspot_clusters:
-                self._apply_anchor_cluster_generation(
-                    df_window,
-                    self.recovery,
-                    clusters=self.correlation_hotspot_clusters,
-                    blend=0.72,
-                    min_abs_corr=0.20,
-                    residual_floor=0.10,
-                    smooth_alpha=0.90,
-                )
+            recovery_top_pair_cfg = self._get_corr_tuning_block(
+                "recovery",
+                "top_pairwise_overlay",
+                defaults={
+                    "strength": 0.14,
+                    "top_n": 100,
+                    "min_abs_corr": 0.08,
+                    "smooth_alpha": 0.90,
+                },
+            )
+
+            recovery_bridge_cfg = self._get_corr_tuning_block(
+                "recovery",
+                "bridge_pair_generation",
+                defaults={
+                    "bridge_pairs": BRIDGE_PAIRS,
+                    "blend": 0.90,
+                    "min_abs_corr": 0.20,
+                    "residual_floor": 0.05,
+                    "smooth_alpha": 0.93,
+                },
+            )
 
             self._apply_top_pairwise_overlay(
                 df_window,
                 self.recovery,
-                min_abs_corr=0.08,
-                top_n=100,
-                strength=0.14,
-                smooth_alpha=0.90,
+                min_abs_corr=float(recovery_top_pair_cfg["min_abs_corr"]),
+                top_n=int(recovery_top_pair_cfg["top_n"]),
+                strength=float(recovery_top_pair_cfg["strength"]),
+                smooth_alpha=float(recovery_top_pair_cfg["smooth_alpha"]),
             )
 
             if self.correlation_hotspot_clusters:
-                self._apply_named_cluster_overlay(
-                    df_window,
-                    self.recovery,
-                    clusters=self.correlation_hotspot_clusters,
-                    strength=0.14,
-                    smooth_alpha=0.93,
-                )
+                for cluster in self.correlation_hotspot_clusters:
+                    family_name = self._classify_cluster_family(cluster)
+
+                    named_cfg = self._get_family_corr_tuning_block(
+                        "recovery",
+                        family_name,
+                        "named_cluster_overlay",
+                        defaults={
+                            "strength": 0.14,
+                            "smooth_alpha": 0.93,
+                        },
+                    )
+
+                    anchor_cfg = self._get_family_corr_tuning_block(
+                        "recovery",
+                        family_name,
+                        "anchor_cluster_generation",
+                        defaults={
+                            "blend": 0.82,
+                            "min_abs_corr": 0.15,
+                            "residual_floor": 0.06,
+                            "smooth_alpha": 0.92,
+                        },
+                    )
+
+                    self._apply_named_cluster_overlay(
+                        df_window,
+                        self.recovery,
+                        clusters=[cluster],
+                        strength=float(named_cfg["strength"]),
+                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                    )
+
+                    self._apply_anchor_cluster_generation(
+                        df_window,
+                        self.recovery,
+                        clusters=[cluster],
+                        blend=float(anchor_cfg["blend"]),
+                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
+                        residual_floor=float(anchor_cfg["residual_floor"]),
+                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                    )
+
+            self._apply_bridge_pair_generation(
+                df_window,
+                self.recovery,
+                bridge_pairs=self._get_bridge_pairs_from_tuning("recovery"),
+                blend=float(recovery_bridge_cfg["blend"]),
+                min_abs_corr=float(recovery_bridge_cfg["min_abs_corr"]),
+                residual_floor=float(recovery_bridge_cfg["residual_floor"]),
+                smooth_alpha=float(recovery_bridge_cfg["smooth_alpha"]),
+            )
+
+            self._apply_priority_pair_generation(
+                df_window,
+                self.recovery,
+                pair_specs=self._get_priority_pair_specs_from_tuning("recovery"),
+            )
 
             dataframe.loc[df_window.index, df_window.columns] = df_window
 
@@ -1543,6 +2307,17 @@ class SyntheticGenerator:
                 smooth_alpha=0.93,
             )
             dataframe.loc[df_window.index, df_window.columns] = df_window
+
+        dataframe = self._build_episode_truth_columns(
+            dataframe,
+            spec=spec,
+            episode_id=episode_id,
+            buildup_start_idx=b0,
+            failure_start_idx=f0,
+            is_fault_episode=is_fault_episode,
+            observable_zscore_threshold=observable_zscore_threshold,
+            observable_min_consecutive=observable_min_consecutive,
+        )
 
         if self.missingness_spec is not None:
             dataframe = self.apply_missingness(

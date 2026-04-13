@@ -128,6 +128,7 @@ def merge_stage_results_back(
     Merge row-level stage results back onto the full master dataframe.
     """
     out = ensure_stable_row_id(master_dataframe, row_id_column=row_id_column)
+    
 
     stage_columns = [
         row_id_column,

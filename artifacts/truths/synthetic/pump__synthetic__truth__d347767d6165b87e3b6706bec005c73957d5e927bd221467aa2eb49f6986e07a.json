@@ -1,0 +1,823 @@
+{
+  "artifact_paths": {
+    "corr_pairs_normal_path": "/workspace/artifacts/silver_eda/pump/sensor_correlation_pairs_normal.csv",
+    "export_batch_parquet_path": "/workspace/artifacts/synthetic/pump/pump__synthetic__batch.parquet",
+    "fault_pairings_normal_path": "/workspace/artifacts/silver_eda/pump/sensor_fault_pairings_normal.csv",
+    "group_map_normal_path": "/workspace/artifacts/silver_eda/pump/sensor_group_map_normal.csv",
+    "postgres_batch_id": 1,
+    "postgres_cycle_start": 1,
+    "postgres_schema": "capstone",
+    "postgres_table": "synthetic_pump_stream",
+    "profile_abnormal_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__feature_profile__abnormal.csv",
+    "profile_normal_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__feature_profile__normal.csv",
+    "profile_recovery_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__feature_profile__recovery.csv",
+    "silver_eda_truth_hash": "c94ce9b31d6816d885d75c2750944068fcf129bca1d858758f3ed5cacf6ca9c2",
+    "synthetic_episode_path": "/workspace/artifacts/synthetic/pump/pump__synthetic__batch.parquet"
+  },
+  "column_count": 76,
+  "config_snapshot": {
+    "resolved_config_path": "/workspace/artifacts/synthetic/pump/pump__synthetic__resolved_config.yaml",
+    "synthetic_cfg": {
+      "calibration": {
+        "enabled": true,
+        "mean_within_k_std": 1.0,
+        "std_ratio_bounds": [
+          0.9,
+          1.35
+        ]
+      },
+      "correlation_cluster_derivation": {
+        "enabled": true,
+        "max_cluster_size": 8,
+        "min_abs_corr": 0.2,
+        "min_cluster_size": 2,
+        "top_n_pairs": 80
+      },
+      "correlation_hotspot_clusters": [],
+      "correlation_tuning": {
+        "family_split_rules": {
+          "chain_cluster_avg_abs_corr_threshold": 0.8
+        },
+        "normal": {
+          "anchor_cluster_generation": {
+            "blend": 0.9,
+            "min_abs_corr": 0.15,
+            "residual_floor": 0.04,
+            "smooth_alpha": 0.94
+          },
+          "bridge_pair_generation": {
+            "blend": 0.988,
+            "bridge_pairs": [
+              [
+                "sensor_08",
+                "sensor_09"
+              ],
+              [
+                "sensor_14",
+                "sensor_16"
+              ],
+              [
+                "sensor_17",
+                "sensor_18"
+              ],
+              [
+                "sensor_25",
+                "sensor_26"
+              ],
+              [
+                "sensor_31",
+                "sensor_32"
+              ],
+              [
+                "sensor_32",
+                "sensor_33"
+              ],
+              [
+                "sensor_34",
+                "sensor_35"
+              ],
+              [
+                "sensor_35",
+                "sensor_36"
+              ]
+            ],
+            "min_abs_corr": 0.1,
+            "residual_floor": 0.015,
+            "smooth_alpha": 0.975
+          },
+          "family_overrides": {
+            "dense_cluster": {
+              "anchor_cluster_generation": {
+                "blend": 0.88,
+                "min_abs_corr": 0.05,
+                "residual_floor": 0.05,
+                "smooth_alpha": 0.94
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.94,
+                "strength": 0.15
+              }
+            },
+            "strong_chain_cluster": {
+              "anchor_cluster_generation": {
+                "blend": 0.965,
+                "min_abs_corr": 0.1,
+                "residual_floor": 0.02,
+                "smooth_alpha": 0.975
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.96,
+                "strength": 0.19
+              }
+            },
+            "tight_pair": {
+              "anchor_cluster_generation": {
+                "blend": 0.98,
+                "min_abs_corr": 0.08,
+                "residual_floor": 0.01,
+                "smooth_alpha": 0.98
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.975,
+                "strength": 0.24
+              }
+            },
+            "weak_chain_cluster": {
+              "anchor_cluster_generation": {
+                "blend": 0.94,
+                "min_abs_corr": 0.1,
+                "residual_floor": 0.025,
+                "smooth_alpha": 0.965
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.955,
+                "strength": 0.17
+              }
+            }
+          },
+          "named_cluster_overlay": {
+            "smooth_alpha": 0.94,
+            "strength": 0.16
+          },
+          "top_pairwise_overlay": {
+            "min_abs_corr": 0.08,
+            "smooth_alpha": 0.91,
+            "strength": 0.18,
+            "top_n": 140
+          }
+        },
+        "recovery": {
+          "anchor_cluster_generation": {
+            "blend": 0.84,
+            "min_abs_corr": 0.12,
+            "residual_floor": 0.035,
+            "smooth_alpha": 0.95
+          },
+          "bridge_pair_generation": {
+            "blend": 0.955,
+            "bridge_pairs": [
+              [
+                "sensor_08",
+                "sensor_09"
+              ],
+              [
+                "sensor_14",
+                "sensor_16"
+              ],
+              [
+                "sensor_17",
+                "sensor_18"
+              ],
+              [
+                "sensor_25",
+                "sensor_26"
+              ],
+              [
+                "sensor_31",
+                "sensor_32"
+              ],
+              [
+                "sensor_32",
+                "sensor_33"
+              ],
+              [
+                "sensor_34",
+                "sensor_35"
+              ],
+              [
+                "sensor_35",
+                "sensor_36"
+              ]
+            ],
+            "min_abs_corr": 0.1,
+            "residual_floor": 0.025,
+            "smooth_alpha": 0.965
+          },
+          "family_overrides": {
+            "dense_cluster": {
+              "anchor_cluster_generation": {
+                "blend": 0.82,
+                "min_abs_corr": 0.15,
+                "residual_floor": 0.06,
+                "smooth_alpha": 0.92
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.93,
+                "strength": 0.14
+              }
+            },
+            "strong_chain_cluster": {
+              "anchor_cluster_generation": {
+                "blend": 0.9,
+                "min_abs_corr": 0.1,
+                "residual_floor": 0.035,
+                "smooth_alpha": 0.955
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.945,
+                "strength": 0.16
+              }
+            },
+            "tight_pair": {
+              "anchor_cluster_generation": {
+                "blend": 0.94,
+                "min_abs_corr": 0.08,
+                "residual_floor": 0.025,
+                "smooth_alpha": 0.965
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.955,
+                "strength": 0.2
+              }
+            },
+            "weak_chain_cluster": {
+              "anchor_cluster_generation": {
+                "blend": 0.8,
+                "min_abs_corr": 0.15,
+                "residual_floor": 0.06,
+                "smooth_alpha": 0.92
+              },
+              "named_cluster_overlay": {
+                "smooth_alpha": 0.93,
+                "strength": 0.13
+              }
+            }
+          },
+          "named_cluster_overlay": {
+            "smooth_alpha": 0.93,
+            "strength": 0.14
+          },
+          "top_pairwise_overlay": {
+            "min_abs_corr": 0.08,
+            "smooth_alpha": 0.91,
+            "strength": 0.15,
+            "top_n": 110
+          }
+        }
+      },
+      "episode": {
+        "buildup_fraction": 0.2,
+        "buildup_range": [
+          650,
+          1100
+        ],
+        "failure_range": [
+          1,
+          1
+        ],
+        "magnitude_range": [
+          0.75,
+          2.0
+        ],
+        "normal_after_range": [
+          250,
+          700
+        ],
+        "normal_before_range": [
+          800,
+          1800
+        ],
+        "recovery_range": [
+          850,
+          1250
+        ]
+      },
+      "export": {
+        "enabled": true,
+        "export_dir_key": "artifacts_root"
+      },
+      "fault_excluded_sensors": [
+        "sensor_15",
+        "sensor_50"
+      ],
+      "faults": {
+        "allowed": [
+          "drift_up",
+          "drift_down",
+          "spike",
+          "stuck_constant",
+          "variance_burst",
+          "step_shift",
+          "intermittent_dropout",
+          "sawtooth"
+        ],
+        "multisensor_probability": 0.25,
+        "random_mode_probability": 0.3
+      },
+      "generator": {
+        "allow_overshoot": false,
+        "append_mode": "renumber",
+        "episode_max_rows": 12000,
+        "max_episodes": 1000000,
+        "mode": "batch",
+        "rows_per_failure": 30000,
+        "target_rows": 225000,
+        "write_mode": "reset"
+      },
+      "kafka": {
+        "checkpoint_table": "synthetic_pump_kafka_checkpoint",
+        "enabled": false,
+        "topic": "synthetic_pump"
+      },
+      "layer_name": "synthetic",
+      "normal_batch_size": 50,
+      "output_mode": "postgres_batch",
+      "postgres": {
+        "schema": "capstone",
+        "table_artifact_name": "stream"
+      },
+      "process_run_id_prefix": "synthetic",
+      "random_seed": 42,
+      "silver_eda_artifact_keys": {
+        "corr_pairs_normal": "sensor_correlation_pairs_normal_path",
+        "fault_pairings_normal": "sensor_fault_pairings_normal_path",
+        "group_map_normal": "sensor_group_map_normal_path",
+        "hotspot_clusters_normal": "sensor_correlation_hotspot_clusters_normal_path",
+        "profile_abnormal": "feature_profile_abnormal_path",
+        "profile_normal": "feature_profile_normal_path",
+        "profile_recovery": "feature_profile_recovery_path"
+      }
+    },
+    "truth_config_block": {
+      "config_hash": "6f42704e80ff9db91e04649be4b4ff474c29e5a22c639a3899b21810b03c8131",
+      "execution": {
+        "fit_models": true,
+        "persist_ledgers": true,
+        "persist_models": true,
+        "persist_truths": true,
+        "save_config_snapshot": true,
+        "score_only": false,
+        "use_existing_gold_truth": false
+      },
+      "lineage": {
+        "load_training_artifacts_from_truth": false,
+        "parent_truth_hash": null,
+        "training_truth_hash": null
+      },
+      "runtime": {
+        "dataset": "pump",
+        "mode": "train",
+        "profile": "default",
+        "stage": "synthetic"
+      },
+      "source_files": [
+        "/workspace/configs/base.yaml",
+        "/workspace/configs/datasets/pump.yaml",
+        "/workspace/configs/modes/train.yaml",
+        "/workspace/configs/stages/synthetic.yaml"
+      ],
+      "stage_params": {
+        "calibration": {
+          "enabled": true,
+          "mean_within_k_std": 1.0,
+          "std_ratio_bounds": [
+            0.9,
+            1.35
+          ]
+        },
+        "correlation_cluster_derivation": {
+          "enabled": true,
+          "max_cluster_size": 8,
+          "min_abs_corr": 0.2,
+          "min_cluster_size": 2,
+          "top_n_pairs": 80
+        },
+        "correlation_hotspot_clusters": [],
+        "correlation_tuning": {
+          "family_split_rules": {
+            "chain_cluster_avg_abs_corr_threshold": 0.8
+          },
+          "normal": {
+            "anchor_cluster_generation": {
+              "blend": 0.9,
+              "min_abs_corr": 0.15,
+              "residual_floor": 0.04,
+              "smooth_alpha": 0.94
+            },
+            "bridge_pair_generation": {
+              "blend": 0.988,
+              "bridge_pairs": [
+                [
+                  "sensor_08",
+                  "sensor_09"
+                ],
+                [
+                  "sensor_14",
+                  "sensor_16"
+                ],
+                [
+                  "sensor_17",
+                  "sensor_18"
+                ],
+                [
+                  "sensor_25",
+                  "sensor_26"
+                ],
+                [
+                  "sensor_31",
+                  "sensor_32"
+                ],
+                [
+                  "sensor_32",
+                  "sensor_33"
+                ],
+                [
+                  "sensor_34",
+                  "sensor_35"
+                ],
+                [
+                  "sensor_35",
+                  "sensor_36"
+                ]
+              ],
+              "min_abs_corr": 0.1,
+              "residual_floor": 0.015,
+              "smooth_alpha": 0.975
+            },
+            "family_overrides": {
+              "dense_cluster": {
+                "anchor_cluster_generation": {
+                  "blend": 0.88,
+                  "min_abs_corr": 0.05,
+                  "residual_floor": 0.05,
+                  "smooth_alpha": 0.94
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.94,
+                  "strength": 0.15
+                }
+              },
+              "strong_chain_cluster": {
+                "anchor_cluster_generation": {
+                  "blend": 0.965,
+                  "min_abs_corr": 0.1,
+                  "residual_floor": 0.02,
+                  "smooth_alpha": 0.975
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.96,
+                  "strength": 0.19
+                }
+              },
+              "tight_pair": {
+                "anchor_cluster_generation": {
+                  "blend": 0.98,
+                  "min_abs_corr": 0.08,
+                  "residual_floor": 0.01,
+                  "smooth_alpha": 0.98
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.975,
+                  "strength": 0.24
+                }
+              },
+              "weak_chain_cluster": {
+                "anchor_cluster_generation": {
+                  "blend": 0.94,
+                  "min_abs_corr": 0.1,
+                  "residual_floor": 0.025,
+                  "smooth_alpha": 0.965
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.955,
+                  "strength": 0.17
+                }
+              }
+            },
+            "named_cluster_overlay": {
+              "smooth_alpha": 0.94,
+              "strength": 0.16
+            },
+            "top_pairwise_overlay": {
+              "min_abs_corr": 0.08,
+              "smooth_alpha": 0.91,
+              "strength": 0.18,
+              "top_n": 140
+            }
+          },
+          "recovery": {
+            "anchor_cluster_generation": {
+              "blend": 0.84,
+              "min_abs_corr": 0.12,
+              "residual_floor": 0.035,
+              "smooth_alpha": 0.95
+            },
+            "bridge_pair_generation": {
+              "blend": 0.955,
+              "bridge_pairs": [
+                [
+                  "sensor_08",
+                  "sensor_09"
+                ],
+                [
+                  "sensor_14",
+                  "sensor_16"
+                ],
+                [
+                  "sensor_17",
+                  "sensor_18"
+                ],
+                [
+                  "sensor_25",
+                  "sensor_26"
+                ],
+                [
+                  "sensor_31",
+                  "sensor_32"
+                ],
+                [
+                  "sensor_32",
+                  "sensor_33"
+                ],
+                [
+                  "sensor_34",
+                  "sensor_35"
+                ],
+                [
+                  "sensor_35",
+                  "sensor_36"
+                ]
+              ],
+              "min_abs_corr": 0.1,
+              "residual_floor": 0.025,
+              "smooth_alpha": 0.965
+            },
+            "family_overrides": {
+              "dense_cluster": {
+                "anchor_cluster_generation": {
+                  "blend": 0.82,
+                  "min_abs_corr": 0.15,
+                  "residual_floor": 0.06,
+                  "smooth_alpha": 0.92
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.93,
+                  "strength": 0.14
+                }
+              },
+              "strong_chain_cluster": {
+                "anchor_cluster_generation": {
+                  "blend": 0.9,
+                  "min_abs_corr": 0.1,
+                  "residual_floor": 0.035,
+                  "smooth_alpha": 0.955
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.945,
+                  "strength": 0.16
+                }
+              },
+              "tight_pair": {
+                "anchor_cluster_generation": {
+                  "blend": 0.94,
+                  "min_abs_corr": 0.08,
+                  "residual_floor": 0.025,
+                  "smooth_alpha": 0.965
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.955,
+                  "strength": 0.2
+                }
+              },
+              "weak_chain_cluster": {
+                "anchor_cluster_generation": {
+                  "blend": 0.8,
+                  "min_abs_corr": 0.15,
+                  "residual_floor": 0.06,
+                  "smooth_alpha": 0.92
+                },
+                "named_cluster_overlay": {
+                  "smooth_alpha": 0.93,
+                  "strength": 0.13
+                }
+              }
+            },
+            "named_cluster_overlay": {
+              "smooth_alpha": 0.93,
+              "strength": 0.14
+            },
+            "top_pairwise_overlay": {
+              "min_abs_corr": 0.08,
+              "smooth_alpha": 0.91,
+              "strength": 0.15,
+              "top_n": 110
+            }
+          }
+        },
+        "episode": {
+          "buildup_fraction": 0.2,
+          "buildup_range": [
+            650,
+            1100
+          ],
+          "failure_range": [
+            1,
+            1
+          ],
+          "magnitude_range": [
+            0.75,
+            2.0
+          ],
+          "normal_after_range": [
+            250,
+            700
+          ],
+          "normal_before_range": [
+            800,
+            1800
+          ],
+          "recovery_range": [
+            850,
+            1250
+          ]
+        },
+        "export": {
+          "enabled": true,
+          "export_dir_key": "artifacts_root"
+        },
+        "fault_excluded_sensors": [
+          "sensor_15",
+          "sensor_50"
+        ],
+        "faults": {
+          "allowed": [
+            "drift_up",
+            "drift_down",
+            "spike",
+            "stuck_constant",
+            "variance_burst",
+            "step_shift",
+            "intermittent_dropout",
+            "sawtooth"
+          ],
+          "multisensor_probability": 0.25,
+          "random_mode_probability": 0.3
+        },
+        "generator": {
+          "allow_overshoot": false,
+          "append_mode": "renumber",
+          "episode_max_rows": 12000,
+          "max_episodes": 1000000,
+          "mode": "batch",
+          "rows_per_failure": 30000,
+          "target_rows": 225000,
+          "write_mode": "reset"
+        },
+        "kafka": {
+          "checkpoint_table": "synthetic_pump_kafka_checkpoint",
+          "enabled": false,
+          "topic": "synthetic_pump"
+        },
+        "layer_name": "synthetic",
+        "normal_batch_size": 50,
+        "output_mode": "postgres_batch",
+        "postgres": {
+          "schema": "capstone",
+          "table_artifact_name": "stream"
+        },
+        "process_run_id_prefix": "synthetic",
+        "random_seed": 42,
+        "silver_eda_artifact_keys": {
+          "corr_pairs_normal": "sensor_correlation_pairs_normal_path",
+          "fault_pairings_normal": "sensor_fault_pairings_normal_path",
+          "group_map_normal": "sensor_group_map_normal_path",
+          "hotspot_clusters_normal": "sensor_correlation_hotspot_clusters_normal_path",
+          "profile_abnormal": "feature_profile_abnormal_path",
+          "profile_normal": "feature_profile_normal_path",
+          "profile_recovery": "feature_profile_recovery_path"
+        }
+      },
+      "versions": {
+        "bronze": "bronze__001",
+        "gold": "gold__001",
+        "silver": "silver__001",
+        "silver_eda": "silver_eda__001",
+        "truth": "truth__001"
+      },
+      "wandb": {
+        "enabled": true,
+        "entity": "dcoo230-western-governors-university",
+        "project": "capstone",
+        "run_name_template": "gold__001_train"
+      }
+    }
+  },
+  "created_at_utc": "2026-04-12T00:23:18+00:00",
+  "dataset_name": "pump",
+  "feature_columns": [
+    "phase",
+    "sensor_00",
+    "sensor_01",
+    "sensor_02",
+    "sensor_03",
+    "sensor_04",
+    "sensor_05",
+    "sensor_06",
+    "sensor_07",
+    "sensor_08",
+    "sensor_09",
+    "sensor_10",
+    "sensor_11",
+    "sensor_12",
+    "sensor_13",
+    "sensor_14",
+    "sensor_15",
+    "sensor_16",
+    "sensor_17",
+    "sensor_18",
+    "sensor_19",
+    "sensor_20",
+    "sensor_21",
+    "sensor_22",
+    "sensor_23",
+    "sensor_24",
+    "sensor_25",
+    "sensor_26",
+    "sensor_27",
+    "sensor_28",
+    "sensor_29",
+    "sensor_30",
+    "sensor_31",
+    "sensor_32",
+    "sensor_33",
+    "sensor_34",
+    "sensor_35",
+    "sensor_36",
+    "sensor_37",
+    "sensor_38",
+    "sensor_39",
+    "sensor_40",
+    "sensor_41",
+    "sensor_42",
+    "sensor_43",
+    "sensor_44",
+    "sensor_45",
+    "sensor_46",
+    "sensor_47",
+    "sensor_48",
+    "sensor_49",
+    "sensor_50",
+    "sensor_51",
+    "stream_state"
+  ],
+  "layer_name": "synthetic",
+  "meta_columns": [
+    "meta__parent_truth_hash",
+    "meta__pipeline_mode",
+    "meta__truth_hash"
+  ],
+  "notes": {},
+  "parent_truth_hash": "c94ce9b31d6816d885d75c2750944068fcf129bca1d858758f3ed5cacf6ca9c2",
+  "pipeline_mode": "batch",
+  "process_run_id": "synthetic__20260412T002314Z",
+  "row_count": 225000,
+  "runtime_facts": {
+    "buildup_range": [
+      650,
+      1100
+    ],
+    "buildup_selection": 650,
+    "episode": {
+      "episodes_used": 79,
+      "meta_episode_id_max": 78,
+      "meta_episode_id_min": 0,
+      "meta_primary_fault_type_mode": "step_shift",
+      "meta_primary_sensor_mode": "sensor_28",
+      "mode": "batch",
+      "target_rows": 225000
+    },
+    "failure_range": [
+      1,
+      1
+    ],
+    "failure_selection": 1,
+    "magnitude_range": [
+      0.75,
+      2.0
+    ],
+    "magnitude_selection": 0.75,
+    "normal_after_range": [
+      250,
+      700
+    ],
+    "normal_after_selection": 250,
+    "normal_before_range": [
+      800,
+      1800
+    ],
+    "normal_before_selection": 800,
+    "parent_truth_hash": "c94ce9b31d6816d885d75c2750944068fcf129bca1d858758f3ed5cacf6ca9c2",
+    "primary_fault_type": "step_shift",
+    "primary_sensor": "sensor_28",
+    "recovery_range": [
+      850,
+      1250
+    ],
+    "recovery_selection": 850,
+    "row_count": 225000,
+    "silver_eda_truth_hash": "c94ce9b31d6816d885d75c2750944068fcf129bca1d858758f3ed5cacf6ca9c2"
+  },
+  "source_fingerprint": {},
+  "truth_hash": "d347767d6165b87e3b6706bec005c73957d5e927bd221467aa2eb49f6986e07a",
+  "truth_version": "truth__001"
+}
