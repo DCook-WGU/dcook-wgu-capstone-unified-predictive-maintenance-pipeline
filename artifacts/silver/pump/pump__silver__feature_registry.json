@@ -157,7 +157,7 @@
   "label_source_type": "status",
   "quarantine_missing_pct": 30.0,
   "pipeline_mode": "batch",
-  "process_run_id": "silver_process__20260405T012842Z",
-  "truth_hash": "eb885b514594038c463c96ed2f58d75ad025af0b9588d99042e977eb073547fc",
-  "parent_truth_hash": "de10d3379ef60c0fbcd5ed602900f6ad807ab5f4bdb82d6d33229a0ada718720"
+  "process_run_id": "silver_process__20260413T171529Z",
+  "truth_hash": "cc891dff9ae2ce22b328689fb2b893f09a8b9fa5ef4597dbd70e2f3b6c3b27e2",
+  "parent_truth_hash": "a49a1d0f8f1bb7f910924d93540eb65bcbde1d7eafadd60e7067839587493ef0"
 }

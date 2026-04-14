@@ -800,7 +800,288 @@ class SyntheticGenerator:
             combined = np.clip(combined, float(member_profile.min_value), float(member_profile.max_value))
 
             dataframe[member_sensor] = combined
-    
+
+    def _get_residual_pair_specs_from_tuning(
+        self,
+        section_name: str,
+    ) -> List[Dict[str, object]]:
+        block = self._get_corr_tuning_block(
+            section_name,
+            "residual_pair_correction",
+            defaults={
+                "enabled": False,
+                "pair_specs": [],
+            },
+        )
+
+        if not bool(block.get("enabled", False)):
+            return []
+
+        pair_specs_raw = list(block.get("pair_specs", []) or [])
+        cleaned: List[Dict[str, object]] = []
+
+        for raw in pair_specs_raw:
+            if not isinstance(raw, dict):
+                continue
+
+            anchor_sensor = str(raw.get("anchor_sensor", "")).strip()
+            member_sensor = str(raw.get("member_sensor", "")).strip()
+
+            if not anchor_sensor or not member_sensor:
+                continue
+
+            cleaned.append(
+                {
+                    "anchor_sensor": anchor_sensor,
+                    "member_sensor": member_sensor,
+                    "base_blend": float(raw.get("base_blend", 0.10)),
+                    "gap_gain": float(raw.get("gap_gain", 0.35)),
+                    "max_blend": float(raw.get("max_blend", 0.28)),
+                    "trigger_gap": float(raw.get("trigger_gap", 0.03)),
+                    "residual_floor": float(raw.get("residual_floor", 0.08)),
+                    "smooth_alpha": float(raw.get("smooth_alpha", 0.97)),
+                    "min_abs_corr": float(raw.get("min_abs_corr", 0.05)),
+                }
+            )
+
+        return cleaned
+
+
+    def _apply_residual_pair_correction(
+        self,
+        dataframe: pd.DataFrame,
+        profiles: Dict[str, SensorRichProfile],
+        *,
+        pair_specs: List[Dict[str, object]],
+    ) -> None:
+        """
+        Small post-bridge correction that nudges the current member path toward the
+        target pair correlation while preserving most of the existing local shape.
+        """
+        if len(dataframe) == 0 or not pair_specs:
+            return
+
+        for spec in pair_specs:
+            anchor_sensor = str(spec["anchor_sensor"])
+            member_sensor = str(spec["member_sensor"])
+
+            if anchor_sensor not in dataframe.columns or member_sensor not in dataframe.columns:
+                continue
+            if anchor_sensor not in profiles or member_sensor not in profiles:
+                continue
+
+            target_corr = float(self.corr.get((anchor_sensor, member_sensor), 0.0))
+            target_corr = float(np.clip(target_corr, -0.98, 0.98))
+
+            if abs(target_corr) < float(spec["min_abs_corr"]):
+                continue
+
+            anchor_values = pd.to_numeric(
+                dataframe[anchor_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            member_values = pd.to_numeric(
+                dataframe[member_sensor],
+                errors="coerce",
+            ).to_numpy(dtype=float, copy=True)
+
+            mask = np.isfinite(anchor_values) & np.isfinite(member_values)
+            if mask.sum() < 8:
+                continue
+
+            anchor_cur = anchor_values[mask]
+            member_cur = member_values[mask]
+
+            anchor_mean = float(np.mean(anchor_cur))
+            anchor_std = max(float(np.std(anchor_cur, ddof=1)), 1e-6)
+
+            member_mean = float(np.mean(member_cur))
+            member_std = max(float(np.std(member_cur, ddof=1)), 1e-6)
+
+            anchor_z = (anchor_values - anchor_mean) / anchor_std
+            member_z = (member_values - member_mean) / member_std
+
+            current_corr = float(np.corrcoef(anchor_z[mask], member_z[mask])[0, 1])
+            if not np.isfinite(current_corr):
+                current_corr = 0.0
+
+            gap = float(target_corr - current_corr)
+            if abs(gap) < float(spec["trigger_gap"]):
+                continue
+
+            raw_residual = member_z - current_corr * anchor_z
+            raw_residual = np.nan_to_num(raw_residual, nan=0.0, posinf=0.0, neginf=0.0)
+
+            residual_std = max(float(np.std(raw_residual[mask], ddof=1)), 1e-6)
+            residual_z = raw_residual / residual_std
+            residual_z = self._smooth_vector(residual_z, alpha=float(spec["smooth_alpha"]))
+
+            target_residual_scale = max(
+                float(np.sqrt(max(0.0, 1.0 - target_corr**2))),
+                float(spec["residual_floor"]),
+            )
+
+            generated_z = target_corr * anchor_z + target_residual_scale * residual_z
+
+            blend = min(
+                float(spec["max_blend"]),
+                float(spec["base_blend"]) + float(spec["gap_gain"]) * abs(gap),
+            )
+
+            combined_z = (1.0 - blend) * member_z + blend * generated_z
+            combined = member_mean + combined_z * member_std
+
+            member_profile = profiles[member_sensor]
+            combined = np.clip(combined, float(member_profile.lower_bound), float(member_profile.upper_bound))
+            combined = np.clip(combined, float(member_profile.min_value), float(member_profile.max_value))
+
+            dataframe[member_sensor] = combined
+
+
+    def _get_triad_specs_from_tuning(
+        self,
+        section_name: str,
+    ) -> List[Dict[str, object]]:
+        block = self._get_corr_tuning_block(
+            section_name,
+            "triad_middle_sensor_correction",
+            defaults={
+                "enabled": False,
+                "triad_specs": [],
+            },
+        )
+
+        if not bool(block.get("enabled", False)):
+            return []
+
+        triad_specs_raw = list(block.get("triad_specs", []) or [])
+        cleaned: List[Dict[str, object]] = []
+
+        for raw in triad_specs_raw:
+            if not isinstance(raw, dict):
+                continue
+
+            left_sensor = str(raw.get("left_sensor", "")).strip()
+            middle_sensor = str(raw.get("middle_sensor", "")).strip()
+            right_sensor = str(raw.get("right_sensor", "")).strip()
+
+            if not left_sensor or not middle_sensor or not right_sensor:
+                continue
+
+            cleaned.append(
+                {
+                    "left_sensor": left_sensor,
+                    "middle_sensor": middle_sensor,
+                    "right_sensor": right_sensor,
+                    "base_blend": float(raw.get("base_blend", 0.10)),
+                    "gap_gain": float(raw.get("gap_gain", 0.30)),
+                    "max_blend": float(raw.get("max_blend", 0.24)),
+                    "trigger_gap": float(raw.get("trigger_gap", 0.03)),
+                    "residual_floor": float(raw.get("residual_floor", 0.10)),
+                    "smooth_alpha": float(raw.get("smooth_alpha", 0.97)),
+                }
+            )
+
+        return cleaned
+
+
+    def _apply_middle_sensor_triad_correction(
+        self,
+        dataframe: pd.DataFrame,
+        profiles: Dict[str, SensorRichProfile],
+        *,
+        triad_specs: List[Dict[str, object]],
+    ) -> None:
+        """
+        Correct a 3-sensor chain by adjusting only the middle sensor so that
+        left-middle and middle-right can improve together.
+        """
+        if len(dataframe) == 0 or not triad_specs:
+            return
+
+        for spec in triad_specs:
+            left_sensor = str(spec["left_sensor"])
+            middle_sensor = str(spec["middle_sensor"])
+            right_sensor = str(spec["right_sensor"])
+
+            if left_sensor not in dataframe.columns or middle_sensor not in dataframe.columns or right_sensor not in dataframe.columns:
+                continue
+            if left_sensor not in profiles or middle_sensor not in profiles or right_sensor not in profiles:
+                continue
+
+            left_values = pd.to_numeric(dataframe[left_sensor], errors="coerce").to_numpy(dtype=float, copy=True)
+            middle_values = pd.to_numeric(dataframe[middle_sensor], errors="coerce").to_numpy(dtype=float, copy=True)
+            right_values = pd.to_numeric(dataframe[right_sensor], errors="coerce").to_numpy(dtype=float, copy=True)
+
+            mask = np.isfinite(left_values) & np.isfinite(middle_values) & np.isfinite(right_values)
+            if mask.sum() < 8:
+                continue
+
+            l_cur = left_values[mask]
+            m_cur = middle_values[mask]
+            r_cur = right_values[mask]
+
+            l_mean = float(np.mean(l_cur))
+            l_std = max(float(np.std(l_cur, ddof=1)), 1e-6)
+
+            m_mean = float(np.mean(m_cur))
+            m_std = max(float(np.std(m_cur, ddof=1)), 1e-6)
+
+            r_mean = float(np.mean(r_cur))
+            r_std = max(float(np.std(r_cur, ddof=1)), 1e-6)
+
+            z_l = (left_values - l_mean) / l_std
+            z_m = (middle_values - m_mean) / m_std
+            z_r = (right_values - r_mean) / r_std
+
+            current_lm = float(np.corrcoef(z_l[mask], z_m[mask])[0, 1])
+            current_mr = float(np.corrcoef(z_m[mask], z_r[mask])[0, 1])
+            if not np.isfinite(current_lm):
+                current_lm = 0.0
+            if not np.isfinite(current_mr):
+                current_mr = 0.0
+
+            target_lm = float(np.clip(self.corr.get((left_sensor, middle_sensor), 0.0), -0.98, 0.98))
+            target_mr = float(np.clip(self.corr.get((middle_sensor, right_sensor), 0.0), -0.98, 0.98))
+
+            gap_lm = target_lm - current_lm
+            gap_mr = target_mr - current_mr
+
+            if max(abs(gap_lm), abs(gap_mr)) < float(spec["trigger_gap"]):
+                continue
+
+            w_l = abs(target_lm)
+            w_r = abs(target_mr)
+            w_sum = max(w_l + w_r, 1e-6)
+            w_l /= w_sum
+            w_r /= w_sum
+
+            current_projection = w_l * current_lm * z_l + w_r * current_mr * z_r
+            residual = z_m - current_projection
+            residual = np.nan_to_num(residual, nan=0.0, posinf=0.0, neginf=0.0)
+
+            residual_std = max(float(np.std(residual[mask], ddof=1)), 1e-6)
+            residual_z = residual / residual_std
+            residual_z = self._smooth_vector(residual_z, alpha=float(spec["smooth_alpha"]))
+
+            target_projection = w_l * target_lm * z_l + w_r * target_mr * z_r
+            generated_z = target_projection + float(spec["residual_floor"]) * residual_z
+
+            blend = min(
+                float(spec["max_blend"]),
+                float(spec["base_blend"]) + float(spec["gap_gain"]) * max(abs(gap_lm), abs(gap_mr)),
+            )
+
+            combined_z = (1.0 - blend) * z_m + blend * generated_z
+            combined = m_mean + combined_z * m_std
+
+            middle_profile = profiles[middle_sensor]
+            combined = np.clip(combined, float(middle_profile.lower_bound), float(middle_profile.upper_bound))
+            combined = np.clip(combined, float(middle_profile.min_value), float(middle_profile.max_value))
+
+            dataframe[middle_sensor] = combined
+
     def _pick_cluster_anchor(
         self,
         cluster: List[str],
@@ -1263,10 +1544,10 @@ class SyntheticGenerator:
         magnitude: float,
     ) -> np.ndarray:
         """
-        Make buildup behave like a transition:
-        - keep it closer to normal than failure
-        - increase perturbation as progress increases
-        - tie some of the noise to local movement
+        Length-aware buildup transition:
+        - short buildup: can become visible a bit sooner
+        - long buildup: stays subtle much longer, then ramps harder later
+        - preserves continuity and avoids early over-obvious anomaly shape
         """
         out = values.astype(float, copy=True)
         n = int(out.shape[0])
@@ -1275,29 +1556,59 @@ class SyntheticGenerator:
             return out
 
         std = max(float(profile.std), 1e-6)
-        progress = np.linspace(0.0, 1.0, n)
+
+        # Normalize buildup length into a 0..1 control.
+        # Around 3k rows = "shorter" buildup, around 18k rows = "very long" buildup.
+        length_scale = float(np.clip((n - 3000.0) / 15000.0, 0.0, 1.0))
+
+        # Longer buildup => flatter early curve, steeper late curve
+        progress_exp = 1.35 + 1.10 * length_scale
+        linear_progress = np.linspace(0.0, 1.0, n)
+        shaped_progress = np.power(linear_progress, progress_exp)
+
+        # Longer buildup => slightly lower effective severity per row
+        effective_magnitude = max(
+            0.05,
+            float(magnitude) * (0.52 - 0.14 * length_scale),
+        )
 
         fault_component = self._inject_fault(
             out.copy(),
             fault_type,
-            magnitude=max(0.05, float(magnitude) * 0.60),
+            magnitude=effective_magnitude,
             profile=profile,
         )
 
-        # Gradually blend toward the fault-shaped path
-        blend_weight = 0.15 + 0.70 * progress
+        # Longer buildup => gentler early blend, but still reaches a strong late ramp
+        start_blend = 0.06 - 0.03 * length_scale
+        end_blend = 0.78 + 0.08 * length_scale
+        blend_weight = start_blend + (end_blend - start_blend) * shaped_progress
         out = out + (fault_component - out) * blend_weight
 
-        # Add transition noise linked to local change
+        # Local movement baseline
         diffs = np.abs(np.diff(np.r_[out[0], out]))
         positive_diffs = diffs[diffs > 0]
         diff_base = float(np.median(positive_diffs)) if positive_diffs.size else std * 0.05
         diff_base = max(diff_base, 1e-6)
-
         diff_weight = np.clip(diffs / diff_base, 0.0, 3.0)
-        noise_sd = std * (0.04 + 0.10 * progress + 0.04 * diff_weight)
+
+        # Longer buildup => quieter early noise, stronger late noise
+        early_noise = 0.012 - 0.004 * length_scale
+        late_noise = 0.030 + 0.015 * length_scale
+        shape_noise = 0.020 + 0.015 * length_scale
+
+        noise_sd = std * (
+            early_noise
+            + late_noise * np.power(linear_progress, 1.50 + 0.50 * length_scale)
+            + shape_noise * shaped_progress
+            + 0.018 * diff_weight
+        )
 
         out = out + self.rng.normal(0.0, noise_sd, size=n)
+
+        # Longer buildup => slightly stronger smoothing so the transition stays gradual
+        smooth_alpha = 0.90 + 0.04 * length_scale
+        out = self._smooth_vector(out, alpha=float(smooth_alpha))
 
         out = np.clip(out, float(profile.lower_bound), float(profile.upper_bound))
         out = np.clip(out, float(profile.min_value), float(profile.max_value))
@@ -2072,6 +2383,18 @@ class SyntheticGenerator:
                 df_window,
                 self.normal,
                 pair_specs=self._get_priority_pair_specs_from_tuning("normal"),
+            )
+
+            self._apply_residual_pair_correction(
+                df_window,
+                self.normal,
+                pair_specs=self._get_residual_pair_specs_from_tuning("normal"),
+            )
+
+            self._apply_middle_sensor_triad_correction(
+                df_window,
+                self.normal,
+                triad_specs=self._get_triad_specs_from_tuning("normal"),
             )
 
             dataframe.loc[df_window.index, df_window.columns] = df_window

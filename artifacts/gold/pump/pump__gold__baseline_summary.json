@@ -15,11 +15,11 @@
   "alert_count_all_rows": 19493,
   "alert_count_test_rows": 1522,
   "result_row_count": 220320,
-  "baseline_truth_hash": "23cfdf317382ede4f2e9a130d2b3a7b6c3aa59f96b394c4e4e22de3c9f70c644",
-  "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__23cfdf317382ede4f2e9a130d2b3a7b6c3aa59f96b394c4e4e22de3c9f70c644.json",
-  "baseline_process_run_id": "gold_baseline_process__20260405T063159Z",
-  "gold_truth_hash": "d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e",
-  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e.json",
-  "gold_process_run_id": "gold_process__20260405T042429Z",
+  "baseline_truth_hash": "92bbf2bc04a1365f1e6088b87c317f98272df19d22c002c8c9d3199675a310e4",
+  "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__92bbf2bc04a1365f1e6088b87c317f98272df19d22c002c8c9d3199675a310e4.json",
+  "baseline_process_run_id": "gold_baseline_process__20260414T192101Z",
+  "gold_truth_hash": "e78cce44ff6cdb68a70475f019e826d2ca15edd429584f2d7835d6c7a05e682b",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__e78cce44ff6cdb68a70475f019e826d2ca15edd429584f2d7835d6c7a05e682b.json",
+  "gold_process_run_id": "gold_process__20260414T150509Z",
   "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40"
 }

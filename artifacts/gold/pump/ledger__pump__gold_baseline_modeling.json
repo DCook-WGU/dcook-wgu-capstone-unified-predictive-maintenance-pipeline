@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-04-05T06:32:03.584606+00:00",
+    "ts_utc": "2026-04-14T19:21:05.563987+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-04-05T06:32:07.702610+00:00",
+    "ts_utc": "2026-04-14T19:21:09.511805+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -21,8 +21,8 @@
     "consequence": null,
     "data": {
       "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-      "gold_truth_hash": "d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e.json",
+      "gold_truth_hash": "e78cce44ff6cdb68a70475f019e826d2ca15edd429584f2d7835d6c7a05e682b",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__e78cce44ff6cdb68a70475f019e826d2ca15edd429584f2d7835d6c7a05e682b.json",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
       "gold_scaled_shape": [
@@ -37,7 +37,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-05T06:32:08.857764+00:00",
+    "ts_utc": "2026-04-14T19:21:10.656259+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -52,7 +52,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-05T06:32:19.171536+00:00",
+    "ts_utc": "2026-04-14T19:21:16.344186+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -78,7 +78,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-05T06:37:13.605647+00:00",
+    "ts_utc": "2026-04-14T19:21:24.825607+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -88,7 +88,6 @@
     "consequence": null,
     "data": {
       "row_count_scored": 220320,
-      "feature_count": 50,
       "baseline_flag_count": 35615,
       "score_column": "baseline_score",
       "decision_column": "baseline_decision",
@@ -97,7 +96,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-05T06:38:12.659394+00:00",
+    "ts_utc": "2026-04-14T19:22:22.112743+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -113,15 +112,15 @@
       "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
       "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json",
       "baseline_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json",
-      "baseline_truth_hash": "23cfdf317382ede4f2e9a130d2b3a7b6c3aa59f96b394c4e4e22de3c9f70c644",
-      "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__23cfdf317382ede4f2e9a130d2b3a7b6c3aa59f96b394c4e4e22de3c9f70c644.json",
+      "baseline_truth_hash": "92bbf2bc04a1365f1e6088b87c317f98272df19d22c002c8c9d3199675a310e4",
+      "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__92bbf2bc04a1365f1e6088b87c317f98272df19d22c002c8c9d3199675a310e4.json",
       "result_row_count": 220320,
       "alert_count_all_rows": 19493,
       "alert_count_test_rows": 1522
     }
   },
   {
-    "ts_utc": "2026-04-05T06:38:13.423146+00:00",
+    "ts_utc": "2026-04-14T19:22:22.513288+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -139,7 +138,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-05T06:38:13.968153+00:00",
+    "ts_utc": "2026-04-14T19:22:23.024807+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",

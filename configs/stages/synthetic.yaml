@@ -11,21 +11,21 @@ synthetic:
     mode: "batch"
     target_rows: 225000
     max_episodes: 1000000
-    episode_max_rows: 12000
+    episode_max_rows: 38000
     allow_overshoot: false
-    rows_per_failure: 135000
+    rows_per_failure: 40000
     write_mode: "reset"
     append_mode: "renumber"
 
   # episode defaults
   episode:
-    normal_before_range: [800, 1800]
-    buildup_range: [650, 1100]
+    normal_before_range: [2500, 4000]
+    buildup_range: [16000, 20000]
     failure_range: [1, 1]
 
-    recovery_range: [1450, 2000]
-    normal_after_range: [250, 700]
-    magnitude_range: [0.75, 2.0]
+    recovery_range: [6000, 8000]
+    normal_after_range: [2500, 4000]
+    magnitude_range: [0.55, 1.50]
     buildup_fraction: 0.20
 
   # fault selection behavior
@@ -168,42 +168,70 @@ synthetic:
             smooth_alpha: 0.960
 
       priority_pair_generation:
-        enabled: true
+        enabled: false
+        pair_specs: []
+#        pair_specs:
+#          - anchor_sensor: "sensor_08"
+#            member_sensor: "sensor_09"
+#            blend: 0.998
+#            min_abs_corr: 0.05
+#            residual_floor: 0.004
+#            smooth_alpha: 0.990
+#
+#          - anchor_sensor: "sensor_14"
+#            member_sensor: "sensor_16"
+#            blend: 0.997
+#            min_abs_corr: 0.05
+#            residual_floor: 0.004
+#            smooth_alpha: 0.989
+#
+#          - anchor_sensor: "sensor_17"
+#            member_sensor: "sensor_18"
+#            blend: 0.997
+#            min_abs_corr: 0.05
+#            residual_floor: 0.004
+#            smooth_alpha: 0.989
+#
+#          - anchor_sensor: "sensor_19"
+#            member_sensor: "sensor_20"
+#            blend: 0.985
+#            min_abs_corr: 0.05
+#            residual_floor: 0.012
+#            smooth_alpha: 0.980
+#
+#          - anchor_sensor: "sensor_34"
+#            member_sensor: "sensor_35"
+#            blend: 0.988
+#            min_abs_corr: 0.05
+#            residual_floor: 0.010
+#            smooth_alpha: 0.982
+
+      residual_pair_correction:
+        enabled: false
         pair_specs:
-          - anchor_sensor: "sensor_08"
-            member_sensor: "sensor_09"
-            blend: 0.998
-            min_abs_corr: 0.05
-            residual_floor: 0.004
-            smooth_alpha: 0.990
-
-          - anchor_sensor: "sensor_14"
-            member_sensor: "sensor_16"
-            blend: 0.997
-            min_abs_corr: 0.05
-            residual_floor: 0.004
-            smooth_alpha: 0.989
-
-          - anchor_sensor: "sensor_17"
-            member_sensor: "sensor_18"
-            blend: 0.997
-            min_abs_corr: 0.05
-            residual_floor: 0.004
-            smooth_alpha: 0.989
-
           - anchor_sensor: "sensor_19"
             member_sensor: "sensor_20"
-            blend: 0.994
+            base_blend: 0.10
+            gap_gain: 0.35
+            max_blend: 0.26
+            trigger_gap: 0.03
+            residual_floor: 0.08
+            smooth_alpha: 0.980
             min_abs_corr: 0.05
-            residual_floor: 0.006
-            smooth_alpha: 0.987
 
-          - anchor_sensor: "sensor_34"
-            member_sensor: "sensor_35"
-            blend: 0.996
-            min_abs_corr: 0.05
-            residual_floor: 0.005
-            smooth_alpha: 0.988
+      triad_middle_sensor_correction:
+        enabled: false
+        triad_specs:
+          - left_sensor: "sensor_34"
+            middle_sensor: "sensor_35"
+            right_sensor: "sensor_36"
+            base_blend: 0.10
+            gap_gain: 0.28
+            max_blend: 0.22
+            trigger_gap: 0.03
+            residual_floor: 0.10
+            smooth_alpha: 0.980
+
 
     recovery:
       top_pairwise_overlay:
@@ -278,39 +306,40 @@ synthetic:
 
 
       priority_pair_generation:
-        enabled: true
-        pair_specs:
-          - anchor_sensor: "sensor_08"
-            member_sensor: "sensor_09"
-            blend: 0.986
-            min_abs_corr: 0.05
-            residual_floor: 0.010
-            smooth_alpha: 0.982
-
-          - anchor_sensor: "sensor_14"
-            member_sensor: "sensor_16"
-            blend: 0.984
-            min_abs_corr: 0.05
-            residual_floor: 0.012
-            smooth_alpha: 0.980
-
-          - anchor_sensor: "sensor_17"
-            member_sensor: "sensor_18"
-            blend: 0.984
-            min_abs_corr: 0.05
-            residual_floor: 0.012
-            smooth_alpha: 0.980
-
-          - anchor_sensor: "sensor_19"
-            member_sensor: "sensor_20"
-            blend: 0.980
-            min_abs_corr: 0.05
-            residual_floor: 0.014
-            smooth_alpha: 0.978
-
-          - anchor_sensor: "sensor_34"
-            member_sensor: "sensor_35"
-            blend: 0.982
-            min_abs_corr: 0.05
-            residual_floor: 0.012
-            smooth_alpha: 0.979
+        enabled: false
+        pair_specs: []
+#        pair_specs:
+#          - anchor_sensor: "sensor_08"
+#            member_sensor: "sensor_09"
+#            blend: 0.986
+#            min_abs_corr: 0.05
+#            residual_floor: 0.010
+#            smooth_alpha: 0.982
+#
+#          - anchor_sensor: "sensor_14"
+#            member_sensor: "sensor_16"
+#            blend: 0.984
+#            min_abs_corr: 0.05
+#            residual_floor: 0.012
+#            smooth_alpha: 0.980
+#
+#          - anchor_sensor: "sensor_17"
+#            member_sensor: "sensor_18"
+#            blend: 0.984
+#            min_abs_corr: 0.05
+#            residual_floor: 0.012
+#            smooth_alpha: 0.980
+#
+#          - anchor_sensor: "sensor_19"
+#            member_sensor: "sensor_20"
+#            blend: 0.980
+#            min_abs_corr: 0.05
+#            residual_floor: 0.014
+#            smooth_alpha: 0.978
+#
+#          - anchor_sensor: "sensor_34"
+#            member_sensor: "sensor_35"
+#            blend: 0.982
+#            min_abs_corr: 0.05
+#            residual_floor: 0.012
+#            smooth_alpha: 0.979

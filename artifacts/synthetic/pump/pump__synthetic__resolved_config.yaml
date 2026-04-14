@@ -86,27 +86,27 @@ synthetic:
     mode: batch
     target_rows: 225000
     max_episodes: 1000000
-    episode_max_rows: 12000
+    episode_max_rows: 30000
     allow_overshoot: false
-    rows_per_failure: 135000
+    rows_per_failure: 50000
     write_mode: reset
     append_mode: renumber
   episode:
     normal_before_range:
-    - 800
-    - 1800
+    - 3500
+    - 6000
     buildup_range:
-    - 650
-    - 1100
+    - 10000
+    - 14000
     failure_range:
     - 1
     - 1
     recovery_range:
-    - 1450
-    - 2000
+    - 3500
+    - 5000
     normal_after_range:
-    - 250
-    - 700
+    - 500
+    - 1500
     magnitude_range:
     - 0.75
     - 2.0
@@ -255,6 +255,33 @@ synthetic:
             min_abs_corr: 0.1
             residual_floor: 0.035
             smooth_alpha: 0.96
+      priority_pair_generation:
+        enabled: false
+        pair_specs: null
+      residual_pair_correction:
+        enabled: false
+        pair_specs:
+        - anchor_sensor: sensor_19
+          member_sensor: sensor_20
+          base_blend: 0.1
+          gap_gain: 0.35
+          max_blend: 0.26
+          trigger_gap: 0.03
+          residual_floor: 0.08
+          smooth_alpha: 0.98
+          min_abs_corr: 0.05
+      triad_middle_sensor_correction:
+        enabled: false
+        triad_specs:
+        - left_sensor: sensor_34
+          middle_sensor: sensor_35
+          right_sensor: sensor_36
+          base_blend: 0.1
+          gap_gain: 0.28
+          max_blend: 0.22
+          trigger_gap: 0.03
+          residual_floor: 0.1
+          smooth_alpha: 0.98
     recovery:
       top_pairwise_overlay:
         strength: 0.15
@@ -330,6 +357,9 @@ synthetic:
             min_abs_corr: 0.1
             residual_floor: 0.04
             smooth_alpha: 0.95
+      priority_pair_generation:
+        enabled: false
+        pair_specs: []
 filenames:
   raw_file_name: sensor.csv
   bronze_train_file_name: pump__bronze__train.parquet
@@ -498,4 +528,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: 74834355b7cd77b2d4571f501cf5ef785d2c6b8e50964ef40a52fd5ab4f7638b
+  config_hash: 56b79f051404d67ddf48fa212b4213c603c595b32849f7a85d0e6435b82ca80b

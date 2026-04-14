@@ -24,8 +24,8 @@
   "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
   "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
   "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
-  "gold_truth_hash": "d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e",
-  "gold_parent_truth_hash": "eb885b514594038c463c96ed2f58d75ad025af0b9588d99042e977eb073547fc",
-  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__d6c00152ed2f56139b4292f313a83aace2cfed3514a960c466053606a9f0be4e.json",
-  "process_run_id": "gold_process__20260405T042429Z"
+  "gold_truth_hash": "e78cce44ff6cdb68a70475f019e826d2ca15edd429584f2d7835d6c7a05e682b",
+  "gold_parent_truth_hash": "cc891dff9ae2ce22b328689fb2b893f09a8b9fa5ef4597dbd70e2f3b6c3b27e2",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__e78cce44ff6cdb68a70475f019e826d2ca15edd429584f2d7835d6c7a05e682b.json",
+  "process_run_id": "gold_process__20260414T150509Z"
 }

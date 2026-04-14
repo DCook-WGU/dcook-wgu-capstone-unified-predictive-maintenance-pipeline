@@ -29,6 +29,7 @@ paths:
   silver_train_subdir: silver/train
   silver_test_subdir: silver/test
   gold_subdir: gold
+  synthetic_subdir: synthetic
   bronze_pipeline_subdir: bronze
   silver_pipeline_subdir: silver
   gold_pipeline_subdir: gold
@@ -171,6 +172,7 @@ resolved_paths:
   data_silver_train_dir: /workspace/data/silver/train
   data_silver_test_dir: /workspace/data/silver/test
   data_gold_dir: /workspace/data/gold
+  data_synthetic_dir: /workspace/data/synthetic
   pipelines_bronze_dir: /workspace/pipelines/bronze
   pipelines_silver_dir: /workspace/pipelines/silver
   pipelines_gold_dir: /workspace/pipelines/gold
@@ -255,4 +257,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/bronze.yaml
   project_root: /workspace
-  config_hash: 468d08efc001651452ac04b45ab74735820ea011276ba0f182d01be08e1f1820
+  config_hash: 023b863e17b6201a7bad5f7b71e0dddcdb4dfaca9a632e2823210680122c6370
