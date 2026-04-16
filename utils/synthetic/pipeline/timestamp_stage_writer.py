@@ -15,7 +15,7 @@ from utils.layer_postgres_writer import write_layer_dataframe
 from utils.chunk_stage_util import (
     get_table_columns,
     get_table_row_count,
-    process_postgres_table_in_chunks,
+    process_observation_index_windows,
     resolve_dataset_run_from_table,
 )
 
@@ -288,13 +288,13 @@ def build_observations_timestamped_stage(
 
     has_written_first_chunk = False
 
-    def transform_chunk_func(df_chunk: pd.DataFrame, chunk_number: int, start_row: int, end_row: int) -> pd.DataFrame:
+    def transform_chunk_func(
+        df_chunk: pd.DataFrame,
+        chunk_number: int,
+        observation_index_min: int,
+        observation_index_max: int,
+    ) -> pd.DataFrame:
         dataframe = df_chunk.copy()
-
-        dataframe = dataframe.sort_values(
-            by=["observation_index"],
-            kind="stable",
-        ).reset_index(drop=True)
 
         dataframe["observation_timestamp"] = (
             simulation_start_datetime
@@ -311,7 +311,12 @@ def build_observations_timestamped_stage(
         dataframe = dataframe[ordered_prefix_columns + remaining_columns]
         return dataframe
 
-    def write_chunk_func(df_out: pd.DataFrame, chunk_number: int, start_row: int, end_row: int) -> None:
+    def write_chunk_func(
+        df_out: pd.DataFrame,
+        chunk_number: int,
+        observation_index_min: int,
+        observation_index_max: int,
+    ) -> None:
         nonlocal has_written_first_chunk
 
         write_layer_dataframe(
@@ -324,17 +329,23 @@ def build_observations_timestamped_stage(
         )
 
         has_written_first_chunk = True
-        print(f"[timestamp] wrote chunk {chunk_number} with {len(df_out):,} rows")
+        print(
+            f"[timestamp] wrote chunk {chunk_number} | "
+            f"observation_index {observation_index_min:,} to {observation_index_max:,} | "
+            f"rows={len(df_out):,}"
+        )
 
-    process_postgres_table_in_chunks(
+    process_observation_index_windows(
         engine,
         schema_name=safe_schema,
         table_name=safe_source_table,
         select_columns=source_columns,
-        order_by_sql="observation_index",
+        dataset_id=resolved_dataset_id,
+        run_id=resolved_run_id,
         transform_chunk_func=transform_chunk_func,
         write_chunk_func=write_chunk_func,
-        chunk_size=chunk_size,
+        window_size=chunk_size,
+        order_by_sql="observation_index",
     )
 
     execute_sql(

@@ -174,6 +174,14 @@ def build_observations_premelt_stage(
     execute_sql(
         engine,
         f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_target_table}_dataset_run_obs"
+        ON "{safe_schema}"."{safe_target_table}" (dataset_id, run_id, observation_index);
+        '''
+    )
+
+    execute_sql(
+        engine,
+        f'''
         CREATE INDEX IF NOT EXISTS "idx_{safe_target_table}_batch_row"
         ON "{safe_schema}"."{safe_target_table}" (batch_id, row_in_batch);
         '''
