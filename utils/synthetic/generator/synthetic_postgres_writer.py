@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import csv
+import io
+import json
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 
 from utils.postgres_util import (
@@ -54,6 +58,7 @@ def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int)
         )
 
     return start
+
 
 def reset_sequence(engine, *, schema: str, sequence_name: str, start_at: int = 1) -> None:
     # nextval returns start_at when is_called=false
@@ -161,6 +166,78 @@ def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataF
 
 
 # -----------------------------------------------------------------------------
+# COPY helpers
+# -----------------------------------------------------------------------------
+
+def _prepare_dataframe_for_copy(dataframe: pd.DataFrame) -> pd.DataFrame:
+    out = dataframe.copy()
+    out.columns = [sanitize_sql_identifier(column) for column in out.columns]
+
+    for column in out.columns:
+        series = out[column]
+
+        if isinstance(series.dtype, pd.CategoricalDtype):
+            out[column] = series.astype(object)
+            series = out[column]
+
+        if pd.api.types.is_object_dtype(series):
+            out[column] = series.map(
+                lambda value: json.dumps(value, ensure_ascii=False)
+                if isinstance(value, (dict, list))
+                else value
+            )
+
+    return out
+
+
+
+def _copy_dataframe_to_table(
+    engine,
+    dataframe: pd.DataFrame,
+    *,
+    schema: str,
+    table: str,
+) -> None:
+    if dataframe.empty:
+        return
+
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table)
+    out = _prepare_dataframe_for_copy(dataframe)
+
+    column_list_sql = ", ".join(f'"{column}"' for column in out.columns)
+    copy_sql = (
+        f'COPY "{safe_schema}"."{safe_table}" ({column_list_sql}) '
+        "FROM STDIN WITH (FORMAT CSV, NULL '\\N')"
+    )
+
+    buffer = io.StringIO()
+    out.to_csv(
+        buffer,
+        index=False,
+        header=False,
+        na_rep="\\N",
+        quoting=csv.QUOTE_MINIMAL,
+    )
+    buffer.seek(0)
+
+    raw_connection = engine.raw_connection()
+    try:
+        cursor = raw_connection.cursor()
+        cursor.copy_expert(copy_sql, buffer)
+        raw_connection.commit()
+    except Exception:
+        raw_connection.rollback()
+        raise
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        raw_connection.close()
+
+
+# -----------------------------------------------------------------------------
 # Batch writer
 # -----------------------------------------------------------------------------
 
@@ -173,6 +250,7 @@ def write_stream_batch(
     artifact_name: str = "stream",
     batch_id: int,
     cycle_start: Optional[int] = None,
+    use_copy: bool = True,
 ) -> str:
     """
     Write a synthetic stream batch to the table:
@@ -181,23 +259,47 @@ def write_stream_batch(
     Behavior:
       - ensures the base stream table exists
       - auto-adds any missing columns for this dataframe
-      - appends rows through the generic layer writer
+      - uses COPY bulk load by default for faster inserts
+      - falls back to the generic layer writer if COPY fails
     """
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
 
     out = dataframe.copy()
+    row_count = len(out)
 
     out.insert(0, "batch_id", int(batch_id))
-    out.insert(1, "row_in_batch", range(len(out)))
+    out.insert(1, "row_in_batch", np.arange(row_count, dtype="int64"))
 
     if cycle_start is not None:
-        out.insert(2, "global_cycle_id", [int(cycle_start) + i for i in range(len(out))])
+        out.insert(
+            2,
+            "global_cycle_id",
+            np.arange(int(cycle_start), int(cycle_start) + row_count, dtype="int64"),
+        )
 
     table = f"synthetic_{dataset_name}_{artifact_name}"
 
     _ensure_stream_table_exists(engine, schema=schema, table=table)
     _add_missing_columns(engine, schema=schema, table=table, dataframe=out)
+
+    if use_copy:
+        try:
+            _copy_dataframe_to_table(
+                engine,
+                out,
+                schema=schema,
+                table=table,
+            )
+            print(
+                f"[synthetic] COPY loaded {row_count:,} rows into {sanitize_sql_identifier(schema)}.{sanitize_sql_identifier(table)}"
+            )
+            return sanitize_sql_identifier(table)
+        except Exception as exc:
+            print(
+                "[synthetic] COPY bulk load failed; falling back to pandas.to_sql. "
+                f"Reason: {exc}"
+            )
 
     table_name = write_layer_dataframe(
         engine=engine,

@@ -254,10 +254,40 @@ synthetic:
             residual_floor: 0.035
             smooth_alpha: 0.96
       priority_pair_generation:
-        enabled: false
-        pair_specs: []
+        enabled: true
+        pair_specs:
+        - anchor_sensor: sensor_08
+          member_sensor: sensor_09
+          blend: 0.992
+          min_abs_corr: 0.05
+          residual_floor: 0.008
+          smooth_alpha: 0.985
+        - anchor_sensor: sensor_14
+          member_sensor: sensor_16
+          blend: 0.992
+          min_abs_corr: 0.05
+          residual_floor: 0.008
+          smooth_alpha: 0.985
+        - anchor_sensor: sensor_17
+          member_sensor: sensor_18
+          blend: 0.992
+          min_abs_corr: 0.05
+          residual_floor: 0.008
+          smooth_alpha: 0.985
+        - anchor_sensor: sensor_19
+          member_sensor: sensor_20
+          blend: 0.988
+          min_abs_corr: 0.05
+          residual_floor: 0.01
+          smooth_alpha: 0.982
+        - anchor_sensor: sensor_34
+          member_sensor: sensor_35
+          blend: 0.99
+          min_abs_corr: 0.05
+          residual_floor: 0.009
+          smooth_alpha: 0.983
       residual_pair_correction:
-        enabled: false
+        enabled: true
         pair_specs:
         - anchor_sensor: sensor_19
           member_sensor: sensor_20
@@ -526,4 +556,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: caf56ca8aed1b69f95de465b9b2bdd935311b67262c0aa20ac07724781ec88dd
+  config_hash: 7cfde6bdcddea26d639c5a486eb382ceadc0f0cc4296eaaf7e5d01a46db47c2d
