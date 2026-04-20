@@ -1,0 +1,6 @@
+alert_packet_id,packet_start_plot_order_index,packet_end_plot_order_index,packet_row_count,rows_from_packet_start_to_broken,contains_pre_failure_alert,contains_failure_hit,contains_recovery_alert,contains_stable_normal_alert
+1,17154,17155,2,1,1,1,0,0
+2,17163,17190,28,-8,0,0,1,0
+3,17289,17295,6,-134,0,0,0,1
+4,17303,17362,55,-148,0,0,0,1
+5,17371,17485,113,-216,0,0,0,1

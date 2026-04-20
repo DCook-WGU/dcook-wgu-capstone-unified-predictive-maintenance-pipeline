@@ -1,0 +1,22 @@
+{
+  "selected_run_key": "baseline",
+  "plot_run_label": "Baseline Isolation Forest",
+  "run_family": "baseline",
+  "target_flag_column": "baseline_flag",
+  "primary_score_column": "baseline_score",
+  "primary_decision_column": null,
+  "row_count": 220320,
+  "first_alert_plot_order_index": 17154,
+  "first_broken_plot_order_index": 17155,
+  "recovery_end_plot_order_index": 18330,
+  "lead_rows_to_failure": 1,
+  "lead_time_seconds_to_failure": 1,
+  "total_final_alert_rows": 19493,
+  "detection_class_counts": {
+    "no_alert": 200827,
+    "false_positive": 18317,
+    "recovery_alert": 1174,
+    "failure_hit": 1,
+    "early_warning": 1
+  }
+}
