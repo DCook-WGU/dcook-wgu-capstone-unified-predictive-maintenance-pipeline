@@ -1,0 +1,7 @@
+{
+  "recommendation": "forward_fill_within_group_then_median",
+  "reason": "Dataset has (asset,run) grouping and event_step ordering; forward fill preserves short gaps in time series while median handles leading gaps and long missing runs.",
+  "has_grouping_columns": true,
+  "has_event_step": true,
+  "comparison_csv": "/workspace/artifacts/silver_eda/pump/imputation__comparison.csv"
+}

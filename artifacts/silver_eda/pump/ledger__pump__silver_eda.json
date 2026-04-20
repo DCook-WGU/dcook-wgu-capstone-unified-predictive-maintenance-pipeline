@@ -1,0 +1,262 @@
+[
+  {
+    "ts_utc": "2026-04-20T14:49:53.500108+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-04-20T14:49:54.229456+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "load_silver",
+    "message": "Loaded Silver Parquet",
+    "why": "Silver must be derived from reprodicible Silver Artifact",
+    "consequence": "All silver outputs trace back to this file",
+    "data": {
+      "silver_path": "/workspace/data/silver/train/pump__silver__train.parquet",
+      "shape": [
+        220320,
+        73
+      ],
+      "cols": 73
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:49:55.097320+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "load_silver_feature_registry",
+    "message": "Loaded Silver Feature Registry JSON file using the path resolved from Silver truth.",
+    "why": "Silver EDA should inherit resolved feature metadata from Silver Pre-EDA rather than rebuilding it from config.",
+    "consequence": "Silver EDA uses the same resolved feature set and feature registry lineage as Silver Pre-EDA.",
+    "data": {
+      "feature_registry_path": "/workspace/artifacts/silver/pump/pump__silver__feature_registry.json",
+      "keys": 17,
+      "feature_count": 50
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:50:03.197691+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "episode_status_state_stats",
+    "message": "Computed global and per-episode normalized state statistics from Silver episode IDs.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "status_column": "machine_status__synthetic",
+      "episode_column": "meta__episode_id",
+      "episode_count": 8,
+      "mean_total_rows_per_episode": 27540.0,
+      "mean_rows_normal": 25729.5,
+      "mean_rows_abnormal": 0.88,
+      "mean_rows_recovery": 1809.62,
+      "mean_percent_normal": 0.9195034173479136,
+      "mean_percent_abnormal": 7.248551299873191e-05,
+      "mean_percent_recovery": 0.08042409713908762,
+      "global_count_normal": 205836,
+      "global_count_abnormal": 7,
+      "global_count_recovery": 14477,
+      "global_percent_normal": 93.43,
+      "global_percent_abnormal": 0.0,
+      "global_percent_recovery": 6.57,
+      "episode_status_counts_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_counts.json"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:50:05.793221+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "missingness_by_group",
+    "message": "Built missingness-by-state and missingness-by-episode artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "missingness_by_state_rows": 78,
+      "missingness_by_episode_rows": 209,
+      "missingness_by_state_path": "/workspace/artifacts/silver_eda/pump/missingness__by_state.csv",
+      "missingness_by_episode_path": "/workspace/artifacts/silver_eda/pump/missingness__by_episode.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:50:07.077358+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "state_transitions",
+    "message": "Built transition and dwell summary artifacts from normalized state sequences.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "transition_count_rows": 3,
+      "dwell_event_rows": 22,
+      "state_transition_probability_path": "/workspace/artifacts/silver_eda/pump/state_transition__probabilities.csv",
+      "state_dwell_summary_path": "/workspace/artifacts/silver_eda/pump/state_dwell__summary.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:50:09.440073+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "derive_correlation_hotspot_clusters",
+    "message": "Derived explainable hotspot sensor clusters from the normal-state correlation pair table.",
+    "why": "The generator should consume cluster structure that can be traced back to Silver EDA evidence instead of relying only on ad hoc or fallback grouping logic later.",
+    "consequence": "Silver EDA now produces a reusable cluster artifact that can be reviewed, exported, added to truth, and passed into the synthetic generator as a dataset-backed relationship structure.",
+    "data": {
+      "cluster_count": 11,
+      "membership_rows": 41,
+      "summary_rows": 11,
+      "source_method": "silver_eda_mutual_topk_abs_corr",
+      "min_abs_corr": 0.2,
+      "top_k_per_sensor": 5,
+      "min_cluster_size": 2,
+      "max_cluster_size": 8
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:50:09.731699+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "save_correlation_hotspot_cluster_artifacts",
+    "message": "Saved hotspot cluster membership, summary, and JSON artifacts.",
+    "why": "These cluster outputs are intended to become reusable downstream relationship artifacts, so they should be persisted immediately after derivation.",
+    "consequence": "The hotspot cluster artifacts are now available for final truth registration and downstream generator consumption.",
+    "data": {
+      "membership_path": "/workspace/artifacts/silver_eda/pump/sensor_correlation_hotspot_cluster_membership_normal.csv",
+      "summary_path": "/workspace/artifacts/silver_eda/pump/sensor_correlation_hotspot_cluster_summary_normal.csv",
+      "json_path": "/workspace/artifacts/silver_eda/pump/sensor_correlation_hotspot_clusters_normal.json",
+      "cluster_count": 11
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:50:41.405969+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "robust_state_comparison",
+    "message": "Built robust state-comparison table plus boxplot and ECDF artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "robust_rows": 100,
+      "robust_effect_path": "/workspace/artifacts/silver_eda/pump/feature_behavior__robust_comparison.csv",
+      "state_boxplot_count": 12,
+      "state_ecdf_count": 12
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:52:29.599722+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "pca_2d_projection",
+    "message": "Computed PCA(2) projection for separation check.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "numeric_feature_count": 50,
+      "rows_used": 8000,
+      "scaler": "RobustScaler",
+      "explained_variance_ratio": [
+        0.8520313514930179,
+        0.11306601074922507
+      ],
+      "pca_table_path": "/workspace/artifacts/silver_eda/pump/pca_2d__table.csv",
+      "pca_plot_path": "/workspace/artifacts/silver_eda/pump/pca_2d__scatter.png"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:52:34.414571+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "pca_diagnostics",
+    "message": "Built PCA scree and loading diagnostics.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "pca_component_count": 10,
+      "pca_explained_variance_path": "/workspace/artifacts/silver_eda/pump/pca__explained_variance.csv",
+      "pca_loadings_path": "/workspace/artifacts/silver_eda/pump/pca__loadings.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:52:35.695845+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "decision",
+    "step": "imputation_recommendation",
+    "message": "Compared basic imputation strategies and recorded recommendation for Gold layer.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "recommendation": "forward_fill_within_group_then_median",
+      "reason": "Dataset has (asset,run) grouping and event_step ordering; forward fill preserves short gaps in time series while median handles leading gaps and long missing runs.",
+      "has_grouping_columns": true,
+      "has_event_step": true,
+      "comparison_csv": "/workspace/artifacts/silver_eda/pump/imputation__comparison.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:52:43.803414+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "outlier_audit",
+    "message": "Built outlier summary artifacts overall and by state.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "outlier_summary_rows": 50,
+      "outlier_by_state_rows": 150,
+      "outlier_summary_path": "/workspace/artifacts/silver_eda/pump/outliers__feature_summary.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:52:44.928487+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "artifact",
+    "step": "episode_status_state_stats",
+    "message": "Saved episode status state stats payload, counts, and summary artifacts.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "episode_status_payload_json_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_state_stats_payload.json",
+      "episode_status_counts_csv_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_counts.csv",
+      "episode_status_summary_json_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_state_stats_summary.json",
+      "episode_count": 8,
+      "counts_record_count": 8,
+      "status_column": "machine_status__synthetic",
+      "episode_column": "meta__episode_id",
+      "silver_eda_truth_hash": "300b8a76f2283925ff4389aa4a0066761922b23bb64455217c27af93a6aed832"
+    }
+  },
+  {
+    "ts_utc": "2026-04-20T14:52:45.227991+00:00",
+    "stage": "silver_eda",
+    "recipe": "silver_eda__v001",
+    "kind": "step",
+    "step": "finalize",
+    "message": "Saved Silver EDA ledger and truth record.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "ledger_path": "/workspace/artifacts/silver_eda/pump/ledger__pump__silver_eda.json",
+      "silver_eda_truth_hash": "300b8a76f2283925ff4389aa4a0066761922b23bb64455217c27af93a6aed832",
+      "silver_eda_truth_path": "/workspace/artifacts/truths/silver_eda/pump__silver_eda__truth__300b8a76f2283925ff4389aa4a0066761922b23bb64455217c27af93a6aed832.json"
+    }
+  }
+]

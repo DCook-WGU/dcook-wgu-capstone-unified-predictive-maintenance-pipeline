@@ -1,0 +1,8 @@
+{
+  "row_count": 220320,
+  "column_count": 73,
+  "meta_column_count": 13,
+  "numeric_column_count": 58,
+  "categorical_column_count": 12,
+  "columns_are_unique": true
+}

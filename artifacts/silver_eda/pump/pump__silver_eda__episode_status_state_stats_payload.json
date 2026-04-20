@@ -1,0 +1,164 @@
+{
+  "status_column": "machine_status__synthetic",
+  "episode_column": "meta__episode_id",
+  "episode_count": 8,
+  "mean_total_rows_per_episode": 27540.0,
+  "global_status_stats": [
+    {
+      "status_state": "normal",
+      "global_count": 205836,
+      "global_percent": 93.43
+    },
+    {
+      "status_state": "recovery",
+      "global_count": 14477,
+      "global_percent": 6.57
+    },
+    {
+      "status_state": "abnormal",
+      "global_count": 7,
+      "global_percent": 0.0
+    }
+  ],
+  "episode_status_means": [
+    {
+      "status_state": "normal",
+      "mean_rows_per_episode": 25729.5
+    },
+    {
+      "status_state": "abnormal",
+      "mean_rows_per_episode": 0.88
+    },
+    {
+      "status_state": "recovery",
+      "mean_rows_per_episode": 1809.62
+    }
+  ],
+  "episode_status_percent_means": [
+    {
+      "status_state": "normal",
+      "mean_percent_per_episode": 0.9195034173479136
+    },
+    {
+      "status_state": "abnormal",
+      "mean_percent_per_episode": 7.248551299873191e-05
+    },
+    {
+      "status_state": "recovery",
+      "mean_percent_per_episode": 0.08042409713908762
+    }
+  ],
+  "episode_totals": [
+    {
+      "metric": "episode_count",
+      "value": 8.0
+    },
+    {
+      "metric": "mean_total_rows_per_episode",
+      "value": 27540.0
+    }
+  ],
+  "episode_status_mean_lookup": {
+    "normal": 25729.5,
+    "abnormal": 0.88,
+    "recovery": 1809.62
+  },
+  "episode_status_percent_mean_lookup": {
+    "normal": 0.9195034173479136,
+    "abnormal": 7.248551299873191e-05,
+    "recovery": 0.08042409713908762
+  },
+  "global_status_count_lookup": {
+    "normal": 205836,
+    "recovery": 14477,
+    "abnormal": 7
+  },
+  "global_status_percent_lookup": {
+    "normal": 93.43,
+    "recovery": 6.57,
+    "abnormal": 0.0
+  },
+  "episode_status_counts_path": "/workspace/artifacts/silver_eda/pump/pump__silver_eda__episode_status_counts.json",
+  "episode_status_counts_records": [
+    {
+      "meta__episode_id": 0,
+      "normal": 17155,
+      "normal_percent": 0.9477900552486188,
+      "abnormal": 1,
+      "abnormal_percent": 5.524861878453039e-05,
+      "recovery": 944,
+      "recovery_percent": 0.052154696132596684,
+      "episode_total_rows": 18100
+    },
+    {
+      "meta__episode_id": 1,
+      "normal": 6410,
+      "normal_percent": 0.6732486083394601,
+      "abnormal": 1,
+      "abnormal_percent": 0.00010503098414032139,
+      "recovery": 3110,
+      "recovery_percent": 0.3266463606763995,
+      "episode_total_rows": 9521
+    },
+    {
+      "meta__episode_id": 2,
+      "normal": 41697,
+      "normal_percent": 0.9694722157637758,
+      "abnormal": 1,
+      "abnormal_percent": 2.3250406882120437e-05,
+      "recovery": 1312,
+      "recovery_percent": 0.030504533829342012,
+      "episode_total_rows": 43010
+    },
+    {
+      "meta__episode_id": 3,
+      "normal": 7159,
+      "normal_percent": 0.9219575016097875,
+      "abnormal": 1,
+      "abnormal_percent": 0.000128783000643915,
+      "recovery": 605,
+      "recovery_percent": 0.07791371538956858,
+      "episode_total_rows": 7765
+    },
+    {
+      "meta__episode_id": 4,
+      "normal": 49644,
+      "normal_percent": 0.8554148358749031,
+      "abnormal": 1,
+      "abnormal_percent": 1.7230981304385284e-05,
+      "recovery": 8390,
+      "recovery_percent": 0.14456793314379254,
+      "episode_total_rows": 58035
+    },
+    {
+      "meta__episode_id": 5,
+      "normal": 4700,
+      "normal_percent": 0.9911429776465627,
+      "abnormal": 1,
+      "abnormal_percent": 0.00021088148460565162,
+      "recovery": 41,
+      "recovery_percent": 0.008646140868831717,
+      "episode_total_rows": 4742
+    },
+    {
+      "meta__episode_id": 6,
+      "normal": 25267,
+      "normal_percent": 0.9970011443002013,
+      "abnormal": 1,
+      "abnormal_percent": 3.9458627628931066e-05,
+      "recovery": 75,
+      "recovery_percent": 0.00295939707216983,
+      "episode_total_rows": 25343
+    },
+    {
+      "meta__episode_id": 7,
+      "normal": 53804,
+      "normal_percent": 1.0,
+      "abnormal": 0,
+      "abnormal_percent": 0.0,
+      "recovery": 0,
+      "recovery_percent": 0.0,
+      "episode_total_rows": 53804
+    }
+  ]
+}
