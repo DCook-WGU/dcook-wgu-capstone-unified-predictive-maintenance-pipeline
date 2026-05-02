@@ -92,6 +92,9 @@ filenames:
   raw_file_name: sensor.csv
   bronze_train_file_name: pump__bronze__train.parquet
   silver_train_file_name: pump__silver__train.parquet
+  silver_subset_profiled_file_name: pump__silver_subsets__profiled_dataframe.parquet
+  silver_subset_normal_clean_file_name: pump__silver_subsets__normal_clean.parquet
+  silver_subset_normal_contaminated_file_name: pump__silver_subsets__normal_contaminated.parquet
   gold_preprocessed_file_name: pump__gold__preprocessed.parquet
   gold_preprocessed_prescaled_file_name: pump__gold__preprocessed_prescaled.parquet
   gold_preprocessed_scaled_file_name: pump__gold__preprocessed_scaled.parquet
@@ -185,6 +188,9 @@ resolved_paths:
   raw_file_path: /workspace/data/raw/pump_sensor_data/sensor.csv
   bronze_train_data_path: /workspace/data/bronze/train/pump__bronze__train.parquet
   silver_train_data_path: /workspace/data/silver/train/pump__silver__train.parquet
+  silver_subsets_profiled_dataframe_data_path: /workspace/data/silver/train/pump__silver_subsets__profiled_dataframe.parquet
+  silver_subsets_normal_clean_data_path: /workspace/data/silver/train/pump__silver_subsets__normal_clean.parquet
+  silver_subsets_normal_contaminated_data_path: /workspace/data/silver/train/pump__silver_subsets__normal_contaminated.parquet
   gold_preprocessed_data_path: /workspace/data/gold/pump__gold__preprocessed.parquet
   gold_preprocessed_prescaled_data_path: /workspace/data/gold/pump__gold__preprocessed_prescaled.parquet
   gold_preprocessed_scaled_data_path: /workspace/data/gold/pump__gold__preprocessed_scaled.parquet
@@ -256,4 +262,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/gold_preprocessing.yaml
   project_root: /workspace
-  config_hash: a8ce01c9498b2706a0d4795a27aa298ffc221edaaee6330675300e28ffa86513
+  config_hash: 667d48ea1c09d07325bde3ffb9de0b8b77f93f42a5e40c332f52579750839857

@@ -3,7 +3,7 @@
   "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
   "gold_scaled_shape": [
     220320,
-    75
+    341
   ],
   "feature_count": 50,
   "stage1_feature_count": 50,
@@ -20,12 +20,14 @@
   "train_fraction": 0.7,
   "train_rows": 136431,
   "test_rows": 83889,
-  "fit_rows_normal_only": 122065,
+  "fit_rows_normal_only": 77395,
   "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
   "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
   "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
-  "gold_truth_hash": "2559611526a1819708cb9efaa89724883546b6ec06641d27c4622cd628a6b899",
-  "gold_parent_truth_hash": "7a3d006c17aa92eada073c87947cad4165af02c4e43b3eca859b4148a811560b",
-  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__2559611526a1819708cb9efaa89724883546b6ec06641d27c4622cd628a6b899.json",
-  "process_run_id": "gold_process__20260420T150038Z"
+  "gold_truth_hash": "6389aa884a7b962ba98119fc87509904feea7a87116f164bc57d2577039c5cee",
+  "gold_parent_truth_hash": "5820a2f92976bd97e899e47eb62f1c3f6345048661f6d4b228e648439b1cef79",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__6389aa884a7b962ba98119fc87509904feea7a87116f164bc57d2577039c5cee.json",
+  "process_run_id": "gold_process__20260502T055837Z",
+  "gold_input_source": "silver_subset_profiled_dataframe",
+  "gold_training_normal_source": "machine_status__profiled == normal_clean"
 }

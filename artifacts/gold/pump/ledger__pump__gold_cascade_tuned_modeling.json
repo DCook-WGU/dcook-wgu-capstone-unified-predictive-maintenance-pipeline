@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-04-20T15:05:35.693681+00:00",
+    "ts_utc": "2026-05-02T04:40:15.667317+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-04-20T15:05:38.756753+00:00",
+    "ts_utc": "2026-05-02T04:40:26.030510+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -21,8 +21,8 @@
     "consequence": null,
     "data": {
       "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-      "gold_truth_hash": "2559611526a1819708cb9efaa89724883546b6ec06641d27c4622cd628a6b899",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__2559611526a1819708cb9efaa89724883546b6ec06641d27c4622cd628a6b899.json",
+      "gold_truth_hash": "c1d70199c558a4e1ef0e267c383c67a500aaa7ded108ce5aafaf63aa257968da",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__c1d70199c558a4e1ef0e267c383c67a500aaa7ded108ce5aafaf63aa257968da.json",
       "gold_preprocessed_path": "/workspace/data/gold/pump__gold__preprocessed_prescaled.parquet",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
@@ -33,23 +33,23 @@
       "stage3_secondary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json",
       "gold_preprocessed_shape": [
         220320,
-        75
+        341
       ],
       "gold_scaled_shape": [
         220320,
-        75
+        341
       ],
       "gold_fit_shape": [
-        122065,
-        75
+        77395,
+        341
       ],
       "gold_test_shape": [
         83889,
-        75
+        341
       ],
       "gold_train_shape": [
         136431,
-        75
+        341
       ],
       "stage1_feature_count": 50,
       "stage2_feature_count": 12,
@@ -58,7 +58,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-20T15:05:38.921235+00:00",
+    "ts_utc": "2026-05-02T04:40:26.489666+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -73,7 +73,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-20T15:05:39.322948+00:00",
+    "ts_utc": "2026-05-02T04:40:26.912038+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -82,12 +82,12 @@
     "why": null,
     "consequence": null,
     "data": {
-      "training_rows": 122065,
+      "training_rows": 77395,
       "reference_feature_count": 50
     }
   },
   {
-    "ts_utc": "2026-04-20T15:05:42.409615+00:00",
+    "ts_utc": "2026-05-02T04:40:30.013597+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -98,14 +98,14 @@
     "data": {
       "estimator_count": 200,
       "threshold_percentile": 95.0,
-      "threshold": 0.5337445171501773,
+      "threshold": 0.4886482835351958,
       "feature_count": 50,
-      "alert_count_all_rows": 22742,
-      "alert_count_test_rows": 2288
+      "alert_count_all_rows": 103054,
+      "alert_count_test_rows": 43236
     }
   },
   {
-    "ts_utc": "2026-04-20T15:05:47.038002+00:00",
+    "ts_utc": "2026-05-02T04:40:37.461084+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -115,11 +115,27 @@
     "consequence": null,
     "data": {
       "stage1_row_count": 220320,
-      "stage1_flag_count": 35615
+      "stage1_flag_count": 91594
     }
   },
   {
-    "ts_utc": "2026-04-20T15:29:21.893139+00:00",
+    "ts_utc": "2026-05-02T04:40:37.470563+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "synchronize_stage1_threshold_flags",
+    "message": "Synchronized Stage 1 row-tracked results with the configured percentile-threshold alert rule.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage1_threshold": 0.4886482835351958,
+      "stage1_threshold_percentile": 95.0,
+      "stage1_alert_count_all_rows": 103054,
+      "stage1_alert_count_test_rows": 43236
+    }
+  },
+  {
+    "ts_utc": "2026-05-02T05:01:30.760490+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -129,28 +145,28 @@
     "consequence": null,
     "data": {
       "selection_mode": "parameter_search",
-      "selected_threshold_percentile": 99.0,
-      "threshold": 0.6078905948669239,
+      "selected_threshold_percentile": 97.0,
+      "threshold": 0.4632634880121168,
       "best_params": {
         "bootstrap": false,
         "contamination": "auto",
         "max_features": 1.0,
-        "max_samples": "auto",
+        "max_samples": 0.6,
         "n_estimators": 100
       },
-      "raw_alert_count_all_rows": 14612,
-      "raw_alert_count_test_rows": 1309,
-      "stage2_confirmed_count_all_rows": 13898,
-      "stage2_confirmed_count_test_rows": 648,
-      "precision": 0.09259259259259259,
-      "recall": 0.5084745762711864,
-      "f1": 0.1566579634464752,
-      "selection_score": 0.19498860058447615,
+      "raw_alert_count_all_rows": 134472,
+      "raw_alert_count_test_rows": 82906,
+      "stage2_confirmed_count_all_rows": 93530,
+      "stage2_confirmed_count_test_rows": 43071,
+      "precision": 0.002739662417868171,
+      "recall": 1.0,
+      "f1": 0.005464354349487138,
+      "selection_score": 0.20300913751378025,
       "candidate_count": 216
     }
   },
   {
-    "ts_utc": "2026-04-20T15:29:24.957205+00:00",
+    "ts_utc": "2026-05-02T05:01:34.546081+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -159,14 +175,14 @@
     "why": null,
     "consequence": null,
     "data": {
-      "stage2_candidate_row_count": 35615,
-      "stage2_scored_row_count": 35615,
-      "stage2_raw_flag_count": 14243,
-      "stage2_flag_count": 13898
+      "stage2_candidate_row_count": 103054,
+      "stage2_scored_row_count": 103054,
+      "stage2_raw_flag_count": 93530,
+      "stage2_flag_count": 93530
     }
   },
   {
-    "ts_utc": "2026-04-20T15:29:25.614776+00:00",
+    "ts_utc": "2026-05-02T05:01:35.369541+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -177,20 +193,20 @@
     "data": {
       "primary_rule_sensor_count": 5,
       "secondary_rule_sensor_count": 7,
-      "profile_breach_rows_all": 72702,
-      "profile_breach_rows_test": 49472,
-      "corroboration_rows_all": 150151,
-      "corroboration_rows_test": 80276,
-      "persistence_rows_all": 13875,
-      "persistence_rows_test": 642,
-      "drift_rows_all": 2448,
-      "drift_rows_test": 1409,
-      "final_alert_count_all_rows": 13880,
-      "final_alert_count_test_rows": 646
+      "profile_breach_rows_all": 92627,
+      "profile_breach_rows_test": 46280,
+      "corroboration_rows_all": 168775,
+      "corroboration_rows_test": 78579,
+      "persistence_rows_all": 93144,
+      "persistence_rows_test": 42786,
+      "drift_rows_all": 1543,
+      "drift_rows_test": 438,
+      "final_alert_count_all_rows": 92357,
+      "final_alert_count_test_rows": 42258
     }
   },
   {
-    "ts_utc": "2026-04-20T15:29:25.774557+00:00",
+    "ts_utc": "2026-05-02T05:01:35.743584+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -199,14 +215,44 @@
     "why": null,
     "consequence": null,
     "data": {
-      "stage1_flag_count": 35615,
-      "stage2_flag_count": 13898,
+      "stage1_flag_count": 103054,
+      "stage2_flag_count": 93530,
       "stage3_flag_count": 0,
-      "cascade_final_flag_count": 13880
+      "cascade_final_flag_count": 92357
     }
   },
   {
-    "ts_utc": "2026-04-20T15:30:11.280810+00:00",
+    "ts_utc": "2026-05-02T05:01:36.158378+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "validate_cascade_output",
+    "message": "Validated cascade staged outputs and final held-out test metrics.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "all_rows": 220320,
+      "test_rows": 83889,
+      "stage1_alert_count_all_rows": 103054,
+      "stage1_alert_count_test_rows": 43236,
+      "stage2_raw_alert_count_all_rows": 93530,
+      "stage2_raw_alert_count_test_rows": 43071,
+      "stage2_alert_count_all_rows": 93530,
+      "stage2_alert_count_test_rows": 43071,
+      "final_alert_count_all_rows": 92357,
+      "final_alert_count_test_rows": 42258,
+      "test_anomaly_rows": 118,
+      "precision": 0.0027687065171091863,
+      "recall": 0.9915254237288136,
+      "f1": 0.005521993581272418,
+      "tn": 41630,
+      "fp": 42141,
+      "fn": 1,
+      "tp": 117
+    }
+  },
+  {
+    "ts_utc": "2026-05-02T05:06:00.794985+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -225,15 +271,15 @@
       "cascade_tuned_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_thresholds.json",
       "cascade_tuned_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_summary.json",
       "cascade_tuned_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_metadata.json",
-      "cascade_truth_hash": "10d6c8bf49377c40a5d13b52196251367797c86ef1ae47989affeef72bbee888",
-      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__10d6c8bf49377c40a5d13b52196251367797c86ef1ae47989affeef72bbee888.json",
+      "cascade_truth_hash": "e8ea6c49c3ae49124bb859a532400cf08a9b618be5cb0b904d543125c9ba5af0",
+      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__e8ea6c49c3ae49124bb859a532400cf08a9b618be5cb0b904d543125c9ba5af0.json",
       "result_row_count": 220320,
-      "final_alert_count_all_rows": 13880,
-      "final_alert_count_test_rows": 646
+      "final_alert_count_all_rows": 92357,
+      "final_alert_count_test_rows": 42258
     }
   },
   {
-    "ts_utc": "2026-04-20T15:30:11.343315+00:00",
+    "ts_utc": "2026-05-02T05:06:00.884159+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -244,14 +290,14 @@
     "data": {
       "target_flag_column": "stage1_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 35615,
+      "detected_row_count": 103054,
       "has_time_index": true,
       "has_event_step": true,
       "has_event_time": true
     }
   },
   {
-    "ts_utc": "2026-04-20T15:30:11.431556+00:00",
+    "ts_utc": "2026-05-02T05:06:01.040717+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -262,14 +308,14 @@
     "data": {
       "target_flag_column": "stage2_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 13898,
+      "detected_row_count": 93530,
       "has_time_index": true,
       "has_event_step": true,
       "has_event_time": true
     }
   },
   {
-    "ts_utc": "2026-04-20T15:30:11.576434+00:00",
+    "ts_utc": "2026-05-02T05:06:01.160028+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -280,11 +326,11 @@
     "data": {
       "target_flag_column": "stage3_profile_breach_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 72702
+      "detected_row_count": 92627
     }
   },
   {
-    "ts_utc": "2026-04-20T15:30:11.664105+00:00",
+    "ts_utc": "2026-05-02T05:06:01.300354+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -295,14 +341,14 @@
     "data": {
       "target_flag_column": "cascade_final_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 13880,
+      "detected_row_count": 92357,
       "has_time_index": true,
       "has_event_step": true,
       "has_event_time": true
     }
   },
   {
-    "ts_utc": "2026-04-20T15:30:11.716240+00:00",
+    "ts_utc": "2026-05-02T05:06:01.359228+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -313,15 +359,15 @@
     "data": {
       "cascade_metrics": {
         "model": "3-Stage Cascade",
-        "stage1_alert_count_all_rows": 35615,
-        "stage2_alert_count_all_rows": 13898,
-        "final_alert_count_all_rows": 13880,
-        "stage1_alert_count_test_rows": 6215,
-        "stage2_alert_count_test_rows": 648,
-        "final_alert_count_test_rows": 646,
-        "precision": 0.09287925696594428,
-        "recall": 0.5084745762711864,
-        "f1": 0.15706806282722513
+        "stage1_alert_count_all_rows": 103054,
+        "stage2_alert_count_all_rows": 93530,
+        "final_alert_count_all_rows": 92357,
+        "stage1_alert_count_test_rows": 43236,
+        "stage2_alert_count_test_rows": 43071,
+        "final_alert_count_test_rows": 42258,
+        "precision": 0.0027687065171091863,
+        "recall": 0.9915254237288136,
+        "f1": 0.005521993581272418
       },
       "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.csv",
       "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.pkl",

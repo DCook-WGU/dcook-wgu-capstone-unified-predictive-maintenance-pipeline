@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-04-20T15:31:09.258870+00:00",
+    "ts_utc": "2026-05-02T05:09:05.851974+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-04-20T15:31:12.274862+00:00",
+    "ts_utc": "2026-05-02T05:09:13.629444+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -21,8 +21,8 @@
     "consequence": null,
     "data": {
       "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-      "gold_truth_hash": "2559611526a1819708cb9efaa89724883546b6ec06641d27c4622cd628a6b899",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__2559611526a1819708cb9efaa89724883546b6ec06641d27c4622cd628a6b899.json",
+      "gold_truth_hash": "c1d70199c558a4e1ef0e267c383c67a500aaa7ded108ce5aafaf63aa257968da",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__c1d70199c558a4e1ef0e267c383c67a500aaa7ded108ce5aafaf63aa257968da.json",
       "gold_preprocessed_path": "/workspace/data/gold/pump__gold__preprocessed_prescaled.parquet",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
@@ -33,23 +33,23 @@
       "stage3_secondary_path": "/workspace/artifacts/gold/pump/pump__gold__stage3_secondary_rule_sensors.json",
       "gold_preprocessed_shape": [
         220320,
-        75
+        341
       ],
       "gold_scaled_shape": [
         220320,
-        75
+        341
       ],
       "gold_fit_shape": [
-        122065,
-        75
+        77395,
+        341
       ],
       "gold_test_shape": [
         83889,
-        75
+        341
       ],
       "gold_train_shape": [
         136431,
-        75
+        341
       ],
       "stage1_feature_count": 50,
       "stage2_feature_count": 12,
@@ -58,7 +58,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:12.449642+00:00",
+    "ts_utc": "2026-05-02T05:09:14.202064+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -73,7 +73,7 @@
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:12.762733+00:00",
+    "ts_utc": "2026-05-02T05:09:14.699870+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -82,12 +82,12 @@
     "why": null,
     "consequence": null,
     "data": {
-      "training_rows": 122065,
+      "training_rows": 77395,
       "reference_feature_count": 50
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:15.868273+00:00",
+    "ts_utc": "2026-05-02T05:09:18.198810+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -98,14 +98,14 @@
     "data": {
       "estimator_count": 200,
       "threshold_percentile": 95.0,
-      "threshold": 0.5337445171501773,
+      "threshold": 0.4886482835351958,
       "feature_count": 50,
-      "alert_count_all_rows": 22742,
-      "alert_count_test_rows": 2288
+      "alert_count_all_rows": 103054,
+      "alert_count_test_rows": 43236
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:20.220919+00:00",
+    "ts_utc": "2026-05-02T05:09:25.621140+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -115,11 +115,27 @@
     "consequence": null,
     "data": {
       "stage1_row_count": 220320,
-      "stage1_flag_count": 35615
+      "stage1_flag_count": 91594
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:21.577266+00:00",
+    "ts_utc": "2026-05-02T05:09:25.633002+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "synchronize_stage1_threshold_flags",
+    "message": "Synchronized Stage 1 row-tracked results with the configured percentile-threshold alert rule.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage1_threshold": 0.4886482835351958,
+      "stage1_threshold_percentile": 95.0,
+      "stage1_alert_count_all_rows": 103054,
+      "stage1_alert_count_test_rows": 43236
+    }
+  },
+  {
+    "ts_utc": "2026-05-02T05:09:31.950440+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -129,28 +145,28 @@
     "consequence": null,
     "data": {
       "selection_mode": "fixed",
-      "selected_threshold_percentile": 99.0,
-      "threshold": 0.6078905948669239,
+      "selected_threshold_percentile": 97.0,
+      "threshold": 0.4632634880121168,
       "best_params": {
         "bootstrap": false,
         "contamination": "auto",
         "max_features": 1.0,
-        "max_samples": "auto",
+        "max_samples": 0.6,
         "n_estimators": 100
       },
-      "raw_alert_count_all_rows": 14612,
-      "raw_alert_count_test_rows": 1309,
-      "stage2_confirmed_count_all_rows": 13898,
-      "stage2_confirmed_count_test_rows": 648,
-      "precision": 0.09259259259259259,
-      "recall": 0.5084745762711864,
-      "f1": 0.1566579634464752,
-      "selection_score": 0.19498860058447615,
+      "raw_alert_count_all_rows": 134472,
+      "raw_alert_count_test_rows": 82906,
+      "stage2_confirmed_count_all_rows": 93530,
+      "stage2_confirmed_count_test_rows": 43071,
+      "precision": 0.002739662417868171,
+      "recall": 1.0,
+      "f1": 0.005464354349487138,
+      "selection_score": 0.20300913751378025,
       "candidate_count": 1
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:22.404706+00:00",
+    "ts_utc": "2026-05-02T05:09:35.916534+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -159,14 +175,14 @@
     "why": null,
     "consequence": null,
     "data": {
-      "stage2_candidate_row_count": 35615,
-      "stage2_scored_row_count": 35615,
-      "stage2_raw_flag_count": 14243,
-      "stage2_flag_count": 13898
+      "stage2_candidate_row_count": 103054,
+      "stage2_scored_row_count": 103054,
+      "stage2_raw_flag_count": 93530,
+      "stage2_flag_count": 93530
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:23.322579+00:00",
+    "ts_utc": "2026-05-02T05:09:36.831857+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -178,38 +194,38 @@
       "stage3_variant": "confirmation_and_priority_layer",
       "primary_rule_sensor_count": 5,
       "secondary_rule_sensor_count": 7,
-      "strong_primary_rows_all": 12044,
-      "strong_primary_rows_test": 6891,
-      "profile_breach_rows_all": 72702,
-      "profile_breach_rows_test": 49472,
-      "corroboration_rows_all": 150151,
-      "corroboration_rows_test": 80276,
-      "persistence_rows_all": 13875,
-      "persistence_rows_test": 642,
-      "drift_rows_all": 2448,
-      "drift_rows_test": 1409,
-      "weighted_score_mean_all": 1.415568264342774,
-      "weighted_score_mean_test": 2.160843495571529,
-      "confirmed_rows_all": 68782,
-      "confirmed_rows_test": 48006,
-      "final_tuned_alert_count_all_rows": 13898,
-      "final_tuned_alert_count_test_rows": 648,
-      "stage3_relaxed_alert_count_all_rows": 13880,
-      "stage3_relaxed_alert_count_test_rows": 646,
-      "stage3_medium_alert_count_all_rows": 13117,
-      "stage3_medium_alert_count_test_rows": 579,
-      "stage3_strict_alert_count_all_rows": 223,
-      "stage3_strict_alert_count_test_rows": 111,
-      "high_priority_rows_all": 3673,
-      "high_priority_rows_test": 62,
-      "medium_priority_rows_all": 9331,
-      "medium_priority_rows_test": 481,
-      "low_priority_rows_all": 894,
-      "low_priority_rows_test": 105
+      "strong_primary_rows_all": 48841,
+      "strong_primary_rows_test": 21451,
+      "profile_breach_rows_all": 92627,
+      "profile_breach_rows_test": 46280,
+      "corroboration_rows_all": 168775,
+      "corroboration_rows_test": 78579,
+      "persistence_rows_all": 93144,
+      "persistence_rows_test": 42786,
+      "drift_rows_all": 1543,
+      "drift_rows_test": 438,
+      "weighted_score_mean_all": 2.0366557734204793,
+      "weighted_score_mean_test": 2.5553171452753043,
+      "confirmed_rows_all": 86622,
+      "confirmed_rows_test": 44002,
+      "final_tuned_alert_count_all_rows": 93530,
+      "final_tuned_alert_count_test_rows": 43071,
+      "stage3_relaxed_alert_count_all_rows": 92357,
+      "stage3_relaxed_alert_count_test_rows": 42258,
+      "stage3_medium_alert_count_all_rows": 57026,
+      "stage3_medium_alert_count_test_rows": 19740,
+      "stage3_strict_alert_count_all_rows": 567,
+      "stage3_strict_alert_count_test_rows": 169,
+      "high_priority_rows_all": 34435,
+      "high_priority_rows_test": 8907,
+      "medium_priority_rows_all": 22092,
+      "medium_priority_rows_test": 10764,
+      "low_priority_rows_all": 37003,
+      "low_priority_rows_test": 23400
     }
   },
   {
-    "ts_utc": "2026-04-20T15:31:23.825032+00:00",
+    "ts_utc": "2026-05-02T05:09:37.353303+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -218,14 +234,62 @@
     "why": null,
     "consequence": null,
     "data": {
-      "stage1_flag_count": 35615,
-      "stage2_flag_count": 13898,
-      "stage3_flag_count": 68782,
-      "cascade_final_flag_count": 13898
+      "stage1_flag_count": 103054,
+      "stage2_flag_count": 93530,
+      "stage3_flag_count": 86622,
+      "cascade_final_flag_count": 93530
     }
   },
   {
-    "ts_utc": "2026-04-20T15:32:12.010101+00:00",
+    "ts_utc": "2026-05-02T05:09:37.859544+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "validate_cascade_output",
+    "message": "Validated cascade staged outputs and final held-out test metrics.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "all_rows": 220320,
+      "test_rows": 83889,
+      "stage1_alert_count_all_rows": 103054,
+      "stage1_alert_count_test_rows": 43236,
+      "stage2_raw_alert_count_all_rows": 93530,
+      "stage2_raw_alert_count_test_rows": 43071,
+      "stage2_alert_count_all_rows": 93530,
+      "stage2_alert_count_test_rows": 43071,
+      "final_alert_count_all_rows": 93530,
+      "final_alert_count_test_rows": 43071,
+      "test_anomaly_rows": 118,
+      "precision": 0.002739662417868171,
+      "recall": 1.0,
+      "f1": 0.005464354349487138,
+      "tn": 40818,
+      "fp": 42953,
+      "fn": 0,
+      "tp": 118
+    }
+  },
+  {
+    "ts_utc": "2026-05-02T05:09:37.891570+00:00",
+    "stage": "gold",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "step",
+    "step": "validate_stage3_variant_outputs",
+    "message": "Validated Stage 3 relaxed, medium, and strict variant gates.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage3_relaxed_alert_count_all_rows": 92357,
+      "stage3_medium_alert_count_all_rows": 57026,
+      "stage3_strict_alert_count_all_rows": 567,
+      "stage3_relaxed_alert_count_test_rows": 42258,
+      "stage3_medium_alert_count_test_rows": 19740,
+      "stage3_strict_alert_count_test_rows": 169
+    }
+  },
+  {
+    "ts_utc": "2026-05-02T05:13:25.931216+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -244,18 +308,18 @@
       "cascade_tuned_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_thresholds.json",
       "cascade_tuned_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_summary.json",
       "cascade_tuned_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_metadata.json",
-      "cascade_truth_hash": "b06de3ab80ca91e96a8ecc60238ae54e48dae83e8e01f98ed323710381bc96bd",
-      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__b06de3ab80ca91e96a8ecc60238ae54e48dae83e8e01f98ed323710381bc96bd.json",
+      "cascade_truth_hash": "3b31b49806ff66b4e9c24fef1986bbe025cc121d8981c6ab3664bc29ef99ea70",
+      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__3b31b49806ff66b4e9c24fef1986bbe025cc121d8981c6ab3664bc29ef99ea70.json",
       "result_row_count": 220320,
-      "final_alert_count_all_rows": 13898,
-      "final_alert_count_test_rows": 648,
-      "stage3_relaxed_alert_count_test_rows": 646,
-      "stage3_medium_alert_count_test_rows": 579,
-      "stage3_strict_alert_count_test_rows": 111
+      "final_alert_count_all_rows": 93530,
+      "final_alert_count_test_rows": 43071,
+      "stage3_relaxed_alert_count_test_rows": 42258,
+      "stage3_medium_alert_count_test_rows": 19740,
+      "stage3_strict_alert_count_test_rows": 169
     }
   },
   {
-    "ts_utc": "2026-04-20T15:32:12.039536+00:00",
+    "ts_utc": "2026-05-02T05:13:26.001766+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -266,14 +330,14 @@
     "data": {
       "target_flag_column": "stage1_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 35615,
+      "detected_row_count": 103054,
       "has_time_index": true,
       "has_event_step": true,
       "has_event_time": true
     }
   },
   {
-    "ts_utc": "2026-04-20T15:32:12.079827+00:00",
+    "ts_utc": "2026-05-02T05:13:26.135216+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -284,14 +348,14 @@
     "data": {
       "target_flag_column": "stage2_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 13898,
+      "detected_row_count": 93530,
       "has_time_index": true,
       "has_event_step": true,
       "has_event_time": true
     }
   },
   {
-    "ts_utc": "2026-04-20T15:32:12.148345+00:00",
+    "ts_utc": "2026-05-02T05:13:26.337606+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -302,11 +366,11 @@
     "data": {
       "target_flag_column": "stage3_profile_breach_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 72702
+      "detected_row_count": 92627
     }
   },
   {
-    "ts_utc": "2026-04-20T15:32:12.200495+00:00",
+    "ts_utc": "2026-05-02T05:13:26.519769+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -317,14 +381,14 @@
     "data": {
       "target_flag_column": "cascade_final_flag",
       "row_id_column": "meta__row_id",
-      "detected_row_count": 13898,
+      "detected_row_count": 93530,
       "has_time_index": true,
       "has_event_step": true,
       "has_event_time": true
     }
   },
   {
-    "ts_utc": "2026-04-20T15:32:12.229729+00:00",
+    "ts_utc": "2026-05-02T05:13:26.600089+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -335,27 +399,27 @@
     "data": {
       "cascade_metrics": {
         "model": "3-Stage Cascade",
-        "stage1_alert_count_all_rows": 35615,
-        "stage2_alert_count_all_rows": 13898,
-        "final_alert_count_all_rows": 13898,
-        "stage1_alert_count_test_rows": 6215,
-        "stage2_alert_count_test_rows": 648,
-        "final_alert_count_test_rows": 648,
-        "stage3_relaxed_alert_count_test_rows": 646,
-        "stage3_medium_alert_count_test_rows": 579,
-        "stage3_strict_alert_count_test_rows": 111,
-        "precision": 0.09259259259259259,
-        "recall": 0.5084745762711864,
-        "f1": 0.1566579634464752,
-        "stage3_relaxed_precision": 0.09287925696594428,
-        "stage3_relaxed_recall": 0.5084745762711864,
-        "stage3_relaxed_f1": 0.15706806282722513,
-        "stage3_medium_precision": 0.09844559585492228,
-        "stage3_medium_recall": 0.4830508474576271,
-        "stage3_medium_f1": 0.16355810616929697,
-        "stage3_strict_precision": 0.23423423423423423,
-        "stage3_strict_recall": 0.22033898305084745,
-        "stage3_strict_f1": 0.22707423580786026
+        "stage1_alert_count_all_rows": 103054,
+        "stage2_alert_count_all_rows": 93530,
+        "final_alert_count_all_rows": 93530,
+        "stage1_alert_count_test_rows": 43236,
+        "stage2_alert_count_test_rows": 43071,
+        "final_alert_count_test_rows": 43071,
+        "stage3_relaxed_alert_count_test_rows": 42258,
+        "stage3_medium_alert_count_test_rows": 19740,
+        "stage3_strict_alert_count_test_rows": 169,
+        "precision": 0.002739662417868171,
+        "recall": 1.0,
+        "f1": 0.005464354349487138,
+        "stage3_relaxed_precision": 0.0027687065171091863,
+        "stage3_relaxed_recall": 0.9915254237288136,
+        "stage3_relaxed_f1": 0.005521993581272418,
+        "stage3_medium_precision": 0.005775075987841946,
+        "stage3_medium_recall": 0.9661016949152542,
+        "stage3_medium_f1": 0.01148151878336187,
+        "stage3_strict_precision": 0.20710059171597633,
+        "stage3_strict_recall": 0.2966101694915254,
+        "stage3_strict_f1": 0.24390243902439024
       },
       "cascade_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.csv",
       "cascade_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_stage3_improved_results.pkl",

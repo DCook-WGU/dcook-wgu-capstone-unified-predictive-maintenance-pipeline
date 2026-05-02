@@ -1,15 +1,15 @@
 {
   "cascade_variant": "stage3_improved",
   "stage1_threshold_percentile": 95.0,
-  "stage1_threshold": 0.5337445171501773,
+  "stage1_threshold": 0.4886482835351958,
   "stage2_selection_mode": "fixed",
-  "stage2_selected_threshold_percentile": 99.0,
-  "stage2_threshold": 0.6078905948669239,
+  "stage2_selected_threshold_percentile": 97.0,
+  "stage2_threshold": 0.4632634880121168,
   "stage2_best_params": {
     "bootstrap": false,
     "contamination": "auto",
     "max_features": 1.0,
-    "max_samples": "auto",
+    "max_samples": 0.6,
     "n_estimators": 100
   },
   "stage3_variant": "confirmation_and_priority_layer",

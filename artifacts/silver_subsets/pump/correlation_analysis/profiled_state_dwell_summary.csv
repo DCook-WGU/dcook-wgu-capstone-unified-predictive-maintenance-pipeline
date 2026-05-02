@@ -1,0 +1,6 @@
+state_value,run_count,mean_run_length,median_run_length,min_run_length,max_run_length
+abnormal,7,1.0,1.0,1,1
+normal_clean,2701,56.973343206219916,2.0,1,7214
+normal_contaminated,488,38.282786885245905,2.0,1,4340
+normal_suspect,3189,10.432423957353402,2.0,1,2180
+recovery,7,2068.1428571428573,944.0,41,8390

@@ -22,9 +22,13 @@ gold_cascade:
         max_features: 1.0
         bootstrap: false
       threshold_percentile: 98.5
+      #threshold_percentile: 94.0
+      warning_threshold_percentile: 90.0
+      confirmed_threshold_percentile: 94.0
 
     search:
-      threshold_grid: [95.0, 96.0, 97.0, 97.5, 98.0, 98.5, 99.0]
+      #threshold_grid: [95.0, 96.0, 97.0, 97.5, 98.0, 98.5, 99.0]
+      threshold_grid: [88.0, 90.0, 92.0, 94.0, 95.0, 96.0, 97.0, 98.0]
       param_grid:
         n_estimators: [100, 200, 300]
         max_samples: [auto, 0.6, 0.8, 1.0]
