@@ -7,5 +7,5 @@ gold_baseline:
   use_robust_scaler: false
   baseline_threshold_percentile: 97.0
   stage1_threshold_percentile: 95.0
-  stage2_threshold_percentile: 98.5
+  stage2_threshold_percentile: 97.0
   baseline_estimator_count: 200

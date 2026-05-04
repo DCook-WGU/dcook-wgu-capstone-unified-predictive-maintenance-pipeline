@@ -1,0 +1,123 @@
+{
+  "artifact_paths": {
+    "baseline_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json",
+    "baseline_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.csv",
+    "baseline_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__baseline_results.pkl",
+    "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json",
+    "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
+    "cascade_default_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_defaults_metadata.json",
+    "cascade_default_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_defaults_results.csv",
+    "cascade_default_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_defaults_results.pkl",
+    "cascade_default_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_defaults_summary.json",
+    "cascade_default_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_defaults_thresholds.json",
+    "cascade_stage3_improved_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_metadata.json",
+    "cascade_stage3_improved_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.csv",
+    "cascade_stage3_improved_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.pkl",
+    "cascade_stage3_improved_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_summary.json",
+    "cascade_stage3_improved_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_thresholds.json",
+    "cascade_tuned_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_metadata.json",
+    "cascade_tuned_results_path_csv": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.csv",
+    "cascade_tuned_results_path_pickle": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_results.pkl",
+    "cascade_tuned_summary_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_summary.json",
+    "cascade_tuned_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__cascade_tuned_thresholds.json",
+    "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f.json",
+    "model_comparison_path": "/workspace/artifacts/gold/pump/pump__gold__model_comparison.csv",
+    "model_comparison_summary_path": "/workspace/artifacts/gold/pump/pump__gold__model_comparison_summary.json"
+  },
+  "column_count": 13,
+  "config_snapshot": {
+    "config_hash": "c5025d88163d3c3a4a1550aa7fe433752c9662fe00d23edfff44e1171032db1b",
+    "execution": {
+      "fit_models": true,
+      "persist_ledgers": true,
+      "persist_models": true,
+      "persist_truths": true,
+      "save_config_snapshot": true,
+      "score_only": false,
+      "use_existing_gold_truth": false
+    },
+    "lineage": {
+      "load_training_artifacts_from_truth": false,
+      "parent_truth_hash": null,
+      "training_truth_hash": null
+    },
+    "pipeline": {
+      "execution_mode": "batch",
+      "orchestration_mode": "notebook"
+    },
+    "runtime": {
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "stage": "gold_comparison"
+    },
+    "source_files": [
+      "/workspace/configs/base.yaml",
+      "/workspace/configs/datasets/pump.yaml",
+      "/workspace/configs/modes/train.yaml",
+      "/workspace/configs/stages/gold_comparison.yaml"
+    ],
+    "stage_params": {
+      "layer_name": "gold",
+      "process_run_id_prefix": "gold_comparison",
+      "recipe_id": "gold_modeling__v001_model_comparison"
+    },
+    "versions": {
+      "bronze": "bronze__001",
+      "gold": "gold__001",
+      "silver": "silver__001",
+      "silver_eda": "silver_eda__001",
+      "truth": "truth__001"
+    },
+    "wandb": {
+      "enabled": true,
+      "entity": "dcoo230-western-governors-university",
+      "project": "capstone",
+      "run_name_template": "gold__001_train"
+    }
+  },
+  "created_at_utc": "2026-05-04T05:17:26+00:00",
+  "dataset_name": "pump",
+  "feature_columns": [
+    "alert_count_test_rows",
+    "f1",
+    "model",
+    "model_id",
+    "parent_gold_truth_hash",
+    "precision",
+    "recall",
+    "stage3_mode",
+    "stage_truth_hash",
+    "variant_family"
+  ],
+  "layer_name": "gold_comparison",
+  "meta_columns": [
+    "meta__parent_truth_hash",
+    "meta__pipeline_mode",
+    "meta__truth_hash"
+  ],
+  "notes": {},
+  "parent_truth_hash": "8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f",
+  "pipeline_mode": "batch",
+  "process_run_id": "gold_comparison__20260504T051641Z",
+  "row_count": 6,
+  "runtime_facts": {
+    "baseline_result_row_count": 220320,
+    "baseline_truth_hash": "d35a49077dc4b9d6ee82acc69c8413f8d216712b0ef334239da019e3f6c63b79",
+    "best_model_by_alert_reduction": "stage3_strict",
+    "best_model_by_f1": "stage3_strict",
+    "best_model_by_precision": "stage3_strict",
+    "best_model_by_recall": "baseline",
+    "cascade_default_result_row_count": 220320,
+    "cascade_default_truth_hash": "40ddc64570b9f068f8cc900387ceba8948616d93c060a296e28986c4bc1742fb",
+    "cascade_stage3_improved_result_row_count": 220320,
+    "cascade_stage3_improved_truth_hash": "8627e89c368c1cd70f88e72ad142f9a57d4fbdc82be827ef798b56741ee0e3e4",
+    "cascade_tuned_result_row_count": 220320,
+    "cascade_tuned_truth_hash": "26ff99a72a44d7233a50d7ab9744cdfe7724027da3a73c64cb931e8829c22092",
+    "comparison_row_count": 6,
+    "shared_gold_truth_hash": "8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f"
+  },
+  "source_fingerprint": {},
+  "truth_hash": "c60e40ec0998f1a65c76c0754c9546f3bd7717e05bc3d9dc9227aaf8d8ce096a",
+  "truth_version": "truth__001"
+}

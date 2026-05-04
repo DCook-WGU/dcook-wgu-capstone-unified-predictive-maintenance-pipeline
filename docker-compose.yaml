@@ -10,6 +10,8 @@ services:
     image: postgres:16
     container_name: dcook_capstone_postgres
     environment:
+      TZ: ${TZ:-UTC}
+      PGTZ: ${TZ:-UTC}
       POSTGRES_USER: "dcook_admin"
       POSTGRES_PASSWORD: "V9m!pQ4z@H2eS7wK"
       POSTGRES_DB: "dcook_capstone_postgres_db"
@@ -22,6 +24,10 @@ services:
       - ./data:/data
       # Optional: Initialization Scripts
       # - ./infastructure/postgres/initdb:/docker-entrypoint-initdb.d
+
+      # Mount Host Systems Configurations for Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - capstone_net
 
@@ -32,6 +38,10 @@ services:
     image: dpage/pgadmin4:latest
     container_name: dcook_capstone_pgadmin
     environment:
+      # Timezone configuration
+      # Set in .env. Example: America/New_York, America/Chicago, America/Los_Angeles
+      TZ: ${TZ:-UTC}
+      LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
       PGADMIN_DEFAULT_EMAIL: "admin@dantydcook.com"
       PGADMIN_DEFAULT_PASSWORD: "AdminPass123!"
     ports:
@@ -40,6 +50,10 @@ services:
       - postgres
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+
+      # Mount Host Systems Configurations for Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - capstone_net
 
@@ -53,6 +67,10 @@ services:
     ports:
       - "9092:9092"
     environment:
+
+      # Timezone configuration
+      TZ: ${TZ:-UTC}
+
       # --- KRaft core settings ---
       KAFKA_KRAFT_MODE: "true"
       KAFKA_PROCESS_ROLES: "broker,controller"
@@ -81,6 +99,10 @@ services:
     volumes:
     # For presistence
       - kafka_data:/var/lib/kafka/data
+      
+      # Mount Host Systems Configurations for Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
   # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
   # APP
@@ -122,7 +144,17 @@ services:
       - ./infrastructure:/infrastructure
       # Mount Kafka Folder
       - ./infrastructure/kafka:/kafka
+      
+      # Mount Host Systems Configurations for Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     environment:
+
+      # Timezone configuration
+      # Set in .env. Example: America/New_York, America/Chicago, America/Los_Angeles
+      TZ: ${TZ:-UTC}
+      LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
+      
       # Database Connection for my producers/consumers
       DB_HOST: dcook_capstone_postgres
       DB_PORT: 5432
@@ -186,8 +218,17 @@ services:
       - ./infrastructure:/infrastructure
       # Mount the Kafka Service Infrastructure Folder
       - ./infrastructure/kafka:/kafka
+
+      # Mount Host Systems Configurations for Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     working_dir: /workspace
     environment:
+
+      # Timezone configuration
+      # Set in .env. Example: America/New_York, America/Chicago, America/Los_Angeles
+      TZ: ${TZ:-UTC}
+      LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
 
       ENV_NAME: capstone
       PYTHONPATH: "/workspace:/workspace/app"
@@ -307,10 +348,19 @@ services:
       - ./infrastructure:/infrastructure
       # Mount the Kafka Service Infrastructure Folder
       - ./infrastructure/kafka:/kafka
-    
+      
+      # Mount Host Systems Configurations for Timezone
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     working_dir: /workspace
       
     environment:
+
+      # Timezone configuration
+      # Set in .env. Example: America/New_York, America/Chicago, America/Los_Angeles
+      TZ: ${TZ:-UTC}
+      LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
+      
       PYTHONPATH: "/workspace:/workspace/app"
       # Kafka connection
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
