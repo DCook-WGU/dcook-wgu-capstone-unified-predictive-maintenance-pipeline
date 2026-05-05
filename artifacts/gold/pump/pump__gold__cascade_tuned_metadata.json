@@ -20,7 +20,7 @@
   "gold_scaler_path": "/workspace/artifacts/gold/pump/pump__gold__robust_scaler.joblib",
   "gold_scaler_kind": "robust",
   "gold_recommended_imputation": "forward_fill_within_group_then_median",
-  "cascade_truth_hash": "3f0ce1b01a681eb2bb76c6846bbc4656cd3037a47f77019ac4f4299d474ff4f9",
-  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__3f0ce1b01a681eb2bb76c6846bbc4656cd3037a47f77019ac4f4299d474ff4f9.json",
-  "cascade_process_run_id": "gold_cascade_process__20260504T133906Z"
+  "cascade_truth_hash": "5f529023f901ae361b587563879aaa159594fbb406f18d98ac1007a989e22ea4",
+  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__5f529023f901ae361b587563879aaa159594fbb406f18d98ac1007a989e22ea4.json",
+  "cascade_process_run_id": "gold_cascade_process__20260505T055252Z"
 }

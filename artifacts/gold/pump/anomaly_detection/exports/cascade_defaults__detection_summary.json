@@ -6,21 +6,21 @@
   "primary_score_column": "stage2_score",
   "primary_decision_column": "stage2_model_decision",
   "row_count": 220320,
-  "first_alert_plot_order_index": 353,
+  "first_alert_plot_order_index": 5202,
   "first_broken_plot_order_index": 17155,
-  "recovery_end_plot_order_index": 18523,
-  "lead_rows_to_failure": 16802,
-  "lead_time_minutes_to_failure": 16802,
-  "total_final_alert_rows": 92357,
+  "recovery_end_plot_order_index": 18428,
+  "lead_rows_to_failure": 11953,
+  "lead_time_minutes_to_failure": 11953,
+  "total_final_alert_rows": 69360,
   "detection_class_counts": {
-    "no_alert": 127963,
-    "false_positive": 89704,
-    "recovery_alert": 1330,
-    "early_warning": 1322,
+    "no_alert": 150960,
+    "false_positive": 67553,
+    "recovery_alert": 1271,
+    "early_warning": 535,
     "failure_hit": 1
   },
   "first_stage1_flag_plot_order_index": 260,
-  "first_stage2_flag_plot_order_index": 279,
-  "first_stage2_raw_flag_plot_order_index": 279,
-  "first_cascade_final_flag_plot_order_index": 353
+  "first_stage2_flag_plot_order_index": 5202,
+  "first_stage2_raw_flag_plot_order_index": 5202,
+  "first_cascade_final_flag_plot_order_index": 5202
 }

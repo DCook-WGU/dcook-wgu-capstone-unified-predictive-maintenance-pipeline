@@ -1,6 +1,6 @@
 selected_run_key,plot_run_label,run_family,target_flag_column,first_alert_plot_order_index,first_broken_plot_order_index,lead_rows_to_failure,lead_time_minutes_to_failure,total_final_alert_rows,first_stage1_flag_plot_order_index,first_stage2_flag_plot_order_index,first_stage2_raw_flag_plot_order_index,first_cascade_final_flag_plot_order_index
-baseline,Baseline Isolation Forest,baseline,baseline_flag,260,17155,16895,16895,100743,,,,
-cascade_defaults,Cascade Defaults,cascade,cascade_final_flag,353,17155,16802,16802,92357,260.0,279.0,279.0,353.0
-cascade_tuned,Cascade Tuned,cascade,cascade_final_flag,353,17155,16802,16802,92357,260.0,279.0,279.0,353.0
+baseline,Baseline Isolation Forest,baseline,baseline_flag,274,17155,16881,16881,87735,,,,
+cascade_defaults,Cascade Defaults,cascade,cascade_final_flag,5202,17155,11953,11953,69360,260.0,5202.0,5202.0,5202.0
+cascade_tuned,Cascade Tuned,cascade,cascade_final_flag,5201,17155,11954,11954,54597,260.0,5201.0,5201.0,5201.0
 stage3_medium,Stage 3 Medium,cascade,cascade_stage3_medium_flag,365,17155,16790,16790,57026,260.0,279.0,279.0,279.0
 stage3_strict,Stage 3 Strict,cascade,cascade_stage3_strict_flag,15224,17155,1931,1931,567,260.0,279.0,279.0,279.0

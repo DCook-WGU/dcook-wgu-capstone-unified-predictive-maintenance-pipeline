@@ -1,0 +1,26 @@
+{
+  "selected_run_key": "cascade_tuned",
+  "plot_run_label": "Cascade Tuned",
+  "run_family": "cascade",
+  "target_flag_column": "cascade_final_flag",
+  "primary_score_column": "stage2_score",
+  "primary_decision_column": "stage2_model_decision",
+  "row_count": 220320,
+  "first_alert_plot_order_index": 5201,
+  "first_broken_plot_order_index": 17155,
+  "recovery_end_plot_order_index": 18426,
+  "lead_rows_to_failure": 11954,
+  "lead_time_minutes_to_failure": 11954,
+  "total_final_alert_rows": 54597,
+  "detection_class_counts": {
+    "no_alert": 165723,
+    "false_positive": 53050,
+    "recovery_alert": 1181,
+    "early_warning": 365,
+    "failure_hit": 1
+  },
+  "first_stage1_flag_plot_order_index": 260,
+  "first_stage2_flag_plot_order_index": 5201,
+  "first_stage2_raw_flag_plot_order_index": 5201,
+  "first_cascade_final_flag_plot_order_index": 5201
+}

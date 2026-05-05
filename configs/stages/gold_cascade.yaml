@@ -21,18 +21,20 @@ gold_cascade:
         contamination: auto
         max_features: 1.0
         bootstrap: false
-      threshold_percentile: 98.5
-      warning_threshold_percentile: 97.0
-      confirmed_threshold_percentile: 98.5
+
+      threshold_percentile: 99.0
+      warning_threshold_percentile: 98.0
+      confirmed_threshold_percentile: 99.0
 
     search:
-      #threshold_grid: [95.0, 96.0, 97.0, 97.5, 98.0, 98.5, 99.0]
-      threshold_grid: [97.0, 97.5, 98.0, 98.5, 99.0, 99.25, 99.5]
+
+      threshold_grid: [98.5, 99.0, 99.25, 99.5, 99.75, 99.9, 99.95]
+
       param_grid:
         n_estimators: [100, 200, 300]
-        max_samples: [auto, 0.6, 0.8, 1.0]
-        contamination: [auto, 0.005, 0.01, 0.02, 0.03, 0.05]
-        max_features: [0.5, 0.75, 1.0]
+        max_samples: [auto, 0.8, 1.0]
+        contamination: [auto, 0.005, 0.01]
+        max_features: [1.0]
         bootstrap: [false]
 
   stage3:
