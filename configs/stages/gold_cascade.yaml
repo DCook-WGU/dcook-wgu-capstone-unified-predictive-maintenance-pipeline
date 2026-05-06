@@ -44,7 +44,7 @@ gold_cascade:
     minimum_flags_in_window: 2
 
     stage3_tuning_grid:
-      min_weighted_score: [3.0, 3.25, 3.5, 3.75]
+      min_weighted_score: [3.25, 3.5, 3.75, 4.0, 4.25]
       rolling_window_size: [3, 5]
       minimum_flags_in_window: [2, 3]
       strong_primary_hits: [2, 3]
