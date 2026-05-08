@@ -72,14 +72,17 @@ synthetic:
     mean_within_k_std: 1.00
     std_ratio_bounds: [0.90, 1.35]
 
-  correlation_hotspot_clusters: []
-  #correlation_hotspot_clusters:
-  #  - ["sensor_08", "sensor_09"]
-  #  - ["sensor_14", "sensor_16"]
-  #  - ["sensor_17", "sensor_18"]
-  #  - ["sensor_19", "sensor_20", "sensor_21", "sensor_22", "sensor_23", "sensor_24", "sensor_25"]
-  #  - ["sensor_31", "sensor_32", "sensor_33"]
-  #  - ["sensor_34", "sensor_35", "sensor_36"]
+  #correlation_hotspot_clusters: []
+  correlation_hotspot_clusters:
+  - ["sensor_14", "sensor_16"]
+  - ["sensor_17", "sensor_18"]
+  - ["sensor_19", "sensor_20", "sensor_21", "sensor_22", "sensor_23", "sensor_24", "sensor_25"]
+  - ["sensor_25", "sensor_26"]
+  - ["sensor_31", "sensor_32", "sensor_33"]
+  - ["sensor_34", "sensor_35", "sensor_36"]
+  - ["sensor_40", "sensor_43"]
+  - ["sensor_41", "sensor_42"]
+  - ["sensor_00", "sensor_04"]
 
   correlation_cluster_derivation:
     enabled: true
@@ -100,79 +103,86 @@ synthetic:
 
     normal:
       top_pairwise_overlay:
-        strength: 0.16
-        top_n: 180
-        min_abs_corr: 0.06
-        smooth_alpha: 0.94
+        strength: 0.18
+        top_n: 220
+        min_abs_corr: 0.05
+        smooth_alpha: 0.95
 
       named_cluster_overlay:
-        strength: 0.16
-        smooth_alpha: 0.96
+        strength: 0.20
+        smooth_alpha: 0.95
 
       anchor_cluster_generation:
-        blend: 0.88
-        min_abs_corr: 0.08
-        residual_floor: 0.025
-        smooth_alpha: 0.96
+        blend: 0.92
+        min_abs_corr: 0.06
+        residual_floor: 0.018
+        smooth_alpha: 0.97
 
       bridge_pair_generation:
 #        bridge_pairs: []
         bridge_pairs:
+          - ["sensor_08", "sensor_09"]
           - ["sensor_14", "sensor_16"]
           - ["sensor_17", "sensor_18"]
+          - ["sensor_19", "sensor_20"]
           - ["sensor_20", "sensor_21"]
+          - ["sensor_21", "sensor_22"]
           - ["sensor_22", "sensor_23"]
+          - ["sensor_23", "sensor_24"]
+          - ["sensor_24", "sensor_25"]
           - ["sensor_25", "sensor_26"]
+          - ["sensor_31", "sensor_32"]
+          - ["sensor_32", "sensor_33"]
           - ["sensor_34", "sensor_35"]
           - ["sensor_35", "sensor_36"]
           - ["sensor_40", "sensor_43"]
           - ["sensor_41", "sensor_42"]
           - ["sensor_00", "sensor_04"]
-        blend: 0.88
-        min_abs_corr: 0.20
-        residual_floor: 0.020
-        smooth_alpha: 0.97
+        blend: 0.94
+        min_abs_corr: 0.05
+        residual_floor: 0.012
+        smooth_alpha: 0.985
 
       family_overrides:
         tight_pair:
           named_cluster_overlay:
-            strength: 0.18
-            smooth_alpha: 0.97
+            strength: 0.22
+            smooth_alpha: 0.98
           anchor_cluster_generation:
-            blend: 0.92
-            min_abs_corr: 0.06
-            residual_floor: 0.020
-            smooth_alpha: 0.97
+            blend: 0.95
+            min_abs_corr: 0.04
+            residual_floor: 0.012
+            smooth_alpha: 0.98
 
         strong_chain_cluster:
+          named_cluster_overlay:
+            strength: 0.22
+            smooth_alpha: 0.98
+          anchor_cluster_generation:
+            blend: 0.94
+            min_abs_corr: 0.05
+            residual_floor: 0.014
+            smooth_alpha: 0.98
+
+        weak_chain_cluster:
           named_cluster_overlay:
             strength: 0.18
             smooth_alpha: 0.96
           anchor_cluster_generation:
             blend: 0.90
-            min_abs_corr: 0.08
-            residual_floor: 0.025
+            min_abs_corr: 0.06
+            residual_floor: 0.020
             smooth_alpha: 0.96
-
-        weak_chain_cluster:
-          named_cluster_overlay:
-            strength: 0.14
-            smooth_alpha: 0.95
-          anchor_cluster_generation:
-            blend: 0.84
-            min_abs_corr: 0.08
-            residual_floor: 0.030
-            smooth_alpha: 0.95
 
         dense_cluster:
           named_cluster_overlay:
-            strength: 0.14
-            smooth_alpha: 0.95
+            strength: 0.18
+            smooth_alpha: 0.96
           anchor_cluster_generation:
-            blend: 0.82
-            min_abs_corr: 0.10
-            residual_floor: 0.035
-            smooth_alpha: 0.95
+            blend: 0.88
+            min_abs_corr: 0.08
+            residual_floor: 0.025
+            smooth_alpha: 0.96
 
       priority_pair_generation:
         enabled: false
