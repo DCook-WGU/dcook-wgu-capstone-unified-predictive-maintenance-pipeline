@@ -110,7 +110,7 @@ synthetic:
 
       named_cluster_overlay:
         strength: 0.20
-        smooth_alpha: 0.95
+        smooth_alpha: 0.97
 
       anchor_cluster_generation:
         blend: 0.92
@@ -188,94 +188,93 @@ synthetic:
         enabled: false
         pair_specs: []
 #        pair_specs:
-#          - anchor_sensor: "sensor_08"
-#            member_sensor: "sensor_09"
-#            blend: 0.996
-#            min_abs_corr: 0.03
-#            residual_floor: 0.004
-#            smooth_alpha: 0.988
-#
 #          - anchor_sensor: "sensor_14"
 #            member_sensor: "sensor_16"
-#            blend: 0.992
+#            blend: 0.985
 #            min_abs_corr: 0.05
-#            residual_floor: 0.008
+#            residual_floor: 0.006
 #            smooth_alpha: 0.985
 #
 #          - anchor_sensor: "sensor_17"
 #            member_sensor: "sensor_18"
-#            blend: 0.992
+#            blend: 0.985
 #            min_abs_corr: 0.05
-#            residual_floor: 0.008
+#            residual_floor: 0.006
 #            smooth_alpha: 0.985
 #
-#          - anchor_sensor: "sensor_19"
-#            member_sensor: "sensor_20"
-#            blend: 0.988
+#          - anchor_sensor: "sensor_31"
+#            member_sensor: "sensor_32"
+#            blend: 0.985
 #            min_abs_corr: 0.05
-#            residual_floor: 0.010
-#            smooth_alpha: 0.982
+#            residual_floor: 0.008
+#            smooth_alpha: 0.980
 #
 #          - anchor_sensor: "sensor_34"
 #            member_sensor: "sensor_35"
-#            blend: 0.990
+#            blend: 0.985
 #            min_abs_corr: 0.05
-#            residual_floor: 0.009
-#            smooth_alpha: 0.983
+#            residual_floor: 0.008
+#            smooth_alpha: 0.980
+#
+#          - anchor_sensor: "sensor_08"
+#            member_sensor: "sensor_09"
+#            blend: 0.970
+#            min_abs_corr: 0.05
+#            residual_floor: 0.012
+#            smooth_alpha: 0.970
 
       residual_pair_correction:
         enabled: false
         pair_specs: []
 #        pair_specs:
-#
-#          - anchor_sensor: "sensor_08"
-#            member_sensor: "sensor_09"
-#            base_blend: 0.12
-#            gap_gain: 0.55
-#            max_blend: 0.38
-#            trigger_gap: 0.02
-#            residual_floor: 0.06
-#            smooth_alpha: 0.986
-#            min_abs_corr: 0.05
-#
 #          - anchor_sensor: "sensor_14"
 #            member_sensor: "sensor_16"
-#            base_blend: 0.10
-#            gap_gain: 0.38
-#            max_blend: 0.28
-#            trigger_gap: 0.03
-#            residual_floor: 0.08
-#            smooth_alpha: 0.982
+#            base_blend: 0.18
+#            gap_gain: 0.45
+#            max_blend: 0.45
+#            trigger_gap: 0.02
+#            residual_floor: 0.05
+#            smooth_alpha: 0.985
 #            min_abs_corr: 0.05
 #
 #          - anchor_sensor: "sensor_17"
 #            member_sensor: "sensor_18"
-#            base_blend: 0.10
-#            gap_gain: 0.40
-#            max_blend: 0.30
-#            trigger_gap: 0.03
-#            residual_floor: 0.08
-#            smooth_alpha: 0.982
+#            base_blend: 0.18
+#            gap_gain: 0.45
+#            max_blend: 0.45
+#            trigger_gap: 0.02
+#            residual_floor: 0.05
+#            smooth_alpha: 0.985
 #            min_abs_corr: 0.05
 #
-#          - anchor_sensor: "sensor_19"
-#            member_sensor: "sensor_20"
-#            base_blend: 0.10
-#            gap_gain: 0.35
-#            max_blend: 0.26
-#            trigger_gap: 0.03
-#            residual_floor: 0.08
+#          - anchor_sensor: "sensor_31"
+#            member_sensor: "sensor_32"
+#            base_blend: 0.18
+#            gap_gain: 0.45
+#            max_blend: 0.45
+#            trigger_gap: 0.02
+#            residual_floor: 0.06
 #            smooth_alpha: 0.980
 #            min_abs_corr: 0.05
 #
 #          - anchor_sensor: "sensor_34"
 #            member_sensor: "sensor_35"
-#            base_blend: 0.10
-#            gap_gain: 0.38
-#            max_blend: 0.28
+#            base_blend: 0.18
+#            gap_gain: 0.45
+#            max_blend: 0.45
+#            trigger_gap: 0.02
+#            residual_floor: 0.06
+#            smooth_alpha: 0.980
+#            min_abs_corr: 0.05
+#
+#          - anchor_sensor: "sensor_08"
+#            member_sensor: "sensor_09"
+#            base_blend: 0.14
+#            gap_gain: 0.35
+#            max_blend: 0.35
 #            trigger_gap: 0.03
 #            residual_floor: 0.08
-#            smooth_alpha: 0.982
+#            smooth_alpha: 0.970
 #            min_abs_corr: 0.05
 
       triad_middle_sensor_correction:

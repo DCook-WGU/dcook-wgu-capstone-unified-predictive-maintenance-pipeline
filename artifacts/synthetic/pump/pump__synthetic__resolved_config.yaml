@@ -194,7 +194,7 @@ synthetic:
         smooth_alpha: 0.95
       named_cluster_overlay:
         strength: 0.2
-        smooth_alpha: 0.95
+        smooth_alpha: 0.97
       anchor_cluster_generation:
         blend: 0.92
         min_abs_corr: 0.06
@@ -538,4 +538,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: e77bae0a54a0914a774a05d42a71efffaad4cb5e2cb8e9b760023ea971c60d6b
+  config_hash: 48da0a2b281f65c807417a53f72c664232849fc4aecef73c5b82ba1e6dd31c5e
