@@ -661,13 +661,38 @@ class SyntheticGenerator:
         self,
         section_name: str,
     ) -> List[Tuple[str, str]]:
-        block = self._get_corr_tuning_block(
-            section_name,
-            "bridge_pair_generation",
-            defaults={"bridge_pairs": BRIDGE_PAIRS},
-        )
+        """
+        Resolve bridge-pair settings for a correlation tuning section.
 
-        bridge_pairs_raw = list(block.get("bridge_pairs", BRIDGE_PAIRS) or [])
+        Behavior:
+        - If bridge_pair_generation is missing entirely, use BRIDGE_PAIRS.
+        - If bridge_pairs is missing inside the block, use BRIDGE_PAIRS.
+        - If bridge_pairs is explicitly [], return [].
+        - If bridge_pairs contains pairs, return only valid cleaned pairs.
+        """
+
+        section = self._get_corr_tuning_section(section_name)
+        bridge_block = dict(section.get("bridge_pair_generation", {}) or {})
+
+        # No bridge block at all: preserve historical default behavior.
+        if "bridge_pair_generation" not in section:
+            bridge_pairs_raw = list(BRIDGE_PAIRS)
+
+        # Bridge block exists, but bridge_pairs key is missing:
+        # preserve historical default behavior.
+        elif "bridge_pairs" not in bridge_block:
+            bridge_pairs_raw = list(BRIDGE_PAIRS)
+
+        # bridge_pairs key exists, including explicit []:
+        # respect exactly what the YAML provided.
+        else:
+            raw_value = bridge_block.get("bridge_pairs")
+
+            if raw_value is None:
+                bridge_pairs_raw = list(BRIDGE_PAIRS)
+            else:
+                bridge_pairs_raw = list(raw_value)
+
         cleaned: List[Tuple[str, str]] = []
 
         for pair in bridge_pairs_raw:
@@ -682,7 +707,7 @@ class SyntheticGenerator:
 
             cleaned.append((a, b))
 
-        return cleaned or list(BRIDGE_PAIRS)
+        return cleaned
 
 
     def _get_priority_pair_specs_from_tuning(

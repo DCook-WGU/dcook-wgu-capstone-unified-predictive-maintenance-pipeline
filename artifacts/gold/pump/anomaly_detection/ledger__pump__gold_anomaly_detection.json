@@ -1,8 +1,8 @@
 [
   {
-    "ts_utc": "2026-05-06T05:55:22.834363+00:00",
+    "ts_utc": "2026-05-07T15:03:43.641703+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "decision",
     "step": "notebook_init",
     "message": "Initialized Gold 05 anomaly detection notebook with utils-based paths/config/logging.",
@@ -12,14 +12,14 @@
       "dataset_name": "pump",
       "pipeline_stage": "gold_anomaly_detection",
       "pipeline_mode": "train",
-      "process_run_id": "gold05_anomaly_detection__20260506T055522Z",
+      "process_run_id": "gold05_anomaly_detection__20260507T150343Z",
       "selected_run_key": "stage3_improved"
     }
   },
   {
-    "ts_utc": "2026-05-06T05:55:22.901433+00:00",
+    "ts_utc": "2026-05-07T15:03:43.717197+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "decision",
     "step": "resolved_run_paths",
     "message": "Resolved selected run artifact path from pipeline config.",
@@ -31,9 +31,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T05:55:32.020039+00:00",
+    "ts_utc": "2026-05-07T15:03:48.354283+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "load_selected_results",
     "message": "Loaded selected scored dataframe for Gold 05 anomaly validation.",
@@ -46,9 +46,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T05:56:55.799822+00:00",
+    "ts_utc": "2026-05-07T15:04:48.412446+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "build_timeline_dataframe",
     "message": "Built anomaly timeline dataframe with failure/recovery phase annotations.",
@@ -69,9 +69,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T05:56:57.516040+00:00",
+    "ts_utc": "2026-05-07T15:04:48.776928+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "detected_rows_review",
     "message": "Built detected-row review dataframe for selected run.",
@@ -82,9 +82,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T05:57:06.485132+00:00",
+    "ts_utc": "2026-05-07T15:04:55.907943+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "build_summaries",
     "message": "Built lead-time, alert-packet, and detection summary outputs.",
@@ -97,9 +97,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T05:58:34.826528+00:00",
+    "ts_utc": "2026-05-07T15:06:22.462918+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "comparison_build",
     "message": "Built baseline vs comparison-run timeline payloads and summary dataframe.",
@@ -112,9 +112,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T06:02:17.016940+00:00",
+    "ts_utc": "2026-05-07T15:09:25.801984+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "multi_run_lead_time_comparison",
     "message": "Built multi-run lead-time comparison across baseline, cascade, and Stage 3 operating modes.",
@@ -132,9 +132,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T06:02:28.211056+00:00",
+    "ts_utc": "2026-05-07T15:09:32.944416+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "top_k_alert_packets",
     "message": "Built top-k alert packet review dataframe.",
@@ -145,9 +145,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T06:02:44.343098+00:00",
+    "ts_utc": "2026-05-07T15:09:51.241008+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "export_outputs",
     "message": "Exported Gold 05 timeline outputs and plots.",
@@ -163,9 +163,9 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T06:02:52.796110+00:00",
+    "ts_utc": "2026-05-07T15:09:55.821059+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "additional_exports",
     "message": "Exported detected-row review, comparison outputs, heatmap, 3D surface, and packet review artifacts.",
@@ -182,17 +182,17 @@
     }
   },
   {
-    "ts_utc": "2026-05-06T06:02:53.800647+00:00",
+    "ts_utc": "2026-05-07T15:09:56.332298+00:00",
     "stage": "gold_anomaly_detection",
-    "recipe": "gold05_anomaly_detection__20260506T055522Z",
+    "recipe": "gold05_anomaly_detection__20260507T150343Z",
     "kind": "step",
     "step": "truth_record",
     "message": "Built and saved Gold 05 truth record and stamped the timeline dataframe.",
     "why": "Gold 05 outputs are derived artifacts and should preserve lineage.",
     "consequence": "Timeline export now participates in truth-based lineage tracking.",
     "data": {
-      "truth_hash": "ec929898bd5acce3f0a92910eb5a8a36520a2e055126c4bf6cd0619d3bb15da3",
-      "truth_path": "/workspace/artifacts/truths/gold_anomaly_detection/pump__gold_anomaly_detection__truth__ec929898bd5acce3f0a92910eb5a8a36520a2e055126c4bf6cd0619d3bb15da3.json",
+      "truth_hash": "c09948e7f55d9d9dcbfc6e11dc68208d2e11d1033483fbadf60bee7e35eeb5f2",
+      "truth_path": "/workspace/artifacts/truths/gold_anomaly_detection/pump__gold_anomaly_detection__truth__c09948e7f55d9d9dcbfc6e11dc68208d2e11d1033483fbadf60bee7e35eeb5f2.json",
       "parent_truth_hash": "09d9b14b91c9c6170910f4dbfce3d1e6955087ef17bf98ee716ca4412d8abb00"
     }
   }

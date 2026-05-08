@@ -1,0 +1,22 @@
+{
+  "dropped_sensors_parquet_path": "/workspace/artifacts/silver/pump/pump__silver_preeda__dropped_sensors.parquet",
+  "dropped_physical_sensors": [
+    "sensor_15",
+    "sensor_50"
+  ],
+  "profile_eligible_dropped_sensors": [
+    "sensor_50"
+  ],
+  "dropped_missing_pct": {
+    "sensor_15": 100.0,
+    "sensor_50": 34.95688090050835
+  },
+  "drop_reasons": {
+    "sensor_15": "all_null",
+    "sensor_50": "missing_rate_above_threshold"
+  },
+  "notes": {
+    "sensor_15": "Expected all-null sensor; restore as NaN, do not generate.",
+    "sensor_50": "Generate values from dropped profile, then apply missingness."
+  }
+}

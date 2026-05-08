@@ -1,0 +1,14 @@
+{
+  "feature_profile_normal_clean_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/feature_profile_normal_clean.csv",
+  "feature_profile_abnormal_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/feature_profile_abnormal.csv",
+  "feature_profile_recovery_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/feature_profile_recovery.csv",
+  "sensor_correlation_pairs_normal_clean_path": "/workspace/artifacts/silver_subsets/pump/correlation_analysis/sensor_correlation_pairs_normal_clean.csv",
+  "sensor_group_map_normal_clean_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/sensor_group_map_normal_clean.csv",
+  "sensor_fault_pairings_normal_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/sensor_fault_pairings_normal.csv",
+  "sensor_correlation_hotspot_clusters_normal_clean_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/sensor_correlation_hotspot_clusters_normal_clean.json",
+  "episode_status_counts_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/episode_status_counts.json",
+  "dropped_sensor_registry_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/dropped_sensor_registry.json",
+  "dropped_feature_profile_normal_clean_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/dropped_feature_profiles__normal_clean.csv",
+  "dropped_feature_profile_abnormal_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/dropped_feature_profiles__abnormal.csv",
+  "dropped_feature_profile_recovery_path": "/workspace/artifacts/silver_subsets/pump/generator_inputs/dropped_feature_profiles__recovery.csv"
+}
