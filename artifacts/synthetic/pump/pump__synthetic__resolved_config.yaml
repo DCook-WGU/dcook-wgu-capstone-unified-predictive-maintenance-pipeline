@@ -84,7 +84,7 @@ synthetic:
   normal_batch_size: 50
   generator:
     mode: batch
-    target_rows: 50000
+    target_rows: 225000
     max_episodes: 1000000
     episode_max_rows: 24000
     allow_overshoot: false
@@ -281,8 +281,53 @@ synthetic:
         enabled: false
         pair_specs: []
       residual_pair_correction:
-        enabled: false
-        pair_specs: []
+        enabled: true
+        pair_specs:
+        - anchor_sensor: sensor_17
+          member_sensor: sensor_18
+          base_blend: 0.22
+          gap_gain: 0.5
+          max_blend: 0.5
+          trigger_gap: 0.05
+          residual_floor: 0.045
+          smooth_alpha: 0.985
+          min_abs_corr: 0.05
+        - anchor_sensor: sensor_14
+          member_sensor: sensor_16
+          base_blend: 0.2
+          gap_gain: 0.45
+          max_blend: 0.45
+          trigger_gap: 0.05
+          residual_floor: 0.05
+          smooth_alpha: 0.98
+          min_abs_corr: 0.05
+        - anchor_sensor: sensor_34
+          member_sensor: sensor_35
+          base_blend: 0.18
+          gap_gain: 0.4
+          max_blend: 0.42
+          trigger_gap: 0.05
+          residual_floor: 0.055
+          smooth_alpha: 0.975
+          min_abs_corr: 0.05
+        - anchor_sensor: sensor_08
+          member_sensor: sensor_09
+          base_blend: 0.16
+          gap_gain: 0.35
+          max_blend: 0.35
+          trigger_gap: 0.05
+          residual_floor: 0.06
+          smooth_alpha: 0.97
+          min_abs_corr: 0.05
+        - anchor_sensor: sensor_31
+          member_sensor: sensor_32
+          base_blend: 0.14
+          gap_gain: 0.3
+          max_blend: 0.32
+          trigger_gap: 0.05
+          residual_floor: 0.065
+          smooth_alpha: 0.97
+          min_abs_corr: 0.05
       triad_middle_sensor_correction:
         enabled: false
         triad_specs: []
@@ -538,4 +583,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/synthetic.yaml
   project_root: /workspace
-  config_hash: 48da0a2b281f65c807417a53f72c664232849fc4aecef73c5b82ba1e6dd31c5e
+  config_hash: 8a3866dc45ec1d3bd47cd22332b81a6c5ce5bad45df00fbea3632843d5b072db

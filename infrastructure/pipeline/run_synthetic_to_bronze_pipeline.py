@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 
-from utils.postgres_util import get_engine_from_env
-from utils.synthetic_to_bronze_runner import run_synthetic_to_bronze_loop
+from utils.database.postgres import get_engine_from_env
+from utils.synthetic.pipeline.output_to_bronze_runner import run_synthetic_to_bronze_loop
 
 
 def _require_env(name: str) -> str:

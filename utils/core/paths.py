@@ -27,6 +27,7 @@ class ProjectPaths:
     data_silver_train: Path
     data_silver_test: Path
     data_gold: Path
+    data_synthetic: Path
     notebooks: Path
     artifacts: Path
     models: Path
@@ -113,6 +114,7 @@ def get_paths() -> ProjectPaths:
         data_silver_train=data_dir / "silver/train",
         data_silver_test=data_dir / "silver/test",
         data_gold=data_dir / "gold",
+        data_synthetic = data_dir / "synthetic",
         notebooks=project_root / "notebooks",
         artifacts=project_root / "artifacts",
         models=project_root / "models",

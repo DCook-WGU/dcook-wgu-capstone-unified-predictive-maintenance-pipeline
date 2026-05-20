@@ -1,4 +1,16 @@
 gold_anomaly_detection:
   layer_name: gold
-  process_run_id_prefix: gold_anomaly_detection
   recipe_id: gold_modeling__v001_anomaly_detection
+
+  process_run_id_prefix: gold_anomaly_detection
+  
+  artifact_layout:
+    stage: gold
+    family: anomaly_detection
+    subdirs:
+      - exports
+      - plots
+      - summaries
+      - packets
+      - metadata
+      - lineage

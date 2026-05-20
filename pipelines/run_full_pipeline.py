@@ -68,8 +68,8 @@ import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from utils.paths import get_paths
-from utils.logging_setup import configure_logging
+from utils.core.paths import get_paths
+from utils.core.logging_setup import configure_logging
 
 from pipelines.bronze.run_bronze_preprocessing import run_bronze_preprocessing
 from pipelines.silver.run_silver_preeda import run_silver_preeda

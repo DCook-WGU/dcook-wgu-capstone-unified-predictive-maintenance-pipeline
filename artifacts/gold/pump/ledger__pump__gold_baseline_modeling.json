@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-05-04T17:33:52.052571+00:00",
+    "ts_utc": "2026-05-09T23:40:57.293425+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-05-04T17:34:00.894751+00:00",
+    "ts_utc": "2026-05-09T23:41:00.599547+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -21,8 +21,8 @@
     "consequence": null,
     "data": {
       "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-      "gold_truth_hash": "8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f.json",
+      "gold_truth_hash": "14e102b74fc10d423853d71e4fc2ce83d4e79997763addf4a8e38fe2b96835cc",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__14e102b74fc10d423853d71e4fc2ce83d4e79997763addf4a8e38fe2b96835cc.json",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "stage1_features_path": "/workspace/artifacts/gold/pump/pump__gold__stage1_features.json",
       "gold_scaled_shape": [
@@ -37,7 +37,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:34:03.595027+00:00",
+    "ts_utc": "2026-05-09T23:41:01.320717+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -52,7 +52,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:34:10.296102+00:00",
+    "ts_utc": "2026-05-09T23:41:06.791336+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -78,7 +78,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:34:23.296187+00:00",
+    "ts_utc": "2026-05-09T23:41:16.131992+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -99,7 +99,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:34:24.829426+00:00",
+    "ts_utc": "2026-05-09T23:41:17.440597+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -118,7 +118,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:34:25.726270+00:00",
+    "ts_utc": "2026-05-09T23:41:18.260964+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -143,7 +143,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:36:57.608998+00:00",
+    "ts_utc": "2026-05-09T23:44:00.649892+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -159,15 +159,15 @@
       "baseline_thresholds_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_thresholds.json",
       "baseline_summary_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_summary.json",
       "baseline_metadata_path": "/workspace/artifacts/gold/pump/pump__gold__baseline_metadata.json",
-      "baseline_truth_hash": "f9afef1dc475a059d42d965f1ba47359920e0843834199b3ba6fe37f98e000d6",
-      "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__f9afef1dc475a059d42d965f1ba47359920e0843834199b3ba6fe37f98e000d6.json",
+      "baseline_truth_hash": "fda889f2fb0e1f2a82bbc084fd41003618f7022a464d64c8af7b1273383e8cba",
+      "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__fda889f2fb0e1f2a82bbc084fd41003618f7022a464d64c8af7b1273383e8cba.json",
       "result_row_count": 220320,
       "alert_count_all_rows": 87735,
       "alert_count_test_rows": 31200
     }
   },
   {
-    "ts_utc": "2026-05-04T17:36:58.156185+00:00",
+    "ts_utc": "2026-05-09T23:44:01.092596+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
@@ -185,7 +185,7 @@
     }
   },
   {
-    "ts_utc": "2026-05-04T17:36:58.684804+00:00",
+    "ts_utc": "2026-05-09T23:44:01.436247+00:00",
     "stage": "gold",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",

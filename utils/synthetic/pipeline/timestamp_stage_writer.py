@@ -4,8 +4,8 @@ from typing import Optional, Sequence
 
 import pandas as pd
 
-from utils.chunk_stage_util import resolve_dataset_run_from_table
-from utils.postgres_util import (
+from utils.database.chunk_stage_util import resolve_dataset_run_from_table
+from utils.database.postgres import (
     create_schema_if_not_exists,
     execute_sql,
     read_sql_dataframe,

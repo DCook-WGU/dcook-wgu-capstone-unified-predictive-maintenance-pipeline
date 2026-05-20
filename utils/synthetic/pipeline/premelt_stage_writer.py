@@ -4,7 +4,7 @@ from typing import Sequence
 
 import pandas as pd
 
-from utils.postgres_util import (
+from utils.database.postgres import (
     create_schema_if_not_exists,
     execute_sql,
     read_sql_dataframe,

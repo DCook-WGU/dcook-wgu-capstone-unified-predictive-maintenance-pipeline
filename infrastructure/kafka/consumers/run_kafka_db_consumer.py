@@ -4,7 +4,7 @@ import json
 import os
 import socket
 
-from utils.postgres_util import get_engine_from_env
+from utils.database.postgres import get_engine_from_env
 from utils.kafka_consumer_adapter import run_kafka_consumer_to_postgres_loop
 
 SCHEMA = "capstone"

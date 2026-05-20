@@ -11,7 +11,7 @@ from confluent_kafka import Consumer, KafkaException
 import pandas as pd
 from sqlalchemy import text
 
-from utils.postgres_util import (
+from utils.database.postgres import (
     sanitize_sql_identifier,
     create_schema_if_not_exists,
     execute_sql,

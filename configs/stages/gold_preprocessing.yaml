@@ -1,7 +1,21 @@
 gold_preprocessing:
   layer_name: gold
   recipe_id: gold_preprocessing__v001_cascade
+  
   process_run_id_prefix: gold_process
+
+  artifact_layout:
+    stage: gold
+    family: preprocessing
+    subdirs:
+      - features
+      - profiles
+      - models
+      - summaries
+      - metadata
+      - config
+      - lineage
+      
   train_fraction: 0.70
   random_seed: 42
   scaler_kind: robust

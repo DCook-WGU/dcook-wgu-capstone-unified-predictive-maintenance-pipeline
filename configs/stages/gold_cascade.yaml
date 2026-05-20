@@ -1,8 +1,33 @@
 gold_cascade:
 
   layer_name: gold
-  process_run_id_prefix: gold_cascade_process
   recipe_id: gold_modeling__v001_cascade
+
+  process_run_id_prefix: gold_cascade_process
+
+  artifact_layout:
+    stage: gold
+    subdirs:
+      - models
+      - scores
+      - thresholds
+      - profiles
+      - evidence
+      - row_tracking
+      - tuning
+      - plots
+      - summaries
+      - metadata
+      - lineage
+
+    variants:
+      default:
+        family: cascade_defaults
+      tuned:
+        family: cascade_tuned
+      stage3_improved:
+        family: cascade_stage3_improved
+
   random_seed: 42
 
   stage1:

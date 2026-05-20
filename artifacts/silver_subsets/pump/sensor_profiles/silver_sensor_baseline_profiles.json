@@ -1,6 +1,6 @@
 {
   "artifact_type": "sensor_baseline_profile",
-  "created_at_utc": "2026-05-03T07:35:10.241478+00:00",
+  "created_at_utc": "2026-05-09T23:02:18.358501+00:00",
   "source_notebook": "EDA_Notebook_Pump_Silver_02a_EDA_Building_Subsets_v3",
   "profile_method": "trimmed_normal_episode_sensor_profile",
   "state_column_used_for_profile": "machine_status__synthetic",

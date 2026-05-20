@@ -2,6 +2,18 @@ bronze:
   layer_name: bronze
 
   process_run_id_prefix: bronze_process
+
+  artifact_layout:
+    stage: bronze
+    family: null
+    subdirs:
+      - profiles
+      - quality
+      - schema
+      - summaries
+      - metadata
+      - config
+      - lineage
   
   dataset_candidates: [meta__dataset_name, meta__source_dataset, meta__dataset]
   add_record_id: true 

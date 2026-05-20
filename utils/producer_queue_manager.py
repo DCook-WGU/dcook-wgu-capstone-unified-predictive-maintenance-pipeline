@@ -5,7 +5,7 @@ from typing import Optional
 
 import pandas as pd
 
-from utils.postgres_util import (
+from utils.database.postgres import (
     sanitize_sql_identifier,
     create_schema_if_not_exists,
     execute_sql,

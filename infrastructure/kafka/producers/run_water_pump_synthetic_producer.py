@@ -1,6 +1,6 @@
 import os
 
-from utils.postgres_util import get_engine_from_env
+from utils.database.postgres import get_engine_from_env
 from utils.kafka_producer_adapter import run_send_queue_producer_loop
 
 

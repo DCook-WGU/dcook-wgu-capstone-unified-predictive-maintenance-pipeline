@@ -32,11 +32,11 @@
     "max_features": 1.0,
     "bootstrap": false
   },
-  "cascade_truth_hash": "55875f15352fe57e001786c6752d15a158e856bfaa5b5fc4eada7fe43a0675d2",
-  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__55875f15352fe57e001786c6752d15a158e856bfaa5b5fc4eada7fe43a0675d2.json",
-  "cascade_process_run_id": "gold_cascade_process__20260504T193004Z",
-  "gold_truth_hash": "8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f",
-  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__8bcaa53e4b2575ec9b583b5b22882027eeed91208f9979cafa5b273cf1841a1f.json",
-  "gold_process_run_id": "gold_process__20260504T005215Z",
+  "cascade_truth_hash": "6c545acc43e2c65e0d79cd72737ff816629933762feb4007d80687e01cc13698",
+  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__6c545acc43e2c65e0d79cd72737ff816629933762feb4007d80687e01cc13698.json",
+  "cascade_process_run_id": "gold_cascade_process__20260510T001409Z",
+  "gold_truth_hash": "14e102b74fc10d423853d71e4fc2ce83d4e79997763addf4a8e38fe2b96835cc",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__14e102b74fc10d423853d71e4fc2ce83d4e79997763addf4a8e38fe2b96835cc.json",
+  "gold_process_run_id": "gold_process__20260509T231520Z",
   "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40"
 }

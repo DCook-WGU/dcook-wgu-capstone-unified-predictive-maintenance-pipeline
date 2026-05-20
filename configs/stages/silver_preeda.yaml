@@ -1,7 +1,20 @@
 silver_preeda:
   layer_name: silver
   cleaning_recipe_id: silver__clean__dataset__agnostic__v001
+
   process_run_id_prefix: silver_process
+
+  artifact_layout:
+    stage: silver
+    family: null
+    subdirs:
+      - registry
+      - profiles
+      - quality
+      - summaries
+      - metadata
+      - config
+      - lineage
 
   canonical_output_columns:
     - event_time

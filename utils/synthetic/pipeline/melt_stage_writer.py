@@ -5,14 +5,14 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
-from utils.postgres_util import (
+from utils.database.postgres import (
     sanitize_sql_identifier,
     create_schema_if_not_exists,
     execute_sql,
     read_sql_dataframe,
 )
-from utils.layer_postgres_writer import write_layer_dataframe
-from utils.chunked_stage_util import (
+from utils.database.layer_postgres import write_layer_dataframe
+from utils.database.chunk_stage_util import (
     get_table_row_count,
     process_postgres_table_in_chunks,
 )

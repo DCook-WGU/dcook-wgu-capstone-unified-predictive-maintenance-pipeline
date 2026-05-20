@@ -5,7 +5,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from utils.postgres_util import (
+from utils.database.postgres import (
     sanitize_sql_identifier,
     create_schema_if_not_exists,
     execute_sql,
@@ -13,7 +13,7 @@ from utils.postgres_util import (
     table_exists,
 )
 
-from utils.layer_postgres_writer import write_layer_dataframe
+from utils.database.layer_postgres import write_layer_dataframe
 
 
 # -----------------------------------------------------------------------------

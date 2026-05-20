@@ -14,10 +14,10 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from utils.paths import get_paths
-from utils.file_io import ingest_data, save_data
-from utils.logging_setup import configure_logging, log_layer_paths
-from utils.truths import (
+from utils.core.paths import get_paths
+from utils.core.file_io import ingest_data, save_data
+from utils.core.logging_setup import configure_logging, log_layer_paths
+from utils.core.truths import (
     make_process_run_id,
     build_file_fingerprint,
     identify_meta_columns,
@@ -29,16 +29,16 @@ from utils.truths import (
     append_truth_index,
     stamp_truth_columns,
 )
-from utils.wandb_utils import finalize_wandb_stage
-from utils.pipeline_config_loader import (
+from utils.core.wandb_utils import finalize_wandb_stage
+from utils.core.config_loader import (
     load_pipeline_config,
     build_truth_config_block,
     set_wandb_dir_from_config,
     export_config_snapshot,
 )
-from utils.postgres_util import get_engine_from_env
-from utils.layer_postgres_writer import read_layer_dataframe
-from utils.pipeline.bronze_preprocessing import (
+from utils.database.postgres import get_engine_from_env
+from utils.database.layer_postgres import read_layer_dataframe
+from utils.medallion.bronze.bronze_preprocessing import (
     prepare_bronze_dataframe,
     collect_meta_columns,
 )
