@@ -9,7 +9,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 import pandas as pd
 
-from utils.producer_queue_manager import (
+from utils.synthetic.pipeline.producer_queue_manager import (
     claim_pending_send_queue_batch,
     mark_claimed_batch_failed,
     mark_claimed_batch_sent,
@@ -319,6 +319,8 @@ def run_send_queue_producer_once(
 
     claimed_dataframe = claim_pending_send_queue_batch(
         engine=engine,
+        dataset_id=dataset_id,
+        run_id=run_id,
         batch_size=resolved_batch_size,
         schema=schema,
         table_name=queue_table,

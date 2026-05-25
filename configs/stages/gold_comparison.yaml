@@ -1,7 +1,6 @@
 gold_comparison:
   layer_name: gold
   recipe_id: gold_modeling__v001_model_comparison
-
   process_run_id_prefix: gold_comparison
 
   artifact_layout:
@@ -13,4 +12,5 @@ gold_comparison:
       - summaries
       - statistics
       - metadata
+      - config
       - lineage

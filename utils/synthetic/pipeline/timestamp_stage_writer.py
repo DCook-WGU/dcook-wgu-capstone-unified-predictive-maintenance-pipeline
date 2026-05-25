@@ -5,6 +5,7 @@ from typing import Optional, Sequence
 import pandas as pd
 
 from utils.database.chunk_stage_util import resolve_dataset_run_from_table
+
 from utils.database.postgres import (
     create_schema_if_not_exists,
     execute_sql,
@@ -68,41 +69,87 @@ def ensure_simulation_timing_config_table(
 
 
 def insert_simulation_timing_config(
-    engine,
     *,
+    engine,
     dataset_id: str,
     run_id: str,
-    simulation_start_datetime: str,
+    simulation_start_datetime,
     sampling_interval_seconds: float,
     schema: str = "capstone",
     table_name: str = "simulation_timing_config",
     set_active: bool = True,
     deactivate_existing_for_run: bool = True,
 ) -> None:
-    safe_schema = create_schema_if_not_exists(engine, schema)
-    safe_table = ensure_simulation_timing_config_table(
-        engine,
-        schema=schema,
-        table_name=table_name,
-    )
+    """
+    Insert or update the simulation timing configuration for a dataset/run.
+
+    This function is intentionally idempotent. The database bootstrap may seed
+    an initial timing row for the default synthetic dataset/run, and notebooks
+    may rerun the same timing setup cell multiple times during development.
+    Instead of failing on duplicate ``dataset_id`` / ``run_id`` values, this
+    function updates the existing row.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to the project Postgres database.
+
+    dataset_id:
+        Logical dataset identifier, such as ``pump_synthetic_v1``.
+
+    run_id:
+        Logical synthetic run identifier, such as ``synthetic_run_001``.
+
+    simulation_start_datetime:
+        Timestamp used as the beginning of the generated synthetic timeline.
+
+    sampling_interval_seconds:
+        Number of seconds between generated observation timestamps.
+
+    schema:
+        Database schema containing the timing configuration table.
+
+    table_name:
+        Timing configuration table name.
+
+    set_active:
+        Whether this timing row should be marked active.
+
+    deactivate_existing_for_run:
+        When true, deactivate other active timing rows for the same dataset
+        before activating this run. The current ``dataset_id`` / ``run_id`` row
+        is then inserted or updated.
+    """
+    safe_schema = str(schema).strip()
+    safe_table = str(table_name).strip()
+
+    clean_dataset_id = str(dataset_id).strip()
+    clean_run_id = str(run_id).strip()
+
+    if not clean_dataset_id:
+        raise ValueError("dataset_id cannot be empty.")
+
+    if not clean_run_id:
+        raise ValueError("run_id cannot be empty.")
 
     if deactivate_existing_for_run and set_active:
         deactivate_sql = f"""
         UPDATE "{safe_schema}"."{safe_table}"
         SET is_active = FALSE
         WHERE dataset_id = :dataset_id
-          AND run_id = :run_id
+          AND run_id <> :run_id
         """
+
         execute_sql(
             engine,
             deactivate_sql,
             params={
-                "dataset_id": str(dataset_id).strip(),
-                "run_id": str(run_id).strip(),
+                "dataset_id": clean_dataset_id,
+                "run_id": clean_run_id,
             },
         )
 
-    insert_sql = f"""
+    upsert_sql = f"""
     INSERT INTO "{safe_schema}"."{safe_table}" (
         dataset_id,
         run_id,
@@ -117,13 +164,19 @@ def insert_simulation_timing_config(
         :sampling_interval_seconds,
         :is_active
     )
+    ON CONFLICT (dataset_id, run_id)
+    DO UPDATE SET
+        simulation_start_datetime = EXCLUDED.simulation_start_datetime,
+        sampling_interval_seconds = EXCLUDED.sampling_interval_seconds,
+        is_active = EXCLUDED.is_active
     """
+
     execute_sql(
         engine,
-        insert_sql,
+        upsert_sql,
         params={
-            "dataset_id": str(dataset_id).strip(),
-            "run_id": str(run_id).strip(),
+            "dataset_id": clean_dataset_id,
+            "run_id": clean_run_id,
             "simulation_start_datetime": str(simulation_start_datetime).strip(),
             "sampling_interval_seconds": float(sampling_interval_seconds),
             "is_active": bool(set_active),

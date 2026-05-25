@@ -3,18 +3,18 @@
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 services:
 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
   # PostgreSQL Database Server
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
   postgres:
     image: postgres:16
     container_name: dcook_capstone_postgres
     environment:
       TZ: ${TZ:-UTC}
       PGTZ: ${TZ:-UTC}
-      POSTGRES_USER: "dcook_admin"
-      POSTGRES_PASSWORD: "V9m!pQ4z@H2eS7wK"
-      POSTGRES_DB: "dcook_capstone_postgres_db"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -23,27 +23,77 @@ services:
       # Make Data folder visible
       - ./data:/data
       # Optional: Initialization Scripts
-      # - ./infastructure/postgres/initdb:/docker-entrypoint-initdb.d
+      # - ./infrastructure/postgres/initdb:/docker-entrypoint-initdb.d
 
       # Mount Host Systems Configurations for Timezone
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      #- /etc/localtime:/etc/localtime:ro
+      #- /etc/timezone:/etc/timezone:ro
     networks:
       - capstone_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+  # Database Bootstrap
+  # Creates schemas, roles, grants, core tables, and runtime control rows.
+  # Safe to run repeatedly.
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+  db_bootstrap:
+    image: postgres:16
+    container_name: dcook_capstone_db_bootstrap
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      CAPSTONE_SCHEMA: ${CAPSTONE_SCHEMA:-capstone}
+      SYNTHETIC_DATASET_ID: ${SYNTHETIC_DATASET_ID:-pump_synthetic_v1}
+      SYNTHETIC_RUN_ID: ${SYNTHETIC_RUN_ID:-synthetic_run_001}
+
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+
+      KAFKA_PRODUCER_DB_USER: ${KAFKA_PRODUCER_DB_USER}
+      KAFKA_PRODUCER_DB_PASSWORD: ${KAFKA_PRODUCER_DB_PASSWORD}
+      KAFKA_INGEST_DB_USER: ${KAFKA_INGEST_DB_USER}
+      KAFKA_INGEST_DB_PASSWORD: ${KAFKA_INGEST_DB_PASSWORD}
+
+      PRODUCER_QUEUE_TABLE: ${PRODUCER_QUEUE_TABLE:-synthetic_sensor_messages_send_queue}
+      PRODUCER_CONTROL_TABLE: ${PRODUCER_CONTROL_TABLE:-simulation_state_control}
+      CONSUMER_TARGET_TABLE: ${CONSUMER_TARGET_TABLE:-synthetic_sensor_messages_consumed_stage}
+
+      PRODUCER_BATCH_SIZE: ${PRODUCER_BATCH_SIZE:-5200}
+      PRODUCER_POLL_SECONDS: ${PRODUCER_POLL_SECONDS:-0.0}
+      MAX_SEND_ATTEMPTS: ${MAX_SEND_ATTEMPTS:-3}
+    volumes:
+      - ./infrastructure/postgres/bootstrap:/bootstrap:ro
+    networks:
+      - capstone_net
+    command: ["bash", "/bootstrap/run_bootstrap.sh"]
+    restart: "no"
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
   # PostgreSQL PGAdmin GUI
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -----
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: dcook_capstone_pgadmin
     environment:
-      # Timezone configuration
-      # Set in .env. Example: America/New_York, America/Chicago, America/Los_Angeles
       TZ: ${TZ:-UTC}
       LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
-      PGADMIN_DEFAULT_EMAIL: "admin@dantydcook.com"
-      PGADMIN_DEFAULT_PASSWORD: "AdminPass123!"
+
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "5050:80"
     depends_on:
@@ -52,14 +102,14 @@ services:
       - pgadmin_data:/var/lib/pgadmin
 
       # Mount Host Systems Configurations for Timezone
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      #- /etc/localtime:/etc/localtime:ro
+      #- /etc/timezone:/etc/timezone:ro
     networks:
       - capstone_net
 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
   # KAFKA / KRaft
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----    
   kafka:
     image: confluentinc/cp-kafka:7.6.1
     container_name: dcook_capstone_kafka
@@ -85,8 +135,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
 
       # --- Cluster ID ---
-      KAFKA_CLUSTER_ID: "OwmNBsyETGWymnP2IRTEWA"
-      CLUSTER_ID: "OwmNBsyETGWymnP2IRTEWA"
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      CLUSTER_ID: ${CLUSTER_ID}
       # Generated with 'docker run --rm confluentinc/cp-kafka:7.6.1 kafka-storage random-uuid'
 
       # --- Broker configs ---
@@ -101,12 +151,72 @@ services:
       - kafka_data:/var/lib/kafka/data
       
       # Mount Host Systems Configurations for Timezone
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      #- /etc/localtime:/etc/localtime:ro
+      #- /etc/timezone:/etc/timezone:ro
 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 18
+      start_period: 30s
+
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
+  # KAFKA TOPIC INIT
+  # Creates required Kafka topics after broker is healthy.
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+
+  kafka_topic_init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: dcook_capstone_kafka_topic_init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+      KAFKA_TOPIC_PARTITIONS: ${KAFKA_TOPIC_PARTITIONS:-3}
+      KAFKA_TOPIC_REPLICATION_FACTOR: ${KAFKA_TOPIC_REPLICATION_FACTOR:-1}
+    networks:
+      - capstone_net
+    command:
+      - bash
+      - -lc
+      - |
+        echo "[kafka-topic-init] Waiting for Kafka at $${KAFKA_BOOTSTRAP_SERVERS}..."
+
+        kafka-broker-api-versions \
+          --bootstrap-server "$${KAFKA_BOOTSTRAP_SERVERS}" \
+          >/dev/null 2>&1
+
+        echo "[kafka-topic-init] Creating topic if missing: $${KAFKA_TOPIC}"
+
+        kafka-topics \
+          --bootstrap-server "$${KAFKA_BOOTSTRAP_SERVERS}" \
+          --create \
+          --if-not-exists \
+          --topic "$${KAFKA_TOPIC}" \
+          --partitions "$${KAFKA_TOPIC_PARTITIONS}" \
+          --replication-factor "$${KAFKA_TOPIC_REPLICATION_FACTOR}"
+
+        echo "[kafka-topic-init] Topic description:"
+        kafka-topics \
+          --bootstrap-server "$${KAFKA_BOOTSTRAP_SERVERS}" \
+          --describe \
+          --topic "$${KAFKA_TOPIC}"
+
+        echo "[kafka-topic-init] Complete."
+    restart: "no"
+
+    ## Double $$ on purpose. Using Double $$ keeps Docker Compose from substituting in the variable too early and allows the containers to read the environment variable at runtime.
+
+
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
   # APP
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
   app:
     build:
       context: ./app
@@ -118,8 +228,14 @@ services:
     image: dcook_capstone_app:latest
     container_name: dcook_capstone_app
     depends_on:
-      - postgres
-      - kafka
+      postgres:
+        condition: service_healthy
+      db_bootstrap:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+      kafka_topic_init:
+        condition: service_completed_successfully
     env_file:
       - .env
     volumes:
@@ -146,8 +262,8 @@ services:
       - ./infrastructure/kafka:/kafka
       
       # Mount Host Systems Configurations for Timezone
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      #- /etc/localtime:/etc/localtime:ro
+      #- /etc/timezone:/etc/timezone:ro
     environment:
 
       # Timezone configuration
@@ -156,21 +272,21 @@ services:
       LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
       
       # Database Connection for my producers/consumers
-      DB_HOST: dcook_capstone_postgres
-      DB_PORT: 5432
-      DB_NAME: dcook_capstone_postgres_db
-      DB_DATABASE: dcook_capstone_postgres_db
-      DB_USER: dcook_admin
-      DB_PASSWORD: V9m!pQ4z@H2eS7wK
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
 
       # Kafka bootstrap (Needs to match the advertised listener hostname)
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
 
       # conda env name from Dockerfile
-      ENV_NAME: capstone
+      ENV_NAME: ${ENV_NAME}
 
       # Adding Utility Folder to the Environmental PythonPath to allow for easy import
-      PYTHONPATH: "/workspace:/workspace/app"
+      PYTHONPATH: ${PYTHONPATH}
 
       # W&B writes run data from inside container
       WANDB_DIR: /app/wandb
@@ -183,18 +299,18 @@ services:
     # ---- ---- ---- ---- ---- ---- ---- ----  
     # GPU 
     # ---- ---- ---- ---- ---- ---- ---- ----  
-    deploy:
-        resources:
-          reservations:
-            devices:
-              - driver: nvidia
-                count: 1
-                capabilities: [gpu]
+    #deploy:
+    #    resources:
+    #      reservations:
+    #        devices:
+    #          - driver: nvidia
+    #            count: 1
+    #            capabilities: [gpu]
 
 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
   # PRODUCERS: 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
 
   # Water Pump
   # Water Pump Producer - All Data -- Normal and Abnormal
@@ -202,8 +318,15 @@ services:
     image: dcook_capstone_app:latest
     container_name: producer_water_pump_synthetic
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+        condition: service_healthy
+      kafka_topic_init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      db_bootstrap:
+        condition: service_completed_successfully
+
     env_file:
       - .env
     volumes:
@@ -220,8 +343,8 @@ services:
       - ./infrastructure/kafka:/kafka
 
       # Mount Host Systems Configurations for Timezone
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      #- /etc/localtime:/etc/localtime:ro
+      #- /etc/timezone:/etc/timezone:ro
     working_dir: /workspace
     environment:
 
@@ -230,24 +353,21 @@ services:
       TZ: ${TZ:-UTC}
       LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
 
-      ENV_NAME: capstone
-      PYTHONPATH: "/workspace:/workspace/app"
+      ENV_NAME: ${ENV_NAME}
+      PYTHONPATH: ${PYTHONPATH}
 
       # Database connection (same as app)
-      DB_HOST: dcook_capstone_postgres
-      DB_PORT: 5432
-      DB_NAME: dcook_capstone_postgres_db
-      DB_USER: kafka_producer
-      #DB_PASSWORD: F9tX3qL8vW2pR7mC
-      DB_PASSWORD: n?rA^w]V+,2VJjsig0W!
-      #DB_USER: dcook_admin
-      #DB_PASSWORD: V9m!pQ4z@H2eS7wK
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${KAFKA_PRODUCER_DB_USER}
+      DB_PASSWORD: ${KAFKA_PRODUCER_DB_PASSWORD}
 
       # Variables
       #DATASET_NAME: WATER_PUMP
-      DATASET_ID: pump_synthetic_v1
-      #RUN_ID: synthetic_run_001
-      RUN_ID: premelt_run_001
+      DATASET_ID: ${SYNTHETIC_DATASET_ID:-pump_synthetic_v1}
+      RUN_ID: ${SYNTHETIC_RUN_ID:-synthetic_run_001}
+      #RUN_ID: premelt_run_001
 
       # Producer Details
       PRODUCER_SCHEMA: capstone
@@ -259,15 +379,15 @@ services:
       KAFKA_CLIENT_ID: synthetic-telemetry-producer
       #STREAM_MODE: normal
       #ANOMALY_RATE: "0.0"
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      KAFKA_TOPIC: pump.telemetry.synthetic
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
 
 
     command: ["python", "-m", "infrastructure.kafka.producers.run_water_pump_synthetic_producer"]
     networks:
       - capstone_net
   
-  # ---- ---- ---- ---- 
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 
   # # Water Pump
   # # Water Pump Producer - Normal Data
@@ -293,7 +413,7 @@ services:
   #   networks:
   #     - capstone_net
   
-  # ---- ---- ---- ---- 
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 
   # # Water Pump Producer - Abnormal/Mixed Data
   # producer_water_pump_mixed:
@@ -327,15 +447,21 @@ services:
     # https://dev.to/boyu1997/intro-to-kafka-4hn2
     # https://medium.com/@erkndmrl/kafka-cluster-with-docker-compose-5864d50f677e
 
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
   # Consumer
-  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+  # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
   db_consumer:
     image: dcook_capstone_app:latest
     #container_name: dcook_capstone_db_consumer
     depends_on:
-      - kafka
-      - postgres
+      kafka:
+        condition: service_healthy
+      kafka_topic_init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      db_bootstrap:
+        condition: service_completed_successfully
     env_file:
       - .env
     volumes:
@@ -350,8 +476,8 @@ services:
       - ./infrastructure/kafka:/kafka
       
       # Mount Host Systems Configurations for Timezone
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      #- /etc/localtime:/etc/localtime:ro
+      #- /etc/timezone:/etc/timezone:ro
     working_dir: /workspace
       
     environment:
@@ -361,14 +487,17 @@ services:
       TZ: ${TZ:-UTC}
       LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
       
-      PYTHONPATH: "/workspace:/workspace/app"
+      PYTHONPATH: ${PYTHONPATH}
       # Kafka connection
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
       # Comma-separated list of topics this consumer group will read from
       #CONSUMER_TOPICS: "water_pump_stream,tep_stream,azure_pdm_stream,turbofan_stream,ai4i_stream"
-      CONSUMER_TOPICS: pump.telemetry.synthetic
+      CONSUMER_TOPICS: ${KAFKA_TOPIC}
       # Consumer group id (so you can scale db_consumer if you want)
       CONSUMER_GROUP_ID: synthetic-telemetry-consumer-group
+      CONSUMER_SCHEMA: ${CAPSTONE_SCHEMA:-capstone}
+      CONSUMER_TARGET_TABLE: ${CONSUMER_TARGET_TABLE:-synthetic_sensor_messages_consumed_stage}
+      KAFKA_CONSUMER_GROUP_ID: synthetic-telemetry-consumer-group
 
       KAFKA_CONSUMER_MAX_MESSAGES: 5200
       KAFKA_CONSUMER_POLL_TIMEOUT_SECONDS: 1.0
@@ -377,14 +506,15 @@ services:
       KAFKA_CONSUMER_PROGRESS_LOG_EVERY_BATCHES: 25
 
       # Database connection (same as app)
-      DB_HOST: dcook_capstone_postgres
-      DB_PORT: 5432
-      DB_NAME: dcook_capstone_postgres_db
-      DB_USER: kafka_ingest
-      DB_PASSWORD: F9tX3qL8vW2pR7mC
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${KAFKA_INGEST_DB_USER}
+      DB_PASSWORD: ${KAFKA_INGEST_DB_PASSWORD}
 
       # Conda env name used inside the container
-      ENV_NAME: capstone
+      ENV_NAME: ${ENV_NAME}
+
     command: ["python", "-m", "infrastructure.kafka.consumers.run_kafka_db_consumer"]
     networks:
       - capstone_net
@@ -399,18 +529,24 @@ services:
 
 
 
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 # Volumes
-#---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
 volumes:
   postgres_data:
-  pgadmin_data:
-  kafka_data:
+    name: dcook_capstone_postgres_data
 
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+  pgadmin_data:
+    name: dcook_capstone_pgadmin_data
+
+  kafka_data:
+    name: dcook_capstone_kafka_data
+
+
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
 # Networks 
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----  
 networks:
   capstone_net:
+    name: dcook_capstone_net
     driver: bridge
-

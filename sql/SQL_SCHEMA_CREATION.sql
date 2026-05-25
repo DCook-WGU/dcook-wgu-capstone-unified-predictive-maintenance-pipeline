@@ -3,16 +3,16 @@ BEGIN;
 -- =========================================================
 -- 1) SCHEMAS
 -- =========================================================
-CREATE SCHEMA IF NOT EXISTS core;
+CREATE SCHEMA IF NOT EXISTS capstone;
 CREATE SCHEMA IF NOT EXISTS bronze;
 CREATE SCHEMA IF NOT EXISTS silver;
 CREATE SCHEMA IF NOT EXISTS gold;
-CREATE SCHEMA IF NOT EXISTS audit;
+CREATE SCHEMA IF NOT EXISTS metadata;
 
 -- =========================================================
 -- 2) CORE: shared run / dataset metadata
 -- =========================================================
-CREATE TABLE IF NOT EXISTS core.pipeline_runs (
+CREATE TABLE IF NOT EXISTS capstone.pipeline_runs (
     run_id                TEXT PRIMARY KEY,
     pipeline_mode         TEXT,
     dataset_name          TEXT NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS core.pipeline_runs (
     notes                 TEXT
 );
 
-CREATE TABLE IF NOT EXISTS core.dataset_registry (
+CREATE TABLE IF NOT EXISTS capstone.dataset_registry (
     dataset_name          TEXT PRIMARY KEY,
     dataset_display_name  TEXT,
     source_name           TEXT,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS core.dataset_registry (
     updated_at_utc        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS core.dataset_versions (
+CREATE TABLE IF NOT EXISTS capstone.dataset_versions (
     dataset_version_id    BIGSERIAL PRIMARY KEY,
     dataset_name          TEXT NOT NULL REFERENCES core.dataset_registry(dataset_name),
     layer_name            TEXT NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS core.dataset_versions (
 -- =========================================================
 -- 3) AUDIT: truth / logs / lineage
 -- =========================================================
-CREATE TABLE IF NOT EXISTS audit.truth_records (
+CREATE TABLE IF NOT EXISTS capstone.truth_records (
     truth_id              BIGSERIAL PRIMARY KEY,
     truth_hash            TEXT NOT NULL UNIQUE,
     parent_truth_hash     TEXT,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS audit.truth_records (
     created_at_utc        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS audit.pipeline_logs (
+CREATE TABLE IF NOT EXISTS capstone.pipeline_logs (
     log_id                BIGSERIAL PRIMARY KEY,
     run_id                TEXT,
     dataset_name          TEXT,
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS audit.pipeline_logs (
     logged_at_utc         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS audit.lineage_events (
+CREATE TABLE IF NOT EXISTS capstone.lineage_events (
     lineage_event_id      BIGSERIAL PRIMARY KEY,
     run_id                TEXT,
     dataset_name          TEXT NOT NULL,
@@ -365,12 +365,12 @@ CREATE INDEX IF NOT EXISTS idx_gold_alerts_run_id
 
 -- audit
 CREATE INDEX IF NOT EXISTS idx_audit_truth_records_dataset_layer
-    ON audit.truth_records (dataset_name, layer_name);
+    ON capstone.truth_records (dataset_name, layer_name);
 
 CREATE INDEX IF NOT EXISTS idx_audit_pipeline_logs_run_id
-    ON audit.pipeline_logs (run_id);
+    ON capstone.pipeline_logs (run_id);
 
 CREATE INDEX IF NOT EXISTS idx_audit_lineage_events_run_id
-    ON audit.lineage_events (run_id);
+    ON capstone.lineage_events (run_id);
 
 COMMIT;

@@ -111,7 +111,12 @@ def get_engine_from_env(
     *,
     host_env_names: Sequence[str] = ("DB_HOST", "POSTGRES_HOST"),
     port_env_names: Sequence[str] = ("DB_PORT", "POSTGRES_PORT"),
-    database_env_names: Sequence[str] = ("DB_NAME", "POSTGRES_DB", "POSTGRES_DATABASE"),
+    database_env_names: Sequence[str] = (
+        "DB_NAME",
+        "DB_DATABASE",
+        "POSTGRES_DB",
+        "POSTGRES_DATABASE",
+    ),
     user_env_names: Sequence[str] = ("DB_USER", "POSTGRES_USER"),
     password_env_names: Sequence[str] = ("DB_PASSWORD", "POSTGRES_PASSWORD"),
     driver: str = "psycopg2",

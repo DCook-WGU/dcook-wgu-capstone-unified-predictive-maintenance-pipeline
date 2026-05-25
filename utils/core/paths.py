@@ -1,24 +1,82 @@
 from __future__ import annotations
 
-import os
 import logging
-
+import os
 
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 
-# Initiate Logging
 logger = logging.getLogger("capstone.paths")
+
+
+def find_project_root(start_path: str | Path | None = None) -> Path:
+    """
+    Resolve the capstone project root from a notebook, script, or container path.
+
+    This prevents notebooks from accidentally treating their own folder as the
+    project root. For example, a notebook launched from:
+
+        /workspace/notebooks/synthetic
+
+    should still resolve the project root as:
+
+        /workspace
+
+    Resolution order:
+    1. CAPSTONE_PROJECT_ROOT environment variable, if set.
+    2. PROJECT_ROOT environment variable, if set.
+    3. Walk upward from start_path or the current working directory.
+    4. Fall back to the current working directory if no marker is found.
+
+    A directory is treated as the project root when it contains strong project
+    markers such as configs/base.yaml plus utils/, docker-compose.yaml,
+    environment.yml, or notebooks/.
+    """
+    env_root = os.getenv("CAPSTONE_PROJECT_ROOT") or os.getenv("PROJECT_ROOT")
+
+    if env_root:
+        root = Path(env_root).expanduser().resolve()
+
+        if not root.exists():
+            raise ValueError(f"Configured project root does not exist: {root}")
+
+        return root
+
+    current = Path(start_path or Path.cwd()).expanduser().resolve()
+
+    if current.is_file():
+        current = current.parent
+
+    for candidate in [current, *current.parents]:
+        has_configs = (candidate / "configs" / "base.yaml").exists()
+        has_utils = (candidate / "utils").exists()
+        has_compose = (candidate / "docker-compose.yaml").exists()
+        has_environment = (candidate / "environment.yml").exists()
+        has_notebooks = (candidate / "notebooks").exists()
+
+        if has_configs and has_utils:
+            return candidate
+
+        if has_configs and (has_compose or has_environment or has_notebooks):
+            return candidate
+
+    return Path.cwd().resolve()
 
 
 @dataclass(frozen=True)
 class ProjectPaths:
-    """Centralized project paths."""
+    """
+    Centralized project path map used by notebooks, scripts, and utilities.
+
+    Keeping these paths in one dataclass helps avoid hardcoded notebook-specific
+    paths and keeps the medallion pipeline easier to run after a Docker or WSL
+    reset.
+    """
+
     root: Path
     data: Path
-    #Optional extras you can uncomment/add as your tree solidifies:
     data_raw: Path
     data_bronze: Path
     data_bronze_train: Path
@@ -38,90 +96,48 @@ class ProjectPaths:
     pipelines: Path
 
 
-@lru_cache(maxsize=1)
-def get_paths() -> ProjectPaths:
+@lru_cache(maxsize=8)
+def get_paths(project_root: str | Path | None = None) -> ProjectPaths:
     """
-    Resolve project root and main directories.
+    Resolve the project root and return standardized project directories.
 
-    Priority:
-    1) PROJECT_ROOT environment variable
-    2) Python module location (__file__) if it looks like project root
-    3) Jupyter/interactive fallback:
-       - if cwd is <root>/notebooks, use cwd.parent
-       - otherwise use cwd
+    Parameters
+    ----------
+    project_root:
+        Optional explicit project root. When omitted, the root is discovered
+        by environment variable or by walking upward from the current working
+        directory until project markers are found.
+
+    Returns
+    -------
+    ProjectPaths
+        Dataclass containing common project directories.
     """
-    # Get Current Working Directory
-    cwd = Path.cwd().resolve()
+    root = find_project_root(project_root)
+    data_dir = root / "data"
 
-    # Priority: ENV → script → Jupyter fallback
-    env_root = os.getenv("PROJECT_ROOT")
-
-    if env_root:
-        project_root = Path(env_root).resolve()
-        if not project_root.exists():
-            raise ValueError(f"PROJECT_ROOT does not exist: {project_root}")
-        if not (project_root / "data").exists():
-            raise ValueError("PROJECT_ROOT does not look like project root (missing data/)")
-        source = "env:PROJECT_ROOT"
-
-    else:
-        try:
-            # Script Pathing
-            # Get Project Root From the file location
-
-            project_root_from_file  = Path(__file__).resolve().parents[1]
-
-            if (project_root_from_file  / "data").exists():
-                project_root = project_root_from_file 
-                source = "__file__"
-
-            else:
-                if cwd.name == "notebooks":
-                    project_root = cwd.parent
-                    source = "cwd.parent (jupyter fallback)"
-                else:
-                    project_root = cwd
-                    source = "cwd (jupyter fallback)"
-
-        except NameError:
-            # Jupyter notebook path
-            # Notebooks should always be run from <root>/notebooks,
-            # Thus cwd.parent should be the project root, else we will get the cwd
-            if cwd.name == "notebooks":
-                project_root = cwd.parent
-                source = "cwd.parent (jupyter fallback)"
-            else:
-                project_root = cwd
-                source = "cwd (jupyter fallback)"
-
-
-    # Define data directory
-    data_dir = project_root / "data"
-
-    logger.debug("Resolved paths source=%s", source)
-    logger.debug("CWD=%s", cwd)
-    logger.debug("PROJECT_ROOT=%s", project_root)
-    logger.debug("DATA_DIR=%s", data_dir)
+    logger.debug("Resolved project root: %s", root)
+    logger.debug("Resolved data directory: %s", data_dir)
+    logger.debug("Resolved config directory: %s", root / "configs")
 
     return ProjectPaths(
-        root=project_root,
+        root=root,
         data=data_dir,
         data_raw=data_dir / "raw",
         data_bronze=data_dir / "bronze",
-        data_bronze_train=data_dir / "bronze/train",
-        data_bronze_test=data_dir / "bronze/test",
+        data_bronze_train=data_dir / "bronze" / "train",
+        data_bronze_test=data_dir / "bronze" / "test",
         data_silver=data_dir / "silver",
-        data_silver_train=data_dir / "silver/train",
-        data_silver_test=data_dir / "silver/test",
+        data_silver_train=data_dir / "silver" / "train",
+        data_silver_test=data_dir / "silver" / "test",
         data_gold=data_dir / "gold",
-        data_synthetic = data_dir / "synthetic",
-        notebooks=project_root / "notebooks",
-        artifacts=project_root / "artifacts",
-        models=project_root / "models",
-        utils=project_root / "utils",
-        logs=project_root / "logs",
-        configs=project_root / "configs",
-        truths=project_root / "artifacts/truths",
-        pipelines=project_root / "pipelines",
+        data_synthetic=data_dir / "synthetic",
+        notebooks=root / "notebooks",
+        artifacts=root / "artifacts",
+        models=root / "models",
+        utils=root / "utils",
+        logs=root / "logs",
+        configs=root / "configs",
+        truths=root / "artifacts" / "truths",
+        pipelines=root / "pipelines",
     )
-   

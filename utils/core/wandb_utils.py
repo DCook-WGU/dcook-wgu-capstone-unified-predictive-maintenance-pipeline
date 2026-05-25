@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Sequence, Union
 import pandas as pd
 import logging
 
-from utils.eda_logging import profile_dataframe
+from utils.core.logging_profiler import profile_dataframe
 
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 

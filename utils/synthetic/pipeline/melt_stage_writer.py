@@ -2,8 +2,15 @@ from __future__ import annotations
 
 from typing import Sequence
 
+import os
+import gc
+
+from utils.database.chunk_stage_util import log_memory
+
 import numpy as np
 import pandas as pd
+
+from sqlalchemy import text
 
 from utils.database.postgres import (
     sanitize_sql_identifier,
@@ -12,6 +19,7 @@ from utils.database.postgres import (
     read_sql_dataframe,
 )
 from utils.database.layer_postgres import write_layer_dataframe
+
 from utils.database.chunk_stage_util import (
     get_table_row_count,
     process_postgres_table_in_chunks,
@@ -61,8 +69,85 @@ def _build_message_sequence_index_with_rng(
     return out
 
 
+
 # -----------------------------------------------------------------------------
-# Stage builder
+# Stage Helpers
+# -----------------------------------------------------------------------------
+
+def quote_ident(identifier: str) -> str:
+    return '"' + str(identifier).replace('"', '""') + '"'
+
+
+def fq_table(schema: str, table_name: str) -> str:
+    return f"{quote_ident(schema)}.{quote_ident(table_name)}"
+
+# -----------------------------------------------------------------------------
+# Get Table Columns
+# -----------------------------------------------------------------------------
+
+def get_table_columns(engine, *, schema: str, table_name: str) -> list[str]:
+    columns_df = read_sql_dataframe(
+        engine,
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = :schema
+          AND table_name = :table_name
+        ORDER BY ordinal_position
+        """,
+        params={
+            "schema": schema,
+            "table_name": table_name,
+        },
+    )
+
+    return columns_df["column_name"].astype(str).tolist()
+
+# -----------------------------------------------------------------------------
+# Verify Columns Exist
+# -----------------------------------------------------------------------------
+
+def ensure_sensor_columns_exist(
+    engine,
+    *,
+    schema: str,
+    table_name: str,
+    sensor_columns: list[str],
+) -> None:
+    existing_columns = set(
+        get_table_columns(
+            engine,
+            schema=schema,
+            table_name=table_name,
+        )
+    )
+
+    missing_sensor_columns = [
+        sensor_column
+        for sensor_column in sensor_columns
+        if sensor_column not in existing_columns
+    ]
+
+    if not missing_sensor_columns:
+        print("No missing sensor columns found.")
+        return
+
+    with engine.begin() as conn:
+        for sensor_column in missing_sensor_columns:
+            conn.execute(
+                text(
+                    f"""
+                    ALTER TABLE {fq_table(schema, table_name)}
+                    ADD COLUMN IF NOT EXISTS {quote_ident(sensor_column)} DOUBLE PRECISION
+                    """
+                )
+            )
+
+    print("Added missing sensor columns:", missing_sensor_columns)
+
+
+# -----------------------------------------------------------------------------
+# Stage builder - Old Method
 # -----------------------------------------------------------------------------
 
 def build_sensor_messages_stage(
@@ -75,6 +160,7 @@ def build_sensor_messages_stage(
     random_seed: int = 42,
     n_sensors: int = 52,
     chunk_size: int = 10000,
+    enable_memory_logging: bool = False,
 ) -> str:
     """
     Build the long-format sensor message stage from the timestamped premelt
@@ -160,57 +246,57 @@ def build_sensor_messages_stage(
     ]
 
     def transform_chunk_func(
-        df_chunk: pd.DataFrame,
+        dataframe_chunk: pd.DataFrame,
         chunk_number: int,
         start_row: int,
         end_row: int,
     ) -> pd.DataFrame:
-        df_work = df_chunk.copy()
+        dataframe_work = dataframe_chunk.copy()
 
         # Optional downcast to reduce memory pressure before melt
-        for col in sensor_columns:
-            if col in df_work.columns:
-                df_work[col] = pd.to_numeric(df_work[col], errors="coerce").astype("float32")
+        for column in sensor_columns:
+            if column in dataframe_work.columns:
+                dataframe_work[column] = pd.to_numeric(dataframe_work[column], errors="coerce").astype("float32")
 
-        df_work = df_work.sort_values(
+        dataframe_work = dataframe_work.sort_values(
             by=["observation_index"],
             kind="stable",
         ).reset_index(drop=True)
 
-        df_long = pd.melt(
-            df_work,
+        dataframe_long = pd.melt(
+            dataframe_work,
             id_vars=id_columns,
             value_vars=sensor_columns,
             var_name="sensor_name",
             value_name="sensor_value",
         )
 
-        df_long["sensor_index"] = _extract_sensor_index(df_long["sensor_name"])
+        dataframe_long["sensor_index"] = _extract_sensor_index(dataframe_long["sensor_name"])
 
-        df_long = df_long.sort_values(
+        dataframe_long = dataframe_long.sort_values(
             by=["observation_index", "sensor_index"],
             kind="stable",
         ).reset_index(drop=True)
 
-        observation_count = len(df_work)
-        df_long["message_sequence_index"] = _build_message_sequence_index_with_rng(
+        observation_count = len(dataframe_work)
+        dataframe_long["message_sequence_index"] = _build_message_sequence_index_with_rng(
             observation_count=observation_count,
             sensors_per_observation=n_sensors,
             rng=rng,
         )
 
         remaining_columns = [
-            column for column in df_long.columns
+            column for column in dataframe_long.columns
             if column not in ordered_columns
         ]
-        df_long = df_long[ordered_columns + remaining_columns]
+        dataframe_long = dataframe_long[ordered_columns + remaining_columns]
 
         print(
             f"[chunk] {chunk_number} melted "
-            f"{len(df_work):,} observations -> {len(df_long):,} sensor rows"
+            f"{len(dataframe_work):,} observations -> {len(dataframe_long):,} sensor rows"
         )
 
-        return df_long
+        return dataframe_long
 
     def write_chunk_func(
         df_out: pd.DataFrame,
@@ -247,6 +333,7 @@ def build_sensor_messages_stage(
         transform_chunk_func=transform_chunk_func,
         write_chunk_func=write_chunk_func,
         chunk_size=chunk_size,
+        enable_memory_logging=enable_memory_logging,
     )
 
     # -------------------------------------------------------------------------
@@ -293,6 +380,118 @@ def build_sensor_messages_stage(
     )
 
     return safe_target_table
+
+
+# -----------------------------------------------------------------------------
+# Stage builder - SQL Native 
+# -----------------------------------------------------------------------------
+
+def build_sensor_messages_stage_sql_native(
+    engine,
+    *,
+    schema: str,
+    source_table: str,
+    target_table: str,
+    n_sensors: int = 52,
+    enable_memory_logging=enable_memory_logging,
+) -> str:
+    sensor_columns = [f"sensor_{sensor_index:02d}" for sensor_index in range(n_sensors)]
+
+    ensure_sensor_columns_exist(
+        engine,
+        schema=schema,
+        table_name=source_table,
+        sensor_columns=sensor_columns,
+    )
+
+    if enable_memory_logging:
+        log_memory("stage 04 sql-native - before metadata read")
+
+    source_columns = get_table_columns(
+        engine,
+        schema=schema,
+        table_name=source_table,
+    )
+    if enable_memory_logging:
+        log_memory("stage 04 sql-native - after metadata read")
+
+    passthrough_columns = [
+        column
+        for column in source_columns
+        if column not in sensor_columns
+    ]
+
+    passthrough_select_sql = ",\n        ".join(
+        f"t.{quote_ident(column)}"
+        for column in passthrough_columns
+    )
+
+    sensor_values_sql = ",\n            ".join(
+        (
+            f"({sensor_index}::integer, "
+            f"'{sensor_column}'::text, "
+            f"t.{quote_ident(sensor_column)}::double precision)"
+        )
+        for sensor_index, sensor_column in enumerate(sensor_columns)
+    )
+
+    source_fq = fq_table(schema, source_table)
+    target_fq = fq_table(schema, target_table)
+
+    create_sql = f"""
+    CREATE TABLE {target_fq} AS
+    SELECT
+        {passthrough_select_sql},
+        v.sensor_name,
+        v.sensor_index,
+        v.sensor_value,
+        v.sensor_index AS message_sequence_index
+    FROM {source_fq} AS t
+    CROSS JOIN LATERAL (
+        VALUES
+            {sensor_values_sql}
+    ) AS v(sensor_index, sensor_name, sensor_value)
+    """
+
+    index_sql_statements = [
+        f"""
+        CREATE INDEX IF NOT EXISTS ix_{target_table}_obs_sensor
+        ON {target_fq} (observation_index, sensor_index)
+        """,
+        f"""
+        CREATE INDEX IF NOT EXISTS ix_{target_table}_run_obs
+        ON {target_fq} (dataset_id, run_id, observation_index)
+        """,
+        f"""
+        CREATE INDEX IF NOT EXISTS ix_{target_table}_sensor_name
+        ON {target_fq} (sensor_name)
+        """,
+    ]
+
+    if enable_memory_logging:
+        log_memory("stage 04 sql-native - before SQL melt/create table")
+
+    with engine.begin() as conn:
+        conn.execute(text(f"DROP TABLE IF EXISTS {target_fq} CASCADE"))
+        conn.execute(text(create_sql))
+
+        if enable_memory_logging:
+            log_memory("stage 04 sql-native - after SQL melt/create table")
+
+        if enable_memory_logging:
+            log_memory("stage 04 sql-native - before indexes/analyze")
+        for index_sql in index_sql_statements:
+            conn.execute(text(index_sql))
+
+        conn.execute(text(f"ANALYZE {target_fq}"))
+        if enable_memory_logging:
+            log_memory("stage 04 sql-native - after indexes/analyze")
+
+    gc.collect()
+    if enable_memory_logging:
+        log_memory("stage 04 sql-native - after gc")
+
+    return target_table
 
 
 # -----------------------------------------------------------------------------

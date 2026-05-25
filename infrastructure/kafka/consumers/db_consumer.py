@@ -5,12 +5,8 @@ import os
 import socket
 
 from utils.database.postgres import get_engine_from_env
-from utils.kafka_consumer_adapter import run_kafka_consumer_to_postgres_loop
+from utils.synthetic.pipeline.kafka_consumer_adapter import run_kafka_consumer_to_postgres_loop
 
-SCHEMA = "capstone"
-TOPIC = "pump.telemetry.synthetic"
-TABLE_NAME = "synthetic_sensor_messages_consumed_stage"
-CONSUMER_GROUP_ID = "synthetic-telemetry-consumer-group"
 
 
 def _get_env_str(name: str, default: str) -> str:
@@ -59,6 +55,11 @@ def _resolve_consumer_worker_id() -> str:
 
     return "consumer_worker_001"
 
+CONSUMER_SCHEMA = _get_env_str("CONSUMER_SCHEMA", "capstone")
+KAFKA_TOPIC = _get_env_str("KAFKA_TOPIC", "pump.telemetry.synthetic")
+CONSUMER_TARGET_TABLE = _get_env_str("CONSUMER_TARGET_TABLE", "synthetic_sensor_messages_consumed_stage")
+KAFKA_CONSUMER_GROUP_ID = _get_env_str("KAFKA_CONSUMER_GROUP_ID", "synthetic-telemetry-consumer-group")
+
 
 CONSUMER_WORKER_ID = _resolve_consumer_worker_id()
 MAX_MESSAGES = _get_env_int("KAFKA_CONSUMER_MAX_MESSAGES", 5200)
@@ -75,12 +76,12 @@ def main() -> None:
 
     summary = run_kafka_consumer_to_postgres_loop(
         engine=engine,
-        topic=TOPIC,
-        schema=SCHEMA,
-        table_name=TABLE_NAME,
+        topic=KAFKA_TOPIC,
+        schema=CONSUMER_SCHEMA,
+        table_name=CONSUMER_TARGET_TABLE,
         max_messages=MAX_MESSAGES,
         poll_timeout_seconds=POLL_TIMEOUT_SECONDS,
-        consumer_group_id=CONSUMER_GROUP_ID,
+        consumer_group_id=KAFKA_CONSUMER_GROUP_ID,
         consumer_worker_id=CONSUMER_WORKER_ID,
         auto_offset_reset=AUTO_OFFSET_RESET,
         max_batches=MAX_BATCHES,

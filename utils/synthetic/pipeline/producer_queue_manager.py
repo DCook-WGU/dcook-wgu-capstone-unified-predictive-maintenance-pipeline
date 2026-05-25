@@ -338,6 +338,8 @@ def get_send_queue_status_counts(
 def claim_pending_send_queue_batch(
     engine,
     *,
+    dataset_id: str,
+    run_id: str,
     batch_size: int,
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
@@ -353,6 +355,14 @@ def claim_pending_send_queue_batch(
     """
     if batch_size <= 0:
         raise ValueError("batch_size must be > 0")
+
+    resolved_dataset_id = str(dataset_id).strip()
+    resolved_run_id = str(run_id).strip()
+
+    if not resolved_dataset_id:
+        raise ValueError("dataset_id cannot be empty")
+    if not resolved_run_id:
+        raise ValueError("run_id cannot be empty")
 
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
@@ -377,6 +387,8 @@ def claim_pending_send_queue_batch(
         FROM "{safe_schema}"."{safe_table}"
         WHERE queue_status = 'pending'
           AND producer_sent_at IS NULL
+          AND dataset_id = :dataset_id
+          AND run_id = :run_id
         ORDER BY observation_index, message_sequence_index, sensor_index
         LIMIT :batch_size
         FOR UPDATE SKIP LOCKED
@@ -394,10 +406,13 @@ def claim_pending_send_queue_batch(
     WHERE q.ctid = next_rows.ctid
     RETURNING q.*
     """
+
     return read_sql_dataframe(
         engine,
         sql,
         params={
+            "dataset_id": resolved_dataset_id,
+            "run_id": resolved_run_id,
             "batch_size": int(batch_size),
             "claim_token": resolved_claim_token,
             "producer_worker_id": resolved_worker_id,

@@ -1,8 +1,6 @@
 gold_cascade:
-
   layer_name: gold
   recipe_id: gold_modeling__v001_cascade
-
   process_run_id_prefix: gold_cascade_process
 
   artifact_layout:
@@ -18,6 +16,7 @@ gold_cascade:
       - plots
       - summaries
       - metadata
+      - config
       - lineage
 
     variants:
@@ -35,8 +34,8 @@ gold_cascade:
     threshold_percentile: 95.0
 
   stage2:
-    selection_mode: parameter_search   # fixed | threshold_grid | parameter_search
-    min_recall: 0.50
+    selection_mode: parameter_search
+    min_recall: 0.5
     random_state: 42
 
     fixed:
@@ -46,21 +45,37 @@ gold_cascade:
         contamination: auto
         max_features: 1.0
         bootstrap: false
-
       threshold_percentile: 99.0
       warning_threshold_percentile: 98.0
       confirmed_threshold_percentile: 99.0
 
     search:
-
-      threshold_grid: [98.5, 99.0, 99.25, 99.5, 99.75, 99.9, 99.95]
+      threshold_grid:
+        - 98.5
+        - 99.0
+        - 99.25
+        - 99.5
+        - 99.75
+        - 99.9
+        - 99.95
 
       param_grid:
-        n_estimators: [100, 200, 300]
-        max_samples: [auto, 0.8, 1.0]
-        contamination: [auto, 0.005, 0.01]
-        max_features: [1.0]
-        bootstrap: [false]
+        n_estimators:
+          - 100
+          - 200
+          - 300
+        max_samples:
+          - auto
+          - 0.8
+          - 1.0
+        contamination:
+          - auto
+          - 0.005
+          - 0.01
+        max_features:
+          - 1.0
+        bootstrap:
+          - false
 
   stage3:
     min_primary_sensor_hits: 2
@@ -69,8 +84,22 @@ gold_cascade:
     minimum_flags_in_window: 2
 
     stage3_tuning_grid:
-      min_weighted_score: [3.25, 3.5, 3.75, 4.0, 4.25]
-      rolling_window_size: [3, 5]
-      minimum_flags_in_window: [2, 3]
-      strong_primary_hits: [2, 3]
-      drift_threshold_multiplier: [1.0, 1.25, 1.5]
+      min_weighted_score:
+        - 3.25
+        - 3.5
+        - 3.75
+        - 4.0
+        - 4.25
+      rolling_window_size:
+        - 3
+        - 5
+      minimum_flags_in_window:
+        - 2
+        - 3
+      strong_primary_hits:
+        - 2
+        - 3
+      drift_threshold_multiplier:
+        - 1.0
+        - 1.25
+        - 1.5

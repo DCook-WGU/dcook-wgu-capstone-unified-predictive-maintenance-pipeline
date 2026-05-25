@@ -109,6 +109,7 @@ def _ensure_send_queue_indexes(
         CREATE INDEX IF NOT EXISTS "idx_{safe_table}_claimed_at"
         ON "{safe_schema}"."{safe_table}" (claimed_at);
         ''',
+        
     ]
 
     for sql in index_statements:
@@ -158,13 +159,13 @@ def build_sensor_messages_send_queue(
     engine,
     *,
     schema: str = "capstone",
-    source_table: str = "synthetic_sensor_messages_timestamped_stage",
+    source_table: str = "synthetic_sensor_messages_stage",
     target_table: str = "synthetic_sensor_messages_send_queue",
     if_exists: str = "replace",
     queue_status_default: str = "pending",
     chunk_size: int = 10000,
     queue_owner_role: str = "kafka_producer",
-    apply_owner_and_grants: bool = True,
+    apply_owner_and_grants: bool = False,
 ) -> str:
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
@@ -280,7 +281,11 @@ def build_sensor_messages_send_queue(
         dataframe["producer_delivery_error"] = None
 
         dataframe["message_key"] = (
-            dataframe["asset_id"].astype(str)
+            dataframe["dataset_id"].astype(str)
+            + "|"
+            + dataframe["run_id"].astype(str)
+            + "|"
+            + dataframe["asset_id"].astype(str)
             + "|"
             + dataframe["observation_index"].astype(int).astype(str)
             + "|"

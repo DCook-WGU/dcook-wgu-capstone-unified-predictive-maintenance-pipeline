@@ -1,8 +1,6 @@
 silver_eda:
   layer_name: silver_eda
-  
   cleaning_recipe_id: silver_eda__v001
-
   process_run_id_prefix: silver_eda_process
 
   artifact_layout:
@@ -19,13 +17,13 @@ silver_eda:
       - metadata
       - config
       - lineage
+      - timeline_overlays
 
   min_time_parse_success_percent: 95.0
   min_step_parse_success_percent: 95.0
   quarantine_missing_pct: 30.0
   correlation_threshold: 0.85
-  use_robust_scaler: True
-
+  use_robust_scaler: true
   top_n_sensors_for_plots: 8
   pairplot_sensor_cap: 8
   pairplot_sample_n: 2000

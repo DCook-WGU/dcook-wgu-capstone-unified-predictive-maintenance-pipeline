@@ -45,7 +45,7 @@ from utils.core.config_loader import (
     export_config_snapshot,
 )
 from utils.database.postgres import get_engine_from_env
-from utils.core.layer_postgres import write_layer_dataframe, prepare_layer_dataframe
+from utils.database.layer_postgres import write_layer_dataframe, prepare_layer_dataframe
 from utils.core.ledger import Ledger
 from utils.medallion.gold.gold_baseline_modeling import run_baseline_pipeline
 from utils.medallion.gold.cascade_row_tracking import ensure_stable_row_id

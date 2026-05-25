@@ -63,8 +63,8 @@ synthetic:
     export_dir_key: "artifacts_root"
 
   kafka:
-    enabled: false
-    topic: "synthetic_pump"
+    enabled: true
+    topic: "pump.telemetry.synthetic"
     checkpoint_table: "synthetic_pump_kafka_checkpoint"
 
   calibration:

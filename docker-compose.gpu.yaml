@@ -1,0 +1,16 @@
+# Optional GPU override.
+# Use only on machines with a working NVIDIA driver, NVIDIA Container Toolkit,
+# and Docker Desktop/WSL GPU support.
+#
+# Startup:
+#   docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d
+
+services:
+  app:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

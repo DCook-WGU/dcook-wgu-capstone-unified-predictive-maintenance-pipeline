@@ -1,12 +1,33 @@
 from __future__ import annotations
 
+import os
 import gc
+import psutil
+
 from typing import Any, Callable, Mapping, Optional
 
 import pandas as pd
+
 from sqlalchemy import text
 
 from utils.database.postgres import sanitize_sql_identifier
+
+
+# -----------------------------------------------------------------------------
+# Memory Logger Helpers
+# -----------------------------------------------------------------------------
+
+
+def memory_gb() -> float:
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / (1024 ** 3)
+
+def log_memory(label: str) -> None:
+    print(f"[memory] {label}: {memory_gb():.2f} GB")
+
+# -----------------------------------------------------------------------------
+# Get Table Columns
+# -----------------------------------------------------------------------------
 
 
 def get_table_columns(
@@ -29,6 +50,9 @@ def get_table_columns(
 
     return list(dataframe.columns)
 
+# -----------------------------------------------------------------------------
+# Resolve Dataset Run From Table
+# -----------------------------------------------------------------------------
 
 def resolve_dataset_run_from_table(
     engine,
@@ -75,6 +99,10 @@ def resolve_dataset_run_from_table(
 
     raise ValueError("dataset_id and run_id must both be provided together, or both omitted.")
 
+# -----------------------------------------------------------------------------
+# Get Table Row Count
+# -----------------------------------------------------------------------------
+
 
 def get_table_row_count(
     engine,
@@ -98,6 +126,10 @@ def get_table_row_count(
         dataframe = pd.read_sql(text(sql), connection, params=params)
 
     return int(dataframe.loc[0, "row_count"])
+
+# -----------------------------------------------------------------------------
+# Read Table Chunk By Row Number
+# -----------------------------------------------------------------------------
 
 
 def read_table_chunk_by_row_number(
@@ -142,6 +174,9 @@ def read_table_chunk_by_row_number(
 
     return dataframe
 
+# -----------------------------------------------------------------------------
+# Process Postgres Table In Chunks
+# -----------------------------------------------------------------------------
 
 def process_postgres_table_in_chunks(
     engine,
@@ -155,6 +190,7 @@ def process_postgres_table_in_chunks(
     chunk_size: int = 10000,
     where_sql: str = "",
     params: Optional[Mapping[str, Any]] = None,
+    enable_memory_logging: bool = False,
 ) -> None:
     total_rows = get_table_row_count(
         engine,
@@ -168,6 +204,9 @@ def process_postgres_table_in_chunks(
         return
 
     for chunk_number, start_row in enumerate(range(0, total_rows, chunk_size), start=1):
+        if enable_memory_logging:
+            log_memory(f"chunk {chunk_number} - before read")
+
         end_row = min(start_row + chunk_size, total_rows)
 
         print(
@@ -175,7 +214,7 @@ def process_postgres_table_in_chunks(
             f"source rows {start_row:,} to {end_row - 1:,}"
         )
 
-        df_chunk = read_table_chunk_by_row_number(
+        dataframe_chunk = read_table_chunk_by_row_number(
             engine,
             schema_name=schema_name,
             table_name=table_name,
@@ -187,16 +226,48 @@ def process_postgres_table_in_chunks(
             params=params,
         )
 
-        if df_chunk.empty:
+        if dataframe_chunk.empty:
+            del dataframe_chunk
+            gc.collect()
+
+            if enable_memory_logging:
+                log_memory(f"chunk {chunk_number} - empty chunk after gc")
+
             continue
 
-        transformed = transform_chunk_func(df_chunk, chunk_number, start_row, end_row)
-        write_chunk_func(transformed, chunk_number, start_row, end_row)
+        if enable_memory_logging:
+            log_memory(f"chunk {chunk_number} - after read")
 
-        del df_chunk
+        transformed = transform_chunk_func(
+            dataframe_chunk,
+            chunk_number,
+            start_row,
+            end_row,
+        )
+
+        if enable_memory_logging:
+            log_memory(f"chunk {chunk_number} - after transform")
+
+        write_chunk_func(
+            transformed,
+            chunk_number,
+            start_row,
+            end_row,
+        )
+
+        if enable_memory_logging:
+            log_memory(f"chunk {chunk_number} - after write")
+
+        del dataframe_chunk
         del transformed
         gc.collect()
 
+        if enable_memory_logging:
+            log_memory(f"chunk {chunk_number} - after gc")
+
+# -----------------------------------------------------------------------------
+# Get Observation Index Bounds
+# -----------------------------------------------------------------------------
 
 def get_observation_index_bounds(
     engine,
@@ -236,6 +307,9 @@ def get_observation_index_bounds(
 
     return int(min_value), int(max_value)
 
+# -----------------------------------------------------------------------------
+# Read Table For Observation Window
+# -----------------------------------------------------------------------------
 
 def read_table_for_observation_window(
     engine,
@@ -278,6 +352,9 @@ def read_table_for_observation_window(
 
     return dataframe
 
+# -----------------------------------------------------------------------------
+# Process Observation Index Windows
+# -----------------------------------------------------------------------------
 
 def process_observation_index_windows(
     engine,
@@ -318,7 +395,7 @@ def process_observation_index_windows(
             f"observation_index {observation_index_min:,} to {observation_index_max:,}"
         )
 
-        df_window = read_table_for_observation_window(
+        dataframe_window = read_table_for_observation_window(
             engine,
             schema_name=schema_name,
             table_name=table_name,
@@ -332,11 +409,11 @@ def process_observation_index_windows(
             order_by_sql=order_by_sql,
         )
 
-        if df_window.empty:
+        if dataframe_window.empty:
             continue
 
         transformed = transform_chunk_func(
-            df_window,
+            dataframe_window,
             window_number,
             observation_index_min,
             observation_index_max,
@@ -348,6 +425,6 @@ def process_observation_index_windows(
             observation_index_max,
         )
 
-        del df_window
+        del dataframe_window
         del transformed
         gc.collect()

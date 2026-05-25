@@ -1,7 +1,7 @@
 import os
 
 from utils.database.postgres import get_engine_from_env
-from utils.kafka_producer_adapter import run_send_queue_producer_loop
+from utils.synthetic.pipeline.kafka_producer_adapter import run_send_queue_producer_loop
 
 
 def _require_env(name: str) -> str:

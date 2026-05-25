@@ -218,6 +218,7 @@ def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
         "gold_cascade_tuned_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_tuned_modeling.json",
         "gold_cascade_stage3_improved_ledger_file_name": f"ledger__{dataset_name}__gold_cascade_stage3_improved_modeling.json",
         "gold_comparison_ledger_file_name": f"ledger__{dataset_name}__gold_comparison.json",
+        "gold_anomaly_detection_ledger_file_name": f"ledger__{dataset_name}__gold_anomaly_detection.json",
         
         # Versions 
         "bronze_version": bronze_version,
@@ -278,7 +279,7 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         # Artifacts
         "bronze_artifacts_dir": str(artifacts_root / "bronze" / dataset_name),
         "silver_artifacts_dir": str(artifacts_root / "silver" / dataset_name),
-        "silver_eda_artifacts_dir": str(artifacts_root / "silver_eda" / dataset_name),
+        "silver_eda_artifacts_dir": str(artifacts_root / "silver_subsets" / dataset_name),
         "gold_artifacts_dir": str(artifacts_root / "gold" / dataset_name),
 
         # Models 
@@ -297,82 +298,460 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
         "gold_fit_data_path": str(data_root / roots["gold_subdir"] / filenames["gold_fit_file_name"]),
         "gold_train_data_path": str(data_root / roots["gold_subdir"] / filenames["gold_train_file_name"]),
         "gold_test_data_path": str(data_root / roots["gold_subdir"] / filenames["gold_test_file_name"]),
-        "silver_preeda_dropped_sensors_data_path": str(artifacts_root / "silver" / dataset_name / filenames["silver_preeda_dropped_sensors_file_name"]),
+
+        "silver_preeda_dropped_sensors_data_path": str(
+            artifacts_root
+            / "silver"
+            / dataset_name
+            / "profiles"
+            / filenames["silver_preeda_dropped_sensors_file_name"]
+        ),
 
         # EDA
-        "feature_registry_path": str(artifacts_root / "silver" / dataset_name / filenames["feature_registry_file_name"]),
-        "impute_recommendation_path": str(artifacts_root / "silver_eda" / dataset_name / filenames["impute_recommendation_file_name"]),
-        "stage1_features_path": str(artifacts_root / "gold" / dataset_name / filenames["stage1_features_file_name"]),
-        "stage2_features_path": str(artifacts_root / "gold" / dataset_name / filenames["stage2_features_file_name"]),
-        "stage3_primary_path": str(artifacts_root / "gold" / dataset_name / filenames["stage3_primary_file_name"]),
-        "stage3_secondary_path": str(artifacts_root / "gold" / dataset_name / filenames["stage3_secondary_file_name"]),
+        "feature_registry_path": str(
+            artifacts_root
+            / "silver"
+            / dataset_name
+            / "registry"
+            / filenames["feature_registry_file_name"]
+        ),
+
+        "impute_recommendation_path": str(
+            artifacts_root
+            / "silver_subsets"
+            / dataset_name
+            / "summaries"
+            / filenames["impute_recommendation_file_name"]
+        ),
+
+        "stage1_features_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "features"
+            / filenames["stage1_features_file_name"]
+        ),
+
+        "stage2_features_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "features"
+            / filenames["stage2_features_file_name"]
+        ),
+
+        "stage3_primary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "features"
+            / filenames["stage3_primary_file_name"]
+        ),
+
+        "stage3_secondary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "features"
+            / filenames["stage3_secondary_file_name"]
+        ),
 
         # Baseline
-        "baseline_results_path_csv": str(artifacts_root / "gold" / dataset_name / filenames["baseline_results_file_name_csv"]),
-        "baseline_results_path_pickle": str(artifacts_root / "gold" / dataset_name / filenames["baseline_results_file_name_pickle"]),
-        "baseline_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["baseline_model_file_name"]),
-        "baseline_models_path": str(models_root / dataset_name / filenames["baseline_model_file_name"]),
-        "baseline_thresholds_path": str(artifacts_root / "gold" / dataset_name / filenames["baseline_thresholds_file_name"]),
-        "baseline_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["baseline_summary_file_name"]),
-        "baseline_metadata_path": str(artifacts_root / "gold" / dataset_name / filenames["baseline_metadata_file_name"]),
+        "baseline_results_path_csv": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "baseline"
+            / "scores"
+            / filenames["baseline_results_file_name_csv"]
+        ),
+
+        "baseline_results_path_pickle": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "baseline"
+            / "scores"
+            / filenames["baseline_results_file_name_pickle"]
+        ),
+
+        "baseline_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "baseline"
+            / "models"
+            / filenames["baseline_model_file_name"]
+        ),
+
+        "baseline_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["baseline_model_file_name"]
+        ),
+
+        "baseline_thresholds_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "baseline"
+            / "thresholds"
+            / filenames["baseline_thresholds_file_name"]
+        ),
+
+        "baseline_summary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "baseline"
+            / "summaries"
+            / filenames["baseline_summary_file_name"]
+        ),
+
+        "baseline_metadata_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "baseline"
+            / "metadata"
+            / filenames["baseline_metadata_file_name"]
+        ),
 
         # Cascade - Defaults
-        "cascade_defaults_results_path_csv": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_results_file_name_csv"]),
-        "cascade_defaults_results_path_pickle": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_results_file_name_pickle"]),
-        "cascade_defaults_thresholds_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_thresholds_file_name"]),
-        "cascade_defaults_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_summary_file_name"]),
-        "cascade_defaults_metadata_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_metadata_file_name"]),
-        "cascade_defaults_reference_profile_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_reference_profile_file_name"]),
-        "cascade_defaults_stage1_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_stage1_model_file_name"]),
-        "cascade_defaults_stage2_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_defaults_stage2_model_file_name"]),
-        "cascade_defaults_stage1_models_path": str(models_root / dataset_name / filenames["cascade_defaults_stage1_model_file_name"]),
-        "cascade_defaults_stage2_models_path": str(models_root / dataset_name / filenames["cascade_defaults_stage2_model_file_name"]),
+        "cascade_defaults_results_path_csv": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "scores"
+            / filenames["cascade_defaults_results_file_name_csv"]
+        ),
 
-        # Cascade - Tuned 
-        "cascade_tuned_results_path_csv": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_results_file_name_csv"]),
-        "cascade_tuned_results_path_pickle": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_results_file_name_pickle"]),
-        "cascade_tuned_thresholds_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_thresholds_file_name"]),
-        "cascade_tuned_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_summary_file_name"]),
-        "cascade_tuned_metadata_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_metadata_file_name"]),
-        "cascade_tuned_reference_profile_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_reference_profile_file_name"]),
-        "cascade_tuned_stage1_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_stage1_model_file_name"]),
-        "cascade_tuned_stage2_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_tuned_stage2_model_file_name"]),
-        "cascade_tuned_stage1_models_path": str(models_root / dataset_name / filenames["cascade_tuned_stage1_model_file_name"]),
-        "cascade_tuned_stage2_models_path": str(models_root / dataset_name / filenames["cascade_tuned_stage2_model_file_name"]),
+        "cascade_defaults_results_path_pickle": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "scores"
+            / filenames["cascade_defaults_results_file_name_pickle"]
+        ),
 
-        # Cascade - Stage3 Improved 
-        "cascade_stage3_improved_results_path_csv": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_results_file_name_csv"]),
-        "cascade_stage3_improved_results_path_pickle": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_results_file_name_pickle"]),
-        "cascade_stage3_improved_thresholds_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_thresholds_file_name"]),
-        "cascade_stage3_improved_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_summary_file_name"]),
-        "cascade_stage3_improved_metadata_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_metadata_file_name"]),
-        "cascade_stage3_improved_reference_profile_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_reference_profile_file_name"]),
-        "cascade_stage3_improved_stage1_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_stage1_model_file_name"]),
-        "cascade_stage3_improved_stage2_model_artifact_path": str(artifacts_root / "gold" / dataset_name / filenames["cascade_stage3_improved_stage2_model_file_name"]),
-        "cascade_stage3_improved_stage1_models_path": str(models_root / dataset_name / filenames["cascade_stage3_improved_stage1_model_file_name"]),
-        "cascade_stage3_improved_stage2_models_path": str(models_root / dataset_name / filenames["cascade_stage3_improved_stage2_model_file_name"]),
+        "cascade_defaults_thresholds_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "thresholds"
+            / filenames["cascade_defaults_thresholds_file_name"]
+        ),
 
+        "cascade_defaults_summary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "summaries"
+            / filenames["cascade_defaults_summary_file_name"]
+        ),
 
-        # Comparision
-        "comparison_path": str(artifacts_root / "gold" / dataset_name / filenames["comparison_file_name"]),
-        "model_comparison_path": str(artifacts_root / "gold" / dataset_name / filenames["model_comparison_file_name"]),
-        "model_comparison_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["model_comparison_summary_file_name"]),
-        "preprocessing_summary_path": str(artifacts_root / "gold" / dataset_name / filenames["preprocessing_summary_file_name"]),
-        "preprocessing_metadata_path": str(artifacts_root / "gold" / dataset_name / filenames["preprocessing_metadata_file_name"]),
-        "reference_profile_path": str(artifacts_root / "gold" / dataset_name / filenames["reference_profile_file_name"]),
-        "comparison_plot_with_test_alerts_path": str(artifacts_root / "gold" / dataset_name / filenames["comparison_plot_with_test_alerts_file_name"]),
-        
-        # Loggs
+        "cascade_defaults_metadata_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "metadata"
+            / filenames["cascade_defaults_metadata_file_name"]
+        ),
+
+        "cascade_defaults_reference_profile_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "profiles"
+            / filenames["cascade_defaults_reference_profile_file_name"]
+        ),
+
+        "cascade_defaults_stage1_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "models"
+            / filenames["cascade_defaults_stage1_model_file_name"]
+        ),
+
+        "cascade_defaults_stage2_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_defaults"
+            / "models"
+            / filenames["cascade_defaults_stage2_model_file_name"]
+        ),
+
+        "cascade_defaults_stage1_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["cascade_defaults_stage1_model_file_name"]
+        ),
+
+        "cascade_defaults_stage2_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["cascade_defaults_stage2_model_file_name"]
+        ),
+
+        # Cascade - Tuned
+        "cascade_tuned_results_path_csv": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "scores"
+            / filenames["cascade_tuned_results_file_name_csv"]
+        ),
+
+        "cascade_tuned_results_path_pickle": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "scores"
+            / filenames["cascade_tuned_results_file_name_pickle"]
+        ),
+
+        "cascade_tuned_thresholds_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "thresholds"
+            / filenames["cascade_tuned_thresholds_file_name"]
+        ),
+
+        "cascade_tuned_summary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "summaries"
+            / filenames["cascade_tuned_summary_file_name"]
+        ),
+
+        "cascade_tuned_metadata_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "metadata"
+            / filenames["cascade_tuned_metadata_file_name"]
+        ),
+
+        "cascade_tuned_reference_profile_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "profiles"
+            / filenames["cascade_tuned_reference_profile_file_name"]
+        ),
+
+        "cascade_tuned_stage1_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "models"
+            / filenames["cascade_tuned_stage1_model_file_name"]
+        ),
+
+        "cascade_tuned_stage2_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_tuned"
+            / "models"
+            / filenames["cascade_tuned_stage2_model_file_name"]
+        ),
+
+        "cascade_tuned_stage1_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["cascade_tuned_stage1_model_file_name"]
+        ),
+
+        "cascade_tuned_stage2_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["cascade_tuned_stage2_model_file_name"]
+        ),
+
+        # Cascade - Stage3 Improved
+        "cascade_stage3_improved_results_path_csv": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "scores"
+            / filenames["cascade_stage3_improved_results_file_name_csv"]
+        ),
+
+        "cascade_stage3_improved_results_path_pickle": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "scores"
+            / filenames["cascade_stage3_improved_results_file_name_pickle"]
+        ),
+
+        "cascade_stage3_improved_thresholds_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "thresholds"
+            / filenames["cascade_stage3_improved_thresholds_file_name"]
+        ),
+
+        "cascade_stage3_improved_summary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "summaries"
+            / filenames["cascade_stage3_improved_summary_file_name"]
+        ),
+
+        "cascade_stage3_improved_metadata_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "metadata"
+            / filenames["cascade_stage3_improved_metadata_file_name"]
+        ),
+
+        "cascade_stage3_improved_reference_profile_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "profiles"
+            / filenames["cascade_stage3_improved_reference_profile_file_name"]
+        ),
+
+        "cascade_stage3_improved_stage1_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "models"
+            / filenames["cascade_stage3_improved_stage1_model_file_name"]
+        ),
+
+        "cascade_stage3_improved_stage2_model_artifact_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "cascade_stage3_improved"
+            / "models"
+            / filenames["cascade_stage3_improved_stage2_model_file_name"]
+        ),
+
+        "cascade_stage3_improved_stage1_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["cascade_stage3_improved_stage1_model_file_name"]
+        ),
+
+        "cascade_stage3_improved_stage2_models_path": str(
+            models_root
+            / dataset_name
+            / filenames["cascade_stage3_improved_stage2_model_file_name"]
+        ),
+
+        # Comparison
+        "comparison_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "comparison"
+            / "results"
+            / filenames["comparison_file_name"]
+        ),
+
+        "model_comparison_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "comparison"
+            / "results"
+            / filenames["model_comparison_file_name"]
+        ),
+
+        "model_comparison_summary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "comparison"
+            / "summaries"
+            / filenames["model_comparison_summary_file_name"]
+        ),
+
+        "preprocessing_summary_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "summaries"
+            / filenames["preprocessing_summary_file_name"]
+        ),
+
+        "preprocessing_metadata_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "metadata"
+            / filenames["preprocessing_metadata_file_name"]
+        ),
+
+        "reference_profile_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "preprocessing"
+            / "profiles"
+            / filenames["reference_profile_file_name"]
+        ),
+
+        "comparison_plot_with_test_alerts_path": str(
+            artifacts_root
+            / "gold"
+            / dataset_name
+            / "comparison"
+            / "plots"
+            / filenames["comparison_plot_with_test_alerts_file_name"]
+        ),
+
+        # Logs
         "bronze_log_path": str(logs_root / "bronze.log"),
         "silver_log_path": str(logs_root / "silver.log"),
         "silver_eda_log_path": str(logs_root / "silver_eda.log"),
         "gold_preprocessing_log_path": str(logs_root / "gold_preprocessing.log"),
         "gold_baseline_log_path": str(logs_root / "gold_modeling_baseline.log"),
         "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade.log"),
-        "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade_defaulfts.log"),
-        "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade_tuned.log"),
-        "gold_cascade_log_path": str(logs_root / "gold_modeling_cascade_stage3_improved.log"),
+        "gold_cascade_defaults_log_path": str(logs_root / "gold_modeling_cascade_defaults.log"),
+        "gold_cascade_tuned_log_path": str(logs_root / "gold_modeling_cascade_tuned.log"),
+        "gold_cascade_stage3_improved_log_path": str(logs_root / "gold_modeling_cascade_stage3_improved.log"),
         "gold_comparison_log_path": str(logs_root / "gold_model_comparison.log"),
+        "gold_anomaly_detection_log_path": str(logs_root / "gold_anomaly_detection.log"),
     }
     return path_map
 
