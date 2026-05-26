@@ -4,6 +4,7 @@ import uuid
 from typing import Optional
 
 import pandas as pd
+from sqlalchemy import text
 
 from utils.database.postgres import (
     sanitize_sql_identifier,
@@ -420,6 +421,96 @@ def claim_pending_send_queue_batch(
         },
     )
 
+def claim_pending_sensor_messages_batch(
+    engine,
+    *,
+    schema: str = "capstone",
+    queue_table: str = "synthetic_sensor_messages_send_queue",
+    batch_size: int = 26000,
+    producer_worker_id: str = "producer_worker_001",
+    producer_topic: str = "pump.telemetry.synthetic",
+) -> tuple[str, pd.DataFrame]:
+    """
+    Atomically claim one producer batch from the send queue.
+
+    This function changes rows from pending to claimed and returns the claimed
+    rows for Kafka production. FOR UPDATE SKIP LOCKED keeps this safe if more
+    than one producer worker is ever used.
+    """
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_queue_table = sanitize_sql_identifier(queue_table)
+    claim_token = str(uuid.uuid4())
+
+    sql = f"""
+    WITH rows_to_claim AS (
+        SELECT message_key
+        FROM "{safe_schema}"."{safe_queue_table}"
+        WHERE queue_status = 'pending'
+        ORDER BY observation_index, message_sequence_index, sensor_index
+        LIMIT :batch_size
+        FOR UPDATE SKIP LOCKED
+    ),
+    claimed_rows AS (
+        UPDATE "{safe_schema}"."{safe_queue_table}" AS queue
+        SET
+            queue_status = 'claimed',
+            claim_token = :claim_token,
+            claimed_at = CURRENT_TIMESTAMP,
+            producer_worker_id = :producer_worker_id,
+            producer_topic = :producer_topic
+        FROM rows_to_claim
+        WHERE queue.message_key = rows_to_claim.message_key
+        RETURNING
+            queue.dataset_id,
+            queue.run_id,
+            queue.asset_id,
+            queue.message_key,
+            queue.generated_row_id,
+            queue.observation_index,
+            queue.observation_timestamp,
+            queue.message_sequence_index,
+            queue.batch_id,
+            queue.row_in_batch,
+            queue.global_cycle_id,
+            queue.stream_state,
+            queue.phase,
+            queue.created_at,
+            queue.meta_episode_id,
+            queue.meta_primary_fault_type,
+            queue.meta_magnitude,
+            queue.sensor_name,
+            queue.sensor_index,
+            queue.sensor_value,
+            queue.is_telemetry_event,
+            queue.telemetry_event_type,
+            queue.producer_send_attempt,
+            queue.queue_status,
+            queue.queued_at,
+            queue.claim_token,
+            queue.claimed_at,
+            queue.producer_topic,
+            queue.producer_worker_id
+    )
+    SELECT *
+    FROM claimed_rows
+    ORDER BY observation_index, message_sequence_index, sensor_index
+    """
+
+    with engine.begin() as connection:
+        dataframe = pd.read_sql(
+            text(sql),
+            connection,
+            params={
+                "batch_size": int(batch_size),
+                "claim_token": claim_token,
+                "producer_worker_id": str(producer_worker_id),
+                "producer_topic": str(producer_topic),
+            },
+        )
+
+    return claim_token, dataframe
+
+
 
 def mark_claimed_batch_sent(
     engine,
@@ -572,6 +663,7 @@ __all__ = [
     "read_simulation_state_control",
     "get_send_queue_status_counts",
     "claim_pending_send_queue_batch",
+    "claim_pending_sensor_messages_batch",
     "mark_claimed_batch_sent",
     "mark_claimed_batch_failed",
     "requeue_failed_messages",

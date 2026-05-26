@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Sequence
+from time import perf_counter
 
 import pandas as pd
 
@@ -9,7 +10,9 @@ from utils.database.postgres import (
     create_schema_if_not_exists,
     execute_sql,
     read_sql_dataframe,
+    table_exists,
 )
+
 from utils.database.layer_postgres import write_layer_dataframe
 
 from utils.database.chunk_stage_util import (
@@ -17,6 +20,15 @@ from utils.database.chunk_stage_util import (
     get_table_row_count,
     process_postgres_table_in_chunks,
 )
+
+# -----------------------------------------------------------------------------
+# Time Logging helpers
+# -----------------------------------------------------------------------------
+
+def log_step_timing(step_name: str, start_time: float) -> float:
+    elapsed_seconds = perf_counter() - start_time
+    print(f"[timing] {step_name}: {elapsed_seconds:,.2f} seconds")
+    return perf_counter()
 
 # -----------------------------------------------------------------------------
 # Validation helpers
@@ -64,6 +76,10 @@ def _ensure_send_queue_runtime_columns(
         f'''
         ALTER TABLE "{safe_schema}"."{safe_table}"
         ADD COLUMN IF NOT EXISTS producer_ack_at TIMESTAMPTZ;
+        ''',
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_dataset_run_obs"
+        ON "{safe_schema}"."{safe_table}" (dataset_id, run_id, observation_index);
         ''',
     ]
 
@@ -152,7 +168,7 @@ def _apply_send_queue_owner_and_grants(
 
 
 # -----------------------------------------------------------------------------
-# Stage builder
+# Stage builder - Old Method
 # -----------------------------------------------------------------------------
 
 def build_sensor_messages_send_queue(
@@ -352,6 +368,240 @@ def build_sensor_messages_send_queue(
 
     return safe_target_table
 
+# -----------------------------------------------------------------------------
+# Stage builder - SQL Native
+# -----------------------------------------------------------------------------
+
+def build_sensor_messages_send_queue_sql_native(
+    engine,
+    *,
+    schema: str = "capstone",
+    source_table: str = "synthetic_sensor_messages_stage",
+    target_table: str = "synthetic_sensor_messages_send_queue",
+    if_exists: str = "replace",
+    queue_status_default: str = "pending",
+    queue_owner_role: str = "kafka_producer",
+    apply_owner_and_grants: bool = False,
+    enable_timing_logging: bool = True,
+) -> str:
+    """
+    Build the synthetic sensor message send queue directly inside Postgres.
+
+    This avoids reading 11M+ rows into pandas just to add queue metadata.
+    The output table keeps the same queue/runtime fields expected by the
+    producer queue manager and Kafka producer stages.
+    """
+    timer = perf_counter()
+
+    safe_schema = create_schema_if_not_exists(engine, schema)
+    safe_source_table = sanitize_sql_identifier(source_table)
+    safe_target_table = sanitize_sql_identifier(target_table)
+
+    source_columns = get_table_columns(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+    )
+
+    required_columns = [
+        "dataset_id",
+        "run_id",
+        "asset_id",
+        "generated_row_id",
+        "observation_index",
+        "observation_timestamp",
+        "message_sequence_index",
+        "batch_id",
+        "row_in_batch",
+        "global_cycle_id",
+        "stream_state",
+        "phase",
+        "created_at",
+        "meta_episode_id",
+        "meta_primary_fault_type",
+        "meta_magnitude",
+        "sensor_name",
+        "sensor_index",
+        "sensor_value",
+        "is_telemetry_event",
+        "telemetry_event_type",
+        "producer_send_attempt",
+    ]
+
+    missing_columns = [
+        column
+        for column in required_columns
+        if column not in source_columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            "Send-queue source table is missing required columns: "
+            + ", ".join(missing_columns)
+        )
+
+    source_row_count = get_table_row_count(
+        engine,
+        schema_name=safe_schema,
+        table_name=safe_source_table,
+    )
+
+    if source_row_count == 0:
+        raise ValueError(
+            f"Source table '{safe_schema}.{safe_source_table}' is empty."
+        )
+
+    if enable_timing_logging:
+        timer = log_step_timing("source validation complete", timer)
+
+    write_mode = str(if_exists).strip().lower()
+    target_exists = table_exists(
+        engine,
+        schema=safe_schema,
+        table_name=safe_target_table,
+    )
+
+    create_select_sql = f'''
+    SELECT
+        dataset_id,
+        run_id,
+        asset_id,
+        CONCAT_WS(
+            '|',
+            dataset_id::TEXT,
+            run_id::TEXT,
+            asset_id::TEXT,
+            observation_index::TEXT,
+            sensor_index::TEXT
+        ) AS message_key,
+        generated_row_id,
+        observation_index,
+        observation_timestamp,
+        message_sequence_index,
+        batch_id,
+        row_in_batch,
+        global_cycle_id,
+        stream_state,
+        phase,
+        created_at,
+        meta_episode_id,
+        meta_primary_fault_type,
+        meta_magnitude,
+        sensor_name,
+        sensor_index,
+        sensor_value,
+        is_telemetry_event,
+        telemetry_event_type,
+        producer_send_attempt,
+        CAST(:queue_status_default AS TEXT) AS queue_status,
+        CURRENT_TIMESTAMP AS queued_at,
+        NULL::TEXT AS claim_token,
+        NULL::TIMESTAMPTZ AS claimed_at,
+        NULL::TEXT AS producer_topic,
+        NULL::TEXT AS producer_worker_id,
+        NULL::TIMESTAMPTZ AS producer_sent_at,
+        NULL::TIMESTAMPTZ AS producer_ack_at,
+        NULL::TEXT AS producer_delivery_status,
+        NULL::TEXT AS producer_delivery_error
+    FROM "{safe_schema}"."{safe_source_table}"
+    ORDER BY observation_index, message_sequence_index, sensor_index
+    '''
+
+    params = {
+        "queue_status_default": str(queue_status_default).strip(),
+    }
+
+    if write_mode == "replace":
+        execute_sql(
+            engine,
+            f'DROP TABLE IF EXISTS "{safe_schema}"."{safe_target_table}" CASCADE;',
+        )
+
+        execute_sql(
+            engine,
+            f'''
+            CREATE TABLE "{safe_schema}"."{safe_target_table}" AS
+            {create_select_sql}
+            ''',
+            params=params,
+        )
+
+    elif write_mode == "fail":
+        if target_exists:
+            raise ValueError(
+                f"Target table already exists: {safe_schema}.{safe_target_table}"
+            )
+
+        execute_sql(
+            engine,
+            f'''
+            CREATE TABLE "{safe_schema}"."{safe_target_table}" AS
+            {create_select_sql}
+            ''',
+            params=params,
+        )
+
+    elif write_mode == "append":
+        if not target_exists:
+            execute_sql(
+                engine,
+                f'''
+                CREATE TABLE "{safe_schema}"."{safe_target_table}" AS
+                {create_select_sql}
+                ''',
+                params=params,
+            )
+        else:
+            execute_sql(
+                engine,
+                f'''
+                INSERT INTO "{safe_schema}"."{safe_target_table}"
+                {create_select_sql}
+                ''',
+                params=params,
+            )
+
+    else:
+        raise ValueError("if_exists must be one of: 'replace', 'append', 'fail'.")
+
+    if enable_timing_logging:
+        timer = log_step_timing("send queue table build complete", timer)
+
+    _ensure_send_queue_runtime_columns(
+        engine,
+        schema=safe_schema,
+        table_name=safe_target_table,
+    )
+
+    if enable_timing_logging:
+        timer = log_step_timing("runtime columns verified", timer)
+
+    _ensure_send_queue_indexes(
+        engine,
+        schema=safe_schema,
+        table_name=safe_target_table,
+    )
+
+    execute_sql(
+        engine,
+        f'ANALYZE "{safe_schema}"."{safe_target_table}";',
+    )
+
+    if enable_timing_logging:
+        timer = log_step_timing("indexes/analyze complete", timer)
+
+    if apply_owner_and_grants:
+        _apply_send_queue_owner_and_grants(
+            engine,
+            schema=safe_schema,
+            table_name=safe_target_table,
+            owner_role=queue_owner_role,
+        )
+
+        if enable_timing_logging:
+            timer = log_step_timing("owner/grants applied", timer)
+
+    return safe_target_table
 
 # -----------------------------------------------------------------------------
 # Validation helper
@@ -382,5 +632,6 @@ def validate_sensor_messages_send_queue(
 
 __all__ = [
     "build_sensor_messages_send_queue",
+    "build_sensor_messages_send_queue_sql_native",
     "validate_sensor_messages_send_queue",
 ]

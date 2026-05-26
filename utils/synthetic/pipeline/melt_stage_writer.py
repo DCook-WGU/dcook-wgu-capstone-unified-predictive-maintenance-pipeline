@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Sequence
 
-import os
 import gc
 
-from utils.database.chunk_stage_util import log_memory
+
+from time import perf_counter
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,20 @@ from utils.database.layer_postgres import write_layer_dataframe
 from utils.database.chunk_stage_util import (
     get_table_row_count,
     process_postgres_table_in_chunks,
+    log_memory,
 )
+
+
+
+
+# -----------------------------------------------------------------------------
+# Time Logging helpers
+# -----------------------------------------------------------------------------
+
+def log_step_timing(step_name: str, start_time: float) -> float:
+    elapsed_seconds = perf_counter() - start_time
+    print(f"[timing] {step_name}: {elapsed_seconds:,.2f} seconds")
+    return perf_counter()
 
 
 # -----------------------------------------------------------------------------
@@ -393,7 +406,7 @@ def build_sensor_messages_stage_sql_native(
     source_table: str,
     target_table: str,
     n_sensors: int = 52,
-    enable_memory_logging=enable_memory_logging,
+    enable_memory_logging: bool = False,
 ) -> str:
     sensor_columns = [f"sensor_{sensor_index:02d}" for sensor_index in range(n_sensors)]
 
@@ -404,6 +417,8 @@ def build_sensor_messages_stage_sql_native(
         sensor_columns=sensor_columns,
     )
 
+    timer = perf_counter()
+
     if enable_memory_logging:
         log_memory("stage 04 sql-native - before metadata read")
 
@@ -412,6 +427,8 @@ def build_sensor_messages_stage_sql_native(
         schema=schema,
         table_name=source_table,
     )
+
+    timer = log_step_timing("metadata read complete", timer)
     if enable_memory_logging:
         log_memory("stage 04 sql-native - after metadata read")
 
@@ -468,6 +485,7 @@ def build_sensor_messages_stage_sql_native(
         """,
     ]
 
+    
     if enable_memory_logging:
         log_memory("stage 04 sql-native - before SQL melt/create table")
 
@@ -475,15 +493,21 @@ def build_sensor_messages_stage_sql_native(
         conn.execute(text(f"DROP TABLE IF EXISTS {target_fq} CASCADE"))
         conn.execute(text(create_sql))
 
+        timer = log_step_timing("SQL melt/create table complete", timer)
+
         if enable_memory_logging:
             log_memory("stage 04 sql-native - after SQL melt/create table")
 
         if enable_memory_logging:
             log_memory("stage 04 sql-native - before indexes/analyze")
+
         for index_sql in index_sql_statements:
             conn.execute(text(index_sql))
 
         conn.execute(text(f"ANALYZE {target_fq}"))
+
+        timer = log_step_timing("indexes/analyze complete", timer)
+
         if enable_memory_logging:
             log_memory("stage 04 sql-native - after indexes/analyze")
 
@@ -524,5 +548,6 @@ def validate_sensor_messages_stage(
 
 __all__ = [
     "build_sensor_messages_stage",
+    "build_sensor_messages_stage_sql_native",
     "validate_sensor_messages_stage",
 ]
