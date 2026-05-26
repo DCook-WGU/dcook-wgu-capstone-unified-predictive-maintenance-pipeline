@@ -375,6 +375,7 @@ def claim_pending_send_queue_batch(
         producer_worker_id=producer_worker_id or "producer_worker_default",
         producer_topic=producer_topic or "pump.telemetry.synthetic",
         claim_token=claim_token,
+        ensure_runtime_columns=False,
     )
 
     return dataframe
@@ -390,6 +391,7 @@ def claim_pending_sensor_messages_batch(
     producer_worker_id: str = "producer_worker_001",
     producer_topic: str = "pump.telemetry.synthetic",
     claim_token: Optional[str] = None,
+    ensure_runtime_columns: bool = False,
 ) -> tuple[str, pd.DataFrame]:
     """
     Atomically claim one producer batch from the send queue.
@@ -414,11 +416,12 @@ def claim_pending_sensor_messages_batch(
     safe_schema = sanitize_sql_identifier(schema)
     safe_queue_table = sanitize_sql_identifier(queue_table)
 
-    ensure_send_queue_runtime_columns(
-        engine,
-        schema=safe_schema,
-        table_name=safe_queue_table,
-    )
+    if ensure_runtime_columns:
+        ensure_send_queue_runtime_columns(
+            engine,
+            schema=safe_schema,
+            table_name=safe_queue_table,
+        )
 
     resolved_claim_token = str(claim_token).strip() if claim_token else str(uuid.uuid4())
 
@@ -561,6 +564,77 @@ def mark_claimed_batch_failed(
         },
     )
 
+def mark_claimed_batch_sent_count(
+    engine,
+    *,
+    claim_token: str,
+    schema: str = "capstone",
+    table_name: str = "synthetic_sensor_messages_send_queue",
+) -> int:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+
+    sql = f"""
+    WITH updated AS (
+        UPDATE "{safe_schema}"."{safe_table}"
+        SET
+            queue_status = 'sent',
+            producer_sent_at = now(),
+            producer_ack_at = now(),
+            producer_delivery_status = 'sent',
+            producer_delivery_error = NULL
+        WHERE claim_token = :claim_token
+          AND queue_status = 'claimed'
+        RETURNING 1
+    )
+    SELECT COUNT(*) AS updated_count
+    FROM updated
+    """
+
+    dataframe = read_sql_dataframe(
+        engine,
+        sql,
+        params={"claim_token": str(claim_token).strip()},
+    )
+
+    return int(dataframe.loc[0, "updated_count"])
+
+def mark_claimed_batch_failed_count(
+    engine,
+    *,
+    claim_token: str,
+    error_message: str,
+    schema: str = "capstone",
+    table_name: str = "synthetic_sensor_messages_send_queue",
+) -> int:
+    safe_schema = sanitize_sql_identifier(schema)
+    safe_table = sanitize_sql_identifier(table_name)
+
+    sql = f"""
+    WITH updated AS (
+        UPDATE "{safe_schema}"."{safe_table}"
+        SET
+            queue_status = 'failed',
+            producer_delivery_status = 'failed',
+            producer_delivery_error = :error_message
+        WHERE claim_token = :claim_token
+          AND queue_status = 'claimed'
+        RETURNING 1
+    )
+    SELECT COUNT(*) AS updated_count
+    FROM updated
+    """
+
+    dataframe = read_sql_dataframe(
+        engine,
+        sql,
+        params={
+            "claim_token": str(claim_token).strip(),
+            "error_message": str(error_message).strip(),
+        },
+    )
+
+    return int(dataframe.loc[0, "updated_count"])
 
 def requeue_failed_messages(
     engine,
@@ -656,6 +730,8 @@ __all__ = [
     "claim_pending_sensor_messages_batch",
     "mark_claimed_batch_sent",
     "mark_claimed_batch_failed",
+    "mark_claimed_batch_sent_count",
+    "mark_claimed_batch_failed_count",
     "requeue_failed_messages",
     "release_stale_claims",
 ]

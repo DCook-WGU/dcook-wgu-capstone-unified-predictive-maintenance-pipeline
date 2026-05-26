@@ -7,12 +7,14 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Mapping, Optional, Sequence
 
+from time import perf_counter
+
 import pandas as pd
 
 from utils.synthetic.pipeline.producer_queue_manager import (
-    claim_pending_send_queue_batch,
-    mark_claimed_batch_failed,
-    mark_claimed_batch_sent,
+    claim_pending_sensor_messages_batch,
+    mark_claimed_batch_failed_count,
+    mark_claimed_batch_sent_count,
     read_simulation_state_control,
 )
 
@@ -233,8 +235,10 @@ def publish_claimed_batch_to_kafka(
         else:
             delivered_count += 1
 
-    for _, row in working.iterrows():
-        payload = build_sensor_message_payload(row.to_dict())
+    POLL_EVERY_MESSAGES = 1000
+
+    for row_number, row in enumerate(working.to_dict("records"), start=1):
+        payload = build_sensor_message_payload(row)
         key = str(row.get("message_key"))
         value = json_dumps_safe(payload)
 
@@ -247,10 +251,12 @@ def publish_claimed_batch_to_kafka(
                     value=value,
                     on_delivery=_delivery_callback,
                 )
-                producer.poll(0)
                 produced = True
             except BufferError:
                 producer.poll(0.25)
+
+        if row_number % POLL_EVERY_MESSAGES == 0:
+            producer.poll(0)
 
     remaining = producer.flush(timeout=float(flush_timeout_seconds))
 
@@ -317,15 +323,16 @@ def run_send_queue_producer_once(
         )
         created_producer = True
 
-    claimed_dataframe = claim_pending_send_queue_batch(
+    claim_token, claimed_dataframe = claim_pending_sensor_messages_batch(
         engine=engine,
         dataset_id=dataset_id,
         run_id=run_id,
         batch_size=resolved_batch_size,
         schema=schema,
-        table_name=queue_table,
+        queue_table=queue_table,
         producer_topic=resolved_topic,
         producer_worker_id=producer_worker_id,
+        ensure_runtime_columns=False,
     )
 
     if claimed_dataframe.empty:
@@ -336,8 +343,6 @@ def run_send_queue_producer_once(
             "failed_rows": 0,
             "topic": resolved_topic,
         }
-
-    claim_token = str(claimed_dataframe["claim_token"].iloc[0])
 
     try:
         publish_result = publish_claimed_batch_to_kafka(
@@ -362,18 +367,19 @@ def run_send_queue_producer_once(
 
             error_message = " | ".join(all_errors)[:4000]
 
-            failed_df = mark_claimed_batch_failed(
+            failed_count = mark_claimed_batch_failed_count(
                 engine=engine,
                 claim_token=claim_token,
                 error_message=error_message,
                 schema=schema,
                 table_name=queue_table,
             )
+
             return {
                 "status": "failed",
-                "claimed_rows": expected_count,
+                "claimed_rows": int(len(claimed_dataframe)),
                 "sent_rows": 0,
-                "failed_rows": int(len(failed_df)),
+                "failed_rows": int(failed_count),
                 "topic": resolved_topic,
                 "claim_token": claim_token,
                 "errors": all_errors,
@@ -381,7 +387,7 @@ def run_send_queue_producer_once(
                 "expected_count": expected_count,
             }
 
-        sent_df = mark_claimed_batch_sent(
+        sent_count = mark_claimed_batch_sent_count(
             engine=engine,
             claim_token=claim_token,
             schema=schema,
@@ -389,33 +395,38 @@ def run_send_queue_producer_once(
         )
 
         return {
-                    "status": "sent",
-                    "claimed_rows": int(len(claimed_dataframe)),
-                    "sent_rows": int(len(sent_df)),
-                    "failed_rows": 0,
-                    "topic": resolved_topic,
-                    "claim_token": claim_token,
-                    "errors": [],
-                    "delivered_count": delivered_count,
-                    "expected_count": expected_count,
-                }
+            "status": "sent",
+            "claimed_rows": int(len(claimed_dataframe)),
+            "sent_rows": int(sent_count),
+            "failed_rows": 0,
+            "topic": resolved_topic,
+            "claim_token": claim_token,
+            "errors": [],
+            "delivered_count": delivered_count,
+            "expected_count": expected_count,
+        }
 
     except Exception as exc:
-        failed_df = mark_claimed_batch_failed(
+        error_message = str(exc)[:4000]
+
+        failed_count = mark_claimed_batch_failed_count(
             engine=engine,
             claim_token=claim_token,
-            error_message=str(exc),
+            error_message=error_message,
             schema=schema,
             table_name=queue_table,
         )
+
         return {
             "status": "failed",
             "claimed_rows": int(len(claimed_dataframe)),
             "sent_rows": 0,
-            "failed_rows": int(len(failed_df)),
+            "failed_rows": int(failed_count),
             "topic": resolved_topic,
             "claim_token": claim_token,
-            "errors": [str(exc)],
+            "errors": [error_message],
+            "delivered_count": 0,
+            "expected_count": int(len(claimed_dataframe)),
         }
     
     finally:
@@ -440,6 +451,8 @@ def run_send_queue_producer_loop(
     max_batches: Optional[int] = None,
     stop_on_failure: bool = True,
     flush_timeout_seconds: float = 30.0,
+    enable_progress_logging: bool = True,
+    progress_every_batches: int = 1,
 ) -> list[dict[str, Any]]:
     """
     Repeatedly publish queue batches until:
@@ -455,10 +468,18 @@ def run_send_queue_producer_loop(
     )
 
     batch_counter = 0
+    cumulative_claimed_rows = 0
+    cumulative_sent_rows = 0
+    cumulative_failed_rows = 0
 
     try:
         while True:
             if max_batches is not None and batch_counter >= int(max_batches):
+                if enable_progress_logging:
+                    print(
+                        f"[producer-loop] max_batches reached: {max_batches}",
+                        flush=True,
+                    )
                 break
 
             control_row = read_simulation_state_control(
@@ -470,16 +491,24 @@ def run_send_queue_producer_loop(
             )
 
             if not bool(control_row.get("is_enabled", False)):
-                results.append(
-                    {
-                        "status": "disabled",
-                        "claimed_rows": 0,
-                        "sent_rows": 0,
-                        "failed_rows": 0,
-                        "topic": control_row.get("producer_topic"),
-                    }
-                )
+                disabled_result = {
+                    "status": "disabled",
+                    "claimed_rows": 0,
+                    "sent_rows": 0,
+                    "failed_rows": 0,
+                    "topic": control_row.get("producer_topic"),
+                }
+                results.append(disabled_result)
+
+                if enable_progress_logging:
+                    print(
+                        "[producer-loop] disabled by simulation_state_control.",
+                        flush=True,
+                    )
+
                 break
+
+            batch_started_at = time.perf_counter()
 
             result = run_send_queue_producer_once(
                 engine=engine,
@@ -493,13 +522,60 @@ def run_send_queue_producer_loop(
                 client_id=client_id,
                 flush_timeout_seconds=flush_timeout_seconds,
             )
+
+            batch_elapsed_seconds = time.perf_counter() - batch_started_at
+
             results.append(result)
             batch_counter += 1
 
+            claimed_rows = int(result.get("claimed_rows", 0) or 0)
+            sent_rows = int(result.get("sent_rows", 0) or 0)
+            failed_rows = int(result.get("failed_rows", 0) or 0)
+
+            messages_per_second = (
+                sent_rows / batch_elapsed_seconds
+                if batch_elapsed_seconds > 0
+                else 0.0
+            )
+
+            cumulative_claimed_rows += claimed_rows
+            cumulative_sent_rows += sent_rows
+            cumulative_failed_rows += failed_rows
+
+            should_print_progress = (
+                enable_progress_logging
+                and progress_every_batches > 0
+                and batch_counter % int(progress_every_batches) == 0
+            )
+
+            if should_print_progress:
+                print(
+                    "[producer-loop] "
+                    f"batch={batch_counter:,} | "
+                    f"status={result.get('status')} | "
+                    f"seconds={batch_elapsed_seconds:,.2f} | "
+                    f"msg_per_sec={messages_per_second:,.0f} | "
+                    f"claimed={claimed_rows:,} | "
+                    f"sent={sent_rows:,} | "
+                    f"failed={failed_rows:,} | "
+                    f"delivered={int(result.get('delivered_count', 0) or 0):,} | "
+                    f"cumulative_sent={cumulative_sent_rows:,} | "
+                    f"cumulative_failed={cumulative_failed_rows:,}",
+                    flush=True,
+                )
+
             if result["status"] == "empty":
+                if enable_progress_logging:
+                    print("[producer-loop] queue is empty.", flush=True)
                 break
 
             if result["status"] == "failed" and stop_on_failure:
+                if enable_progress_logging:
+                    print(
+                        "[producer-loop] stopping on failure. "
+                        f"errors={result.get('errors', [])}",
+                        flush=True,
+                    )
                 break
 
             poll_seconds = float(control_row.get("producer_poll_seconds") or 0.0)
@@ -512,7 +588,18 @@ def run_send_queue_producer_loop(
         except Exception:
             pass
 
+        if enable_progress_logging:
+            print(
+                "[producer-loop] finished | "
+                f"batches={batch_counter:,} | "
+                f"cumulative_claimed={cumulative_claimed_rows:,} | "
+                f"cumulative_sent={cumulative_sent_rows:,} | "
+                f"cumulative_failed={cumulative_failed_rows:,}",
+                flush=True,
+            )
+
     return results
+
 
 
 __all__ = [
