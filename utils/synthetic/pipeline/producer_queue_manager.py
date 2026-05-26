@@ -127,6 +127,17 @@ def ensure_send_queue_runtime_columns(
         ON "{safe_schema}"."{safe_table}" (queue_status, observation_index, message_sequence_index, sensor_index);
         ''',
         f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_dataset_run_claim_order"
+        ON "{safe_schema}"."{safe_table}" (
+            queue_status,
+            dataset_id,
+            run_id,
+            observation_index,
+            message_sequence_index,
+            sensor_index
+        );
+        ''',
+        f'''
         CREATE INDEX IF NOT EXISTS "idx_{safe_table}_claimed_at"
         ON "{safe_schema}"."{safe_table}" (claimed_at);
         ''',
@@ -349,10 +360,45 @@ def claim_pending_send_queue_batch(
     claim_token: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Atomically claim the next pending queue rows in deterministic send order.
+    Compatibility wrapper around claim_pending_sensor_messages_batch.
 
-    Uses FOR UPDATE SKIP LOCKED so multiple workers can safely operate without
-    claiming the same rows.
+    Prefer claim_pending_sensor_messages_batch for new producer code because it
+    returns both claim_token and dataframe.
+    """
+    _, dataframe = claim_pending_sensor_messages_batch(
+        engine=engine,
+        dataset_id=dataset_id,
+        run_id=run_id,
+        schema=schema,
+        queue_table=table_name,
+        batch_size=batch_size,
+        producer_worker_id=producer_worker_id or "producer_worker_default",
+        producer_topic=producer_topic or "pump.telemetry.synthetic",
+        claim_token=claim_token,
+    )
+
+    return dataframe
+
+def claim_pending_sensor_messages_batch(
+    engine,
+    *,
+    dataset_id: str,
+    run_id: str,
+    schema: str = "capstone",
+    queue_table: str = "synthetic_sensor_messages_send_queue",
+    batch_size: int = 26000,
+    producer_worker_id: str = "producer_worker_001",
+    producer_topic: str = "pump.telemetry.synthetic",
+    claim_token: Optional[str] = None,
+) -> tuple[str, pd.DataFrame]:
+    """
+    Atomically claim one producer batch from the send queue.
+
+    This is the preferred queue-claim function for the synthetic sensor-message
+    producer path.
+
+    It filters by dataset_id and run_id, claims rows in deterministic send order,
+    and uses FOR UPDATE SKIP LOCKED so multiple workers cannot claim the same rows.
     """
     if batch_size <= 0:
         raise ValueError("batch_size must be > 0")
@@ -366,86 +412,24 @@ def claim_pending_send_queue_batch(
         raise ValueError("run_id cannot be empty")
 
     safe_schema = sanitize_sql_identifier(schema)
-    safe_table = sanitize_sql_identifier(table_name)
+    safe_queue_table = sanitize_sql_identifier(queue_table)
 
     ensure_send_queue_runtime_columns(
         engine,
-        schema=schema,
-        table_name=table_name,
+        schema=safe_schema,
+        table_name=safe_queue_table,
     )
 
     resolved_claim_token = str(claim_token).strip() if claim_token else str(uuid.uuid4())
-    resolved_worker_id = (
-        str(producer_worker_id).strip()
-        if producer_worker_id
-        else "producer_worker_default"
-    )
-    resolved_topic = None if producer_topic is None else str(producer_topic).strip()
-
-    sql = f"""
-    WITH next_rows AS (
-        SELECT ctid
-        FROM "{safe_schema}"."{safe_table}"
-        WHERE queue_status = 'pending'
-          AND producer_sent_at IS NULL
-          AND dataset_id = :dataset_id
-          AND run_id = :run_id
-        ORDER BY observation_index, message_sequence_index, sensor_index
-        LIMIT :batch_size
-        FOR UPDATE SKIP LOCKED
-    )
-    UPDATE "{safe_schema}"."{safe_table}" AS q
-    SET
-        queue_status = 'claimed',
-        claim_token = :claim_token,
-        claimed_at = now(),
-        producer_worker_id = :producer_worker_id,
-        producer_topic = COALESCE(:producer_topic, q.producer_topic),
-        producer_delivery_status = 'claimed',
-        producer_delivery_error = NULL
-    FROM next_rows
-    WHERE q.ctid = next_rows.ctid
-    RETURNING q.*
-    """
-
-    return read_sql_dataframe(
-        engine,
-        sql,
-        params={
-            "dataset_id": resolved_dataset_id,
-            "run_id": resolved_run_id,
-            "batch_size": int(batch_size),
-            "claim_token": resolved_claim_token,
-            "producer_worker_id": resolved_worker_id,
-            "producer_topic": resolved_topic,
-        },
-    )
-
-def claim_pending_sensor_messages_batch(
-    engine,
-    *,
-    schema: str = "capstone",
-    queue_table: str = "synthetic_sensor_messages_send_queue",
-    batch_size: int = 26000,
-    producer_worker_id: str = "producer_worker_001",
-    producer_topic: str = "pump.telemetry.synthetic",
-) -> tuple[str, pd.DataFrame]:
-    """
-    Atomically claim one producer batch from the send queue.
-
-    This function changes rows from pending to claimed and returns the claimed
-    rows for Kafka production. FOR UPDATE SKIP LOCKED keeps this safe if more
-    than one producer worker is ever used.
-    """
-    safe_schema = sanitize_sql_identifier(schema)
-    safe_queue_table = sanitize_sql_identifier(queue_table)
-    claim_token = str(uuid.uuid4())
 
     sql = f"""
     WITH rows_to_claim AS (
         SELECT message_key
         FROM "{safe_schema}"."{safe_queue_table}"
         WHERE queue_status = 'pending'
+          AND producer_sent_at IS NULL
+          AND dataset_id = :dataset_id
+          AND run_id = :run_id
         ORDER BY observation_index, message_sequence_index, sensor_index
         LIMIT :batch_size
         FOR UPDATE SKIP LOCKED
@@ -457,7 +441,9 @@ def claim_pending_sensor_messages_batch(
             claim_token = :claim_token,
             claimed_at = CURRENT_TIMESTAMP,
             producer_worker_id = :producer_worker_id,
-            producer_topic = :producer_topic
+            producer_topic = :producer_topic,
+            producer_delivery_status = 'claimed',
+            producer_delivery_error = NULL
         FROM rows_to_claim
         WHERE queue.message_key = rows_to_claim.message_key
         RETURNING
@@ -489,7 +475,9 @@ def claim_pending_sensor_messages_batch(
             queue.claim_token,
             queue.claimed_at,
             queue.producer_topic,
-            queue.producer_worker_id
+            queue.producer_worker_id,
+            queue.producer_delivery_status,
+            queue.producer_delivery_error
     )
     SELECT *
     FROM claimed_rows
@@ -501,14 +489,16 @@ def claim_pending_sensor_messages_batch(
             text(sql),
             connection,
             params={
+                "dataset_id": resolved_dataset_id,
+                "run_id": resolved_run_id,
                 "batch_size": int(batch_size),
-                "claim_token": claim_token,
-                "producer_worker_id": str(producer_worker_id),
-                "producer_topic": str(producer_topic),
+                "claim_token": resolved_claim_token,
+                "producer_worker_id": str(producer_worker_id).strip(),
+                "producer_topic": str(producer_topic).strip(),
             },
         )
 
-    return claim_token, dataframe
+    return resolved_claim_token, dataframe
 
 
 
