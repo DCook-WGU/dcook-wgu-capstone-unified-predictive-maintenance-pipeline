@@ -291,6 +291,92 @@ def ensure_consumed_stage_table_exists(
 
     return safe_table
 
+def ensure_consumed_stage_runtime_schema(
+    engine,
+    *,
+    schema: str = "capstone",
+    table_name: str = "synthetic_sensor_messages_consumed_stage",
+) -> str:
+    """
+    One-time setup for the consumed Kafka message landing table.
+
+    This should run once before the consumer loop starts. It avoids repeated
+    table/schema alignment checks inside every consumer batch.
+    """
+    safe_schema = create_schema_if_not_exists(engine, schema)
+    safe_table = ensure_consumed_stage_table_exists(
+        engine,
+        schema=safe_schema,
+        table_name=table_name,
+    )
+
+    column_statements = [
+        ("dataset_id", "TEXT"),
+        ("run_id", "TEXT"),
+        ("asset_id", "TEXT"),
+        ("generated_row_id", "TEXT"),
+
+        ("observation_timestamp", "TIMESTAMPTZ"),
+        ("batch_id", "BIGINT"),
+        ("row_in_batch", "BIGINT"),
+        ("global_cycle_id", "BIGINT"),
+        ("stream_state", "TEXT"),
+        ("phase", "TEXT"),
+
+        ("sensor_name", "TEXT"),
+        ("sensor_value", "DOUBLE PRECISION"),
+        ("message_sequence_index", "BIGINT"),
+
+        ("meta_episode_id", "TEXT"),
+        ("meta_primary_fault_type", "TEXT"),
+        ("meta_magnitude", "DOUBLE PRECISION"),
+        ("created_at", "TIMESTAMPTZ"),
+
+        ("is_telemetry_event", "BOOLEAN"),
+        ("telemetry_event_type", "TEXT"),
+
+        ("producer_send_attempt", "BIGINT"),
+        ("queued_at", "TIMESTAMPTZ"),
+
+        ("consumer_group_id", "TEXT"),
+        ("consumer_worker_id", "TEXT"),
+    ]
+
+    for column_name, column_type in column_statements:
+        safe_column = sanitize_sql_identifier(column_name)
+
+        execute_sql(
+            engine,
+            f'''
+            ALTER TABLE "{safe_schema}"."{safe_table}"
+            ADD COLUMN IF NOT EXISTS "{safe_column}" {column_type};
+            '''
+        )
+
+    execute_sql(
+        engine,
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_dataset_run_obs"
+        ON "{safe_schema}"."{safe_table}" (dataset_id, run_id, observation_index);
+        '''
+    )
+
+    execute_sql(
+        engine,
+        f'''
+        CREATE INDEX IF NOT EXISTS "idx_{safe_table}_dataset_run_rebuild"
+        ON "{safe_schema}"."{safe_table}" (dataset_id, run_id, rebuild_status);
+        '''
+    )
+
+    execute_sql(
+        engine,
+        f'''
+        ANALYZE "{safe_schema}"."{safe_table}";
+        '''
+    )
+
+    return safe_table
 
 def _yield_record_batches(records: list[dict[str, Any]], batch_size: int):
     if batch_size <= 0:
@@ -343,6 +429,8 @@ def write_consumed_messages_batch(
     *,
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_consumed_stage",
+    ensure_table: bool = False,
+    align_schema: bool = False,
 ) -> dict[str, Any]:
     """
     Append a consumer batch into the landed message table.
@@ -359,22 +447,27 @@ def write_consumed_messages_batch(
             "inserted_count": 0,
         }
 
-    safe_schema = create_schema_if_not_exists(engine, schema)
-    safe_table = ensure_consumed_stage_table_exists(
-        engine,
-        schema=schema,
-        table_name=table_name,
-    )
+    if ensure_table:
+        safe_schema = create_schema_if_not_exists(engine, schema)
+        safe_table = ensure_consumed_stage_runtime_schema(
+            engine,
+            schema=schema,
+            table_name=table_name,
+        )
+    else:
+        safe_schema = sanitize_sql_identifier(schema)
+        safe_table = sanitize_sql_identifier(table_name)
 
     working = dataframe.copy()
     working.columns = [sanitize_sql_identifier(column) for column in working.columns]
 
-    _add_missing_columns(
-        engine,
-        schema=safe_schema,
-        table=safe_table,
-        dataframe=working,
-    )
+    if align_schema:
+        _add_missing_columns(
+            engine,
+            schema=safe_schema,
+            table=safe_table,
+            dataframe=working,
+        )
 
     working = working.where(pd.notna(working), None)
     records = working.to_dict(orient="records")
@@ -384,7 +477,8 @@ def write_consumed_messages_batch(
         schema=safe_schema,
         table_name=safe_table,
         records=records,
-        chunk_size=1000,
+        #chunk_size=5000,
+        chunk_size=_get_env_int("KAFKA_CONSUMER_INSERT_CHUNK_SIZE", 5000),
     )
 
     return {
@@ -537,6 +631,8 @@ def land_consumed_messages_to_postgres(
         dataframe=dataframe,
         schema=schema,
         table_name=table_name,
+        ensure_table=False,
+        align_schema=False,
     )
 
     return {
@@ -676,6 +772,14 @@ def run_kafka_consumer_to_postgres_loop(
 
     resolved_group_id = summary["consumer_group_id"]
 
+    resolved_table_name = ensure_consumed_stage_runtime_schema(
+        engine,
+        schema=schema,
+        table_name=table_name,
+    )
+
+    table_name = resolved_table_name
+
     consumer = create_confluent_consumer(
         bootstrap_servers=bootstrap_servers,
         consumer_group_id=resolved_group_id,
@@ -765,6 +869,7 @@ __all__ = [
     "create_confluent_consumer",
     "build_consumed_message_record",
     "ensure_consumed_stage_table_exists",
+    "ensure_consumed_stage_runtime_schema",
     "write_consumed_messages_batch",
     "consume_kafka_messages_once",
     "land_consumed_messages_to_postgres",

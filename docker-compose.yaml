@@ -487,23 +487,25 @@ services:
       TZ: ${TZ:-UTC}
       LOCAL_TIMEZONE: ${LOCAL_TIMEZONE:-UTC}
       
-      PYTHONPATH: ${PYTHONPATH}
-      # Kafka connection
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      # Comma-separated list of topics this consumer group will read from
-      #CONSUMER_TOPICS: "water_pump_stream,tep_stream,azure_pdm_stream,turbofan_stream,ai4i_stream"
-      CONSUMER_TOPICS: ${KAFKA_TOPIC}
-      # Consumer group id (so you can scale db_consumer if you want)
-      CONSUMER_GROUP_ID: synthetic-telemetry-consumer-group
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-pump.telemetry.synthetic}
+
       CONSUMER_SCHEMA: ${CAPSTONE_SCHEMA:-capstone}
       CONSUMER_TARGET_TABLE: ${CONSUMER_TARGET_TABLE:-synthetic_sensor_messages_consumed_stage}
-      KAFKA_CONSUMER_GROUP_ID: synthetic-telemetry-consumer-group
 
-      KAFKA_CONSUMER_MAX_MESSAGES: 5200
-      KAFKA_CONSUMER_POLL_TIMEOUT_SECONDS: 1.0
-      KAFKA_CONSUMER_IDLE_SLEEP_SECONDS: 0.0
-      KAFKA_CONSUMER_STOP_ON_EMPTY: "false"
-      KAFKA_CONSUMER_PROGRESS_LOG_EVERY_BATCHES: 25
+      KAFKA_CONSUMER_GROUP_ID: ${CONSUMER_GROUP_ID:-synthetic-telemetry-consumer-group-run-001}
+      KAFKA_CONSUMER_MAX_MESSAGES: ${CONSUMER_MAX_MESSAGES:-26000}
+      KAFKA_CONSUMER_POLL_TIMEOUT_SECONDS: ${CONSUMER_POLL_TIMEOUT_SECONDS:-5.0}
+      KAFKA_CONSUMER_AUTO_OFFSET_RESET: ${CONSUMER_AUTO_OFFSET_RESET:-earliest}
+      KAFKA_CONSUMER_STOP_ON_EMPTY: ${CONSUMER_STOP_ON_EMPTY:-true}
+      KAFKA_CONSUMER_IDLE_SLEEP_SECONDS: ${CONSUMER_IDLE_SLEEP_SECONDS:-0.0}
+      KAFKA_CONSUMER_PROGRESS_LOG_EVERY_BATCHES: ${CONSUMER_PROGRESS_LOG_EVERY_BATCHES:-10}
+
+      KAFKA_CONSUMER_INSERT_CHUNK_SIZE: ${CONSUMER_INSERT_CHUNK_SIZE:-5000}
+  
+      PYTHONPATH: ${PYTHONPATH}
+      # Kafka connection
+
 
       # Database connection (same as app)
       DB_HOST: ${DB_HOST}
@@ -515,7 +517,12 @@ services:
       # Conda env name used inside the container
       ENV_NAME: ${ENV_NAME}
 
-    command: ["python", "-m", "infrastructure.kafka.consumers.run_kafka_db_consumer"]
+    command:
+      [
+        "/opt/miniconda/envs/capstone/bin/python",
+        "-m",
+        "infrastructure.kafka.consumers.run_kafka_db_consumer"
+      ]
     networks:
       - capstone_net
     # Uncomment to add GPU support for real-time ML inference, Stretch-goal or later addition
@@ -526,7 +533,6 @@ services:
     #      - driver: nvidia
     #        count: 1
     #        capabilities: ["gpu"]
-
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----   
