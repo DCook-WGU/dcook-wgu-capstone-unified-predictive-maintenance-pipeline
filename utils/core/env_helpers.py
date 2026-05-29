@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Sequence
-
+from typing import Any, Dict, Optional, Sequence
 
 TRUE_VALUES = {"1", "true", "t", "yes", "y", "on"}
 FALSE_VALUES = {"0", "false", "f", "no", "n", "off"}
@@ -133,3 +133,49 @@ def env_bool(name: str, default: bool, *, aliases: Sequence[str] = ()) -> bool:
         f"Invalid boolean value for {name}: {value!r}. "
         f"Use one of {sorted(TRUE_VALUES | FALSE_VALUES)}."
     )
+
+def get_first_env_value(names: Sequence[str]) -> Optional[str]:
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and str(value).strip() != "":
+            return str(value).strip()
+    return None
+
+
+def get_kafka_bootstrap_servers_from_env(
+    env_names: Sequence[str] = (
+        "KAFKA_BOOTSTRAP_SERVERS",
+        "BOOTSTRAP_SERVERS",
+        "KAFKA_BROKERS",
+    ),
+) -> str:
+    value = get_first_env_value(env_names)
+    if value is None:
+        raise RuntimeError(
+            "Missing Kafka bootstrap servers. Checked: "
+            + ", ".join(env_names)
+        )
+    return value
+
+
+def get_kafka_consumer_group_from_env(
+    env_names: Sequence[str] = (
+        "KAFKA_CONSUMER_GROUP_ID",
+        "CONSUMER_GROUP_ID",
+    ),
+    default: str = "synthetic-telemetry-consumer-group",
+) -> str:
+    return get_first_env_value(env_names) or str(default).strip()
+
+__all__ = [
+    "env_raw",
+    "env_required_str",
+    "env_str",
+    "env_int",
+    "env_optional_int",
+    "env_float",
+    "env_bool",
+    "get_first_env_value",
+    "get_kafka_bootstrap_servers_from_env",
+    "get_kafka_consumer_group_from_env",
+]

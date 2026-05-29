@@ -403,10 +403,18 @@ def write_final_aligned_observations(
         return sanitize_sql_identifier(table_name)
 
     safe_schema = create_schema_if_not_exists(engine, schema)
+    safe_table_name = sanitize_sql_identifier(table_name)
+
+    if if_exists == "replace":
+        execute_sql(
+            engine,
+            f'DROP TABLE IF EXISTS "{safe_schema}"."{safe_table_name}" CASCADE;'
+        )
+
     safe_table = ensure_final_aligned_table_exists(
         engine,
-        schema=schema,
-        table_name=table_name,
+        schema=safe_schema,
+        table_name=safe_table_name,
     )
 
     working = dataframe.copy()
@@ -424,7 +432,7 @@ def write_final_aligned_observations(
         dataframe=working,
         schema=safe_schema,
         table_name=safe_table,
-        if_exists=if_exists,
+        if_exists="append",
         index=False,
     )
 

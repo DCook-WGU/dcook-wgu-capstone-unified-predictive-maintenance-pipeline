@@ -88,7 +88,6 @@ def _normalize_missing_scalar(value):
         return None
     return value
 
-
 def _compare_scalar(left, right, *, float_tolerance: float = 1e-9) -> bool:
     left = _normalize_missing_scalar(left)
     right = _normalize_missing_scalar(right)
@@ -98,11 +97,20 @@ def _compare_scalar(left, right, *, float_tolerance: float = 1e-9) -> bool:
     if left is None or right is None:
         return False
 
-    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-        return abs(float(left) - float(right)) <= float(float_tolerance)
+    # Numeric comparison, including numeric-looking strings.
+    try:
+        left_float = float(left)
+        right_float = float(right)
 
-    return left == right
+        left_is_numeric_like = isinstance(left, (int, float, str))
+        right_is_numeric_like = isinstance(right, (int, float, str))
 
+        if left_is_numeric_like and right_is_numeric_like:
+            return abs(left_float - right_float) <= float(float_tolerance)
+    except (TypeError, ValueError):
+        pass
+
+    return str(left).strip() == str(right).strip()
 
 # -----------------------------------------------------------------------------
 # Validation helpers

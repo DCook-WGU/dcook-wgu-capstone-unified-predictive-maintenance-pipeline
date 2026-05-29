@@ -18,48 +18,22 @@ from utils.database.postgres import (
     read_sql_dataframe,
 )
 
+from utils.core.env_helpers import (
+    env_bool,
+    env_float,
+    env_int,
+    env_optional_int,
+    env_str,
+    get_first_env_value,
+    get_kafka_bootstrap_servers_from_env,
+    get_kafka_consumer_group_from_env,
+)
+
 try:
     from confluent_kafka import Consumer
 except ImportError:  # pragma: no cover
     Consumer = None
 
-
-# -----------------------------------------------------------------------------
-# Env helpers
-# -----------------------------------------------------------------------------
-
-def _get_first_env_value(names: Sequence[str]) -> Optional[str]:
-    for name in names:
-        value = os.getenv(name)
-        if value is not None and str(value).strip() != "":
-            return str(value).strip()
-    return None
-
-
-def get_kafka_bootstrap_servers_from_env(
-    env_names: Sequence[str] = (
-        "KAFKA_BOOTSTRAP_SERVERS",
-        "BOOTSTRAP_SERVERS",
-        "KAFKA_BROKERS",
-    ),
-) -> str:
-    value = _get_first_env_value(env_names)
-    if value is None:
-        raise RuntimeError(
-            "Missing Kafka bootstrap servers. Checked: "
-            + ", ".join(env_names)
-        )
-    return value
-
-
-def get_kafka_consumer_group_from_env(
-    env_names: Sequence[str] = (
-        "KAFKA_CONSUMER_GROUP_ID",
-        "CONSUMER_GROUP_ID",
-    ),
-    default: str = "synthetic-telemetry-consumer-group",
-) -> str:
-    return _get_first_env_value(env_names) or str(default).strip()
 
 
 # -----------------------------------------------------------------------------
@@ -477,8 +451,11 @@ def write_consumed_messages_batch(
         schema=safe_schema,
         table_name=safe_table,
         records=records,
-        #chunk_size=5000,
-        chunk_size=_get_env_int("KAFKA_CONSUMER_INSERT_CHUNK_SIZE", 5000),
+        chunk_size=env_int(
+            "KAFKA_CONSUMER_INSERT_CHUNK_SIZE",
+            5000,
+            aliases=("CONSUMER_INSERT_CHUNK_SIZE",),
+        ),
     )
 
     return {
@@ -863,8 +840,6 @@ def run_kafka_consumer_to_postgres_loop(
 
 
 __all__ = [
-    "get_kafka_bootstrap_servers_from_env",
-    "get_kafka_consumer_group_from_env",
     "build_confluent_consumer_config",
     "create_confluent_consumer",
     "build_consumed_message_record",

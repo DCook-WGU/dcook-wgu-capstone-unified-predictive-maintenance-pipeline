@@ -1,0 +1,46 @@
+{
+  "include": [
+    "."
+  ],
+
+  "exclude": [
+    "**/.*",
+    "**/.git",
+    "**/.venv",
+    "**/venv",
+    "**/__pycache__",
+    "**/.ipynb_checkpoints",
+    "**/node_modules",
+    "**/site-packages",
+    "**/dist-packages",
+
+    "data",
+    "artifacts",
+    "logs",
+    "models",
+    "wandb",
+    ".pytest_cache",
+    ".mypy_cache"
+  ],
+
+  "ignore": [
+    "**/*.pyi",
+    "**/bundled/native-stubs/**"
+  ],
+
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Linux",
+
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": false,
+
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

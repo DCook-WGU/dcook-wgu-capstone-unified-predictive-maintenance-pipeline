@@ -1,4 +1,4 @@
-@'
+#@'
 # reset_capstone.py
 # Deletes contents of selected folders (keeps the folders).
 
@@ -45,4 +45,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-'@ | Set-Content -Encoding UTF8 -Path .\reset_capstone.py
+'@ | Set-Content -Encoding UTF8 -Path .\reset_capstone.py'
