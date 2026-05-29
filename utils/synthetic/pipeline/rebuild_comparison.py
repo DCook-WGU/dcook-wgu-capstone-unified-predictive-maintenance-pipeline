@@ -602,5 +602,5 @@ __all__ = [
     "build_rebuild_comparison_dataframe",
     "ensure_rebuild_comparison_table_exists",
     "write_rebuild_comparison_batch",
-    "compare_premelt_to_rebuilt_observations",
+    "build_rebuild_comparison_stage",
 ]
