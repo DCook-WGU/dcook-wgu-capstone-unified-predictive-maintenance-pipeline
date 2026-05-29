@@ -114,6 +114,6 @@ run_sql_file "002_core_metadata_tables.sql"
 run_sql_file "003_streaming_runtime_tables.sql"
 run_sql_file "004_medallion_schema_shells.sql"
 run_sql_file "005_grants_ownership.sql"
-run_sql_file "006_synthetic_notebook_stage_tages.sql"
+run_sql_file "006_synthetic_notebook_stage_tables.sql"
 
 echo "[db-bootstrap] Split bootstrap complete."
