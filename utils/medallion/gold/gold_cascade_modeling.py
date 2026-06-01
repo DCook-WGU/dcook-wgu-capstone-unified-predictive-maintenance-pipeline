@@ -27,6 +27,57 @@ from utils.medallion.gold.gold_cascade_stage3_rules import (
 )
 
 
+def _array_to_float_list(values: Any) -> list[float]:
+    """
+    Convert NumPy/pandas score outputs to a plain Python list of floats.
+
+    The modeling helper signatures expect Sequence[float], while Pylance does
+    not treat ndarray or Series as Sequence even though they work at runtime.
+    """
+    return [float(value) for value in np.asarray(values, dtype=float).ravel().tolist()]
+
+
+def _array_to_object_list(values: Any) -> list[Any]:
+    """
+    Convert NumPy/pandas label outputs to a plain Python list for metrics calls.
+    """
+    return list(np.asarray(values).ravel().tolist())
+
+
+def _series_to_float_list(series: pd.Series) -> list[float]:
+    """
+    Convert a pandas Series to Sequence[float] for shared metric utilities.
+    """
+    return [
+        float(value)
+        for value in pd.to_numeric(series, errors="coerce").to_numpy(dtype=float).tolist()
+    ]
+
+
+def _series_to_object_list(series: pd.Series) -> list[Any]:
+    """
+    Convert a pandas Series to Sequence[Any] for shared metric utilities.
+    """
+    return list(series.to_numpy().tolist())
+
+
+def _evaluate_scored_frame(
+    scored_frame: pd.DataFrame,
+    *,
+    label_column: str,
+    prediction_column: str,
+    score_column: str,
+) -> Dict[str, Any]:
+    """
+    Pylance-safe wrapper around evaluate_against_labels.
+    """
+    return evaluate_against_labels(
+        _series_to_object_list(scored_frame[label_column]),
+        _series_to_object_list(scored_frame[prediction_column]),
+        scores=_series_to_float_list(scored_frame[score_column]),
+    )
+
+
 def fit_stage1_model(
     fit_dataframe: pd.DataFrame,
     *,
@@ -96,10 +147,12 @@ def _score_stage_dataframe(
     working_dataframe = dataframe.copy()
     use_features = [column_name for column_name in feature_columns if column_name in working_dataframe.columns]
 
-    score_values = compute_anomaly_scores_isolation_forest(
+    score_values_raw = compute_anomaly_scores_isolation_forest(
         fitted_model,
         working_dataframe[use_features],
     )
+    score_values = np.asarray(score_values_raw, dtype=float)
+    score_list = _array_to_float_list(score_values)
     working_dataframe[score_column] = score_values
 
     info: Dict[str, Any] = {
@@ -112,10 +165,11 @@ def _score_stage_dataframe(
     }
 
     if threshold is not None and prediction_column is not None:
-        predictions = build_prediction_flags_from_scores(score_values, threshold=threshold)
-        working_dataframe[prediction_column] = predictions
+        predictions = build_prediction_flags_from_scores(scores=score_list, threshold=threshold)
+        prediction_values = np.asarray(predictions, dtype=int)
+        working_dataframe[prediction_column] = prediction_values
         info["prediction_column"] = prediction_column
-        info["predicted_positive_count"] = int(np.sum(predictions))
+        info["predicted_positive_count"] = int(np.sum(prediction_values))
 
     return working_dataframe, info
 
@@ -142,16 +196,21 @@ def evaluate_stage2_model_with_thresholds(
         prediction_column=None,
     )
 
-    results = []
-    scores = scored_frame[score_column].to_numpy()
+    results: list[Dict[str, Any]] = []
+    scores = pd.to_numeric(scored_frame[score_column], errors="coerce").to_numpy(dtype=float)
+    score_list = _array_to_float_list(scores)
+    true_label_list = _series_to_object_list(scored_frame[label_column])
 
     for percentile in threshold_percentiles:
-        threshold, threshold_info = choose_threshold_by_percentile(scores, percentile=float(percentile))
-        predictions = build_prediction_flags_from_scores(scores, threshold=threshold)
+        threshold, threshold_info = choose_threshold_by_percentile(
+            score_list,
+            percentile=float(percentile),
+        )
+        predictions = build_prediction_flags_from_scores(score_list, threshold=threshold)
         metrics = evaluate_against_labels(
-            scored_frame[label_column],
-            predictions,
-            scores=scores,
+            true_label_list,
+            _array_to_object_list(predictions),
+            scores=score_list,
         )
         results.append(
             {
@@ -327,7 +386,7 @@ def run_cascade_pipeline(
         prediction_column=None,
     )
     stage1_threshold, stage1_threshold_info = choose_threshold_by_percentile(
-        train_stage1_unscored["stage1_anomaly_score"].to_numpy(),
+        _series_to_float_list(train_stage1_unscored["stage1_anomaly_score"]),
         percentile=float(variant_config["stage1_percentile"]),
     )
 
@@ -352,7 +411,7 @@ def run_cascade_pipeline(
             prediction_column=None,
         )
         stage2_threshold, stage2_threshold_info = choose_threshold_by_percentile(
-            train_stage2_unscored["stage2_anomaly_score"].to_numpy(),
+            _series_to_float_list(train_stage2_unscored["stage2_anomaly_score"]),
             percentile=float(variant_config["stage2_percentile"]),
         )
         stage2_selection_info = {
@@ -454,25 +513,29 @@ def run_cascade_pipeline(
     scored_test = _run_full_scoring(test_dataframe)
     scored_all = _run_full_scoring(all_dataframe)
 
-    fit_metrics = evaluate_against_labels(
-        scored_fit[label_column],
-        scored_fit["cascade_predicted_anomaly"],
-        scores=scored_fit["stage2_anomaly_score"],
+    fit_metrics = _evaluate_scored_frame(
+        scored_fit,
+        label_column=label_column,
+        prediction_column="cascade_predicted_anomaly",
+        score_column="stage2_anomaly_score",
     )
-    train_metrics = evaluate_against_labels(
-        scored_train[label_column],
-        scored_train["cascade_predicted_anomaly"],
-        scores=scored_train["stage2_anomaly_score"],
+    train_metrics = _evaluate_scored_frame(
+        scored_train,
+        label_column=label_column,
+        prediction_column="cascade_predicted_anomaly",
+        score_column="stage2_anomaly_score",
     )
-    test_metrics = evaluate_against_labels(
-        scored_test[label_column],
-        scored_test["cascade_predicted_anomaly"],
-        scores=scored_test["stage2_anomaly_score"],
+    test_metrics = _evaluate_scored_frame(
+        scored_test,
+        label_column=label_column,
+        prediction_column="cascade_predicted_anomaly",
+        score_column="stage2_anomaly_score",
     )
-    all_metrics = evaluate_against_labels(
-        scored_all[label_column],
-        scored_all["cascade_predicted_anomaly"],
-        scores=scored_all["stage2_anomaly_score"],
+    all_metrics = _evaluate_scored_frame(
+        scored_all,
+        label_column=label_column,
+        prediction_column="cascade_predicted_anomaly",
+        score_column="stage2_anomaly_score",
     )
 
     cascade_metrics = {

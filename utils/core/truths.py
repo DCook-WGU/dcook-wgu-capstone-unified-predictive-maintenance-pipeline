@@ -329,7 +329,7 @@ def get_dataset_name_from_truth(truth_record: Dict[str, Any]) -> str:
 #### #### #### #### 
 
 def get_dataset_name_from_truth(truth_record: Dict[str, Any]) -> str:
-    return get_truth_value(truth_record, "dataset_name")
+    return get_required_truth_value(truth_record, "dataset_name")
 
 
 
@@ -349,7 +349,7 @@ def get_truth_hash(truth_record: Dict[str, Any]) -> str:
 #### #### #### #### 
 
 def get_truth_hash(truth_record: Dict[str, Any]) -> str:
-    return get_truth_value(truth_record, "truth_hash")
+    return get_required_truth_value(truth_record, "truth_hash")
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -408,7 +408,7 @@ def get_artifact_path_from_truth(
 #### #### #### #### 
 
 def get_artifact_path_from_truth(truth_record: Dict[str, Any], key: str) -> str:
-    return get_truth_value(truth_record, "artifact_paths", key)
+    return get_required_truth_value(truth_record, "artifact_paths", key)
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -464,4 +464,20 @@ artifact_path = get_truth_value(truth_record, "artifact_paths", key)
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
+def get_required_truth_value(
+    truth_record: Dict[str, Any],
+    *path: str,
+) -> str:
+    value = get_truth_value(
+        truth_record,
+        *path,
+        required=True,
+    )
 
+    if value is None:
+        formatted_path = " -> ".join(path)
+        raise ValueError(
+            f"Truth record is missing a usable value for: {formatted_path}."
+        )
+
+    return value

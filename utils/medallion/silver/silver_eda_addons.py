@@ -68,15 +68,20 @@ def _plot_heatmap_from_pivot(
     y_label: str,
     figsize: tuple[int, int] = (12, 6),
 ) -> Optional[str]:
+    
+    
     if plot_matrix.empty:
         return None
 
+    x_labels: list[str] = plot_matrix.columns.astype(str).tolist()
+    y_labels: list[str] = plot_matrix.index.astype(str).tolist()
+
     plt.figure(figsize=figsize)
-    plt.imshow(plot_matrix.values, aspect="auto")
+    plt.imshow(plot_matrix.to_numpy(dtype=float), aspect="auto")
     plt.title(title)
     plt.colorbar()
-    plt.xticks(range(len(plot_matrix.columns)), plot_matrix.columns, rotation=90, fontsize=7)
-    plt.yticks(range(len(plot_matrix.index)), plot_matrix.index, fontsize=7)
+    plt.xticks(range(len(x_labels)), x_labels, rotation=90, fontsize=7)
+    plt.yticks(range(len(y_labels)), y_labels, fontsize=7)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.tight_layout()
@@ -359,15 +364,21 @@ def build_state_transition_artifacts(
                 continue
 
             if current_state != previous_state:
-                start_order_value = order_values[run_start_position]
+                if run_start_position is None:
+                    raise ValueError("run_start_position was not initialized before state transition.")
+
+                start_position = int(run_start_position)
+
+                start_order_value = order_values[start_position]
                 end_order_value = order_values[idx - 1]
+
                 dwell_rows.append(
                     {
                         "group_key": "|".join(map(str, group_key_values)),
                         "state": str(previous_state),
-                        "start_position": int(run_start_position),
+                        "start_position": start_position,
                         "end_position": int(idx - 1),
-                        "dwell_length_rows": int(idx - run_start_position),
+                        "dwell_length_rows": int(idx - start_position),
                         "start_order_value": start_order_value,
                         "end_order_value": end_order_value,
                     }
@@ -413,8 +424,9 @@ def build_state_transition_artifacts(
         transition_counts_df = pd.DataFrame(columns=["from_state", "to_state", "transition_count"])
 
     if state_order is None:
-        state_order = sorted(
-            pd.unique(
+        resolved_state_order: list[str] = sorted(
+            str(value)
+            for value in pd.unique(
                 pd.Series(
                     list(transition_counts_df.get("from_state", pd.Series(dtype="object")).dropna())
                     + list(transition_counts_df.get("to_state", pd.Series(dtype="object")).dropna())
@@ -422,10 +434,12 @@ def build_state_transition_artifacts(
                 )
             ).tolist()
         )
+    else:
+        resolved_state_order = [str(value) for value in state_order]
 
     transition_matrix = (
         transition_counts_df.pivot(index="from_state", columns="to_state", values="transition_count")
-        .reindex(index=list(state_order), columns=list(state_order))
+        .reindex(index=resolved_state_order, columns=resolved_state_order)
         .fillna(0.0)
     )
 
@@ -480,7 +494,7 @@ def build_state_transition_artifacts(
     dwell_plot_path = None
     if not dwell_events_df.empty:
         plt.figure(figsize=(10, 5))
-        for state_value in state_order:
+        for state_value in resolved_state_order:
             state_durations = dwell_events_df.loc[
                 dwell_events_df["state"].eq(state_value),
                 "dwell_length_rows",
@@ -656,14 +670,25 @@ def build_robust_feature_comparison_artifacts(
         plot_features = [feature_name for feature_name in plot_features if feature_name in available_features][:max_plot_features]
 
     if state_plot_order is None:
-        state_plot_order = [baseline_state] + [state for state in comparison_states if state != baseline_state]
+        resolved_state_plot_order: list[str] = [
+            str(baseline_state),
+            *[
+                str(state)
+                for state in comparison_states
+                if str(state) != str(baseline_state)
+            ],
+        ]
+    else:
+        resolved_state_plot_order = [str(state) for state in state_plot_order]
 
-    boxplot_paths = []
-    ecdf_paths = []
+    resolved_plot_features: list[str] = [str(feature_name) for feature_name in (plot_features or [])]
 
-    for feature_name in plot_features:
+    boxplot_paths: list[str] = []
+    ecdf_paths: list[str] = []
+
+    for feature_name in resolved_plot_features:
         plot_rows = []
-        for state_value in state_plot_order:
+        for state_value in resolved_state_plot_order:
             feature_values = _safe_numeric_series(
                 dataframe.loc[dataframe[state_column].eq(state_value), feature_name]
             ).dropna()
@@ -681,17 +706,23 @@ def build_robust_feature_comparison_artifacts(
 
         plt.figure(figsize=(9, 4))
 
-        ordered_values = [
-            plot_df.loc[plot_df["state"].eq(state_value), "value"].values
-            for state_value in state_plot_order
-            if state_value in plot_df["state"].unique()
+        ordered_values: list[np.ndarray] = [
+            pd.to_numeric(
+                plot_df.loc[plot_df["state"].eq(state_value), "value"],
+                errors="coerce",
+            )
+            .dropna()
+            .to_numpy(dtype=float)
+            for state_value in resolved_state_plot_order
+            if state_value in plot_df["state"].unique().tolist()
         ]
 
-        ordered_labels = [
-            state_value
-            for state_value in state_plot_order
-            if state_value in plot_df["state"].unique()
+        ordered_labels: list[str] = [
+            str(state_value)
+            for state_value in resolved_state_plot_order
+            if state_value in plot_df["state"].unique().tolist()
         ]
+
 
         plt.boxplot(ordered_values, label=ordered_labels, showfliers=False)
         plt.title(f"State boxplot: {feature_name}")
@@ -706,7 +737,7 @@ def build_robust_feature_comparison_artifacts(
 
         plt.figure(figsize=(9, 4))
         any_line = False
-        for state_value in state_plot_order:
+        for state_value in resolved_state_plot_order:
             feature_values = _safe_numeric_series(
                 dataframe.loc[dataframe[state_column].eq(state_value), feature_name]
             ).dropna().sort_values()
@@ -715,7 +746,8 @@ def build_robust_feature_comparison_artifacts(
                 continue
 
             y_values = np.arange(1, len(feature_values) + 1) / len(feature_values)
-            plt.plot(feature_values.values, y_values, label=str(state_value))
+            feature_values_array = feature_values.to_numpy(dtype=float)
+            plt.plot(feature_values_array, y_values, label=str(state_value))
             any_line = True
 
         if any_line:
@@ -738,7 +770,7 @@ def build_robust_feature_comparison_artifacts(
         "comparison_path": str(comparison_path),
         "boxplot_paths": boxplot_paths,
         "ecdf_paths": ecdf_paths,
-        "top_features": list(plot_features),
+        "top_features": resolved_plot_features,
     }
 
 
@@ -812,8 +844,19 @@ def build_pca_diagnostics_artifacts(
     loadings_df.to_csv(loadings_path, index=False)
 
     plt.figure(figsize=(8, 4))
-    plt.plot(range(1, component_count + 1), explained_variance_df["explained_variance_ratio"].values, marker="o")
-    plt.plot(range(1, component_count + 1), explained_variance_df["cumulative_explained_variance_ratio"].values, marker="o")
+
+    explained_variance_values = pd.to_numeric(
+        explained_variance_df["explained_variance_ratio"],
+        errors="coerce",
+    ).to_numpy(dtype=float)
+
+    cumulative_variance_values = pd.to_numeric(
+        explained_variance_df["cumulative_explained_variance_ratio"],
+        errors="coerce",
+    ).to_numpy(dtype=float)
+
+    plt.plot(range(1, component_count + 1), explained_variance_values, marker="o")
+    plt.plot(range(1, component_count + 1), cumulative_variance_values, marker="o")
     plt.xticks(range(1, component_count + 1))
     plt.xlabel("Principal component")
     plt.ylabel("Explained variance ratio")

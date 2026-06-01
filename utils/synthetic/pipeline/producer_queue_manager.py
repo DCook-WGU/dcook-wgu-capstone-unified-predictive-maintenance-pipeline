@@ -613,7 +613,10 @@ def mark_claimed_batch_sent_count(
         params={"claim_token": str(claim_token).strip()},
     )
 
-    return int(dataframe.loc[0, "updated_count"])
+    return scalar_to_int(
+        dataframe.at[0, "updated_count"],
+        "updated_count",
+    )
 
 def mark_claimed_batch_failed_count(
     engine,
@@ -650,7 +653,10 @@ def mark_claimed_batch_failed_count(
         },
     )
 
-    return int(dataframe.loc[0, "updated_count"])
+    return scalar_to_int(
+        dataframe.at[0, "updated_count"],
+        "updated_count",
+    )
 
 def requeue_failed_messages(
     engine,

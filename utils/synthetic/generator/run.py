@@ -7,8 +7,10 @@ from pathlib import Path
 import pandas as pd
 
 from utils.core.paths import get_paths
+
 from utils.core.file_io import save_data
 from utils.core.logging_setup import configure_logging
+
 from utils.core.config_loader import (
     load_pipeline_config,
     build_truth_config_block,
@@ -159,10 +161,10 @@ def main() -> None:
         normal_profiles=normal_profiles,
         abnormal_profiles=abnormal_profiles,
         recovery_profiles=recovery_profiles,
-        correlation_pairs_df=corr_pairs_df,
-        group_map_df=group_map_df,
-        fault_pairings_df=fault_pairings_df,
-        random_seed=int(SYN_CFG["random_seed"]),
+        correlation_pairs_dataframe=corr_pairs_df,
+        group_map_dataframe=group_map_df,
+        fault_pairings_dataframe=fault_pairings_df,
+        random_seed=SYN_CFG["random_seed"],
     )
 
     # ---------------------------
@@ -198,11 +200,21 @@ def main() -> None:
         parent_truth_hash=PARENT_TRUTH_HASH,
     )
 
+    resolved_config_path = (
+        ARTIFACTS_ROOT
+        / f"{DATASET_NAME}__synthetic__resolved_config.yaml"
+    )
+
+    export_config_snapshot(
+        CONFIG,
+        destination=resolved_config_path,
+    )
+
     synthetic_truth = update_truth_section(
         synthetic_truth,
         "config_snapshot",
         {
-            "pipeline_config": export_config_snapshot(CONFIG),
+            "pipeline_config_path": str(resolved_config_path),
             "synthetic_cfg": SYN_CFG,
         },
     )

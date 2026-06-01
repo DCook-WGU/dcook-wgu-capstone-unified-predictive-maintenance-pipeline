@@ -21,6 +21,44 @@ from utils.medallion.gold.gold_modeling_common import (
 )
 
 
+IsolationForestContamination = Literal["auto"] | float
+IsolationForestMaxSamples = Literal["auto"] | int | float
+
+
+def _array_to_float_list(values: Any) -> list[float]:
+    """
+    Convert numpy/pandas/scalar score values into a plain list[float].
+
+    The shared Gold metric helpers are typed against Sequence[float].
+    Pylance does not treat pandas Series or numpy arrays as Sequence[float],
+    so normalize them at this module boundary.
+    """
+    return [
+        float(value)
+        for value in np.asarray(values, dtype=float).ravel().tolist()
+    ]
+
+
+def _series_to_float_list(series: pd.Series) -> list[float]:
+    """
+    Convert a pandas Series into list[float] for typed metric helpers.
+    """
+    return [
+        float(value)
+        for value in pd.to_numeric(series, errors="coerce")
+        .to_numpy(dtype=float)
+        .ravel()
+        .tolist()
+    ]
+
+
+def _series_to_object_list(series: pd.Series) -> list[Any]:
+    """
+    Convert a pandas Series into list[Any] for typed label helpers.
+    """
+    return list(series.to_numpy().ravel().tolist())
+
+
 def fit_baseline_isolation_forest(
     fit_dataframe: pd.DataFrame,
     *,
@@ -94,12 +132,19 @@ def score_baseline_model(
     Score dataframe with fitted baseline model and optionally create predictions.
     """
     working_dataframe = dataframe.copy()
-    feature_columns = [column_name for column_name in feature_columns if column_name in working_dataframe.columns]
+    feature_columns = [
+        column_name
+        for column_name in feature_columns
+        if column_name in working_dataframe.columns
+    ]
 
-    score_values = compute_anomaly_scores_isolation_forest(
+    raw_score_values = compute_anomaly_scores_isolation_forest(
         fitted_model,
         working_dataframe[feature_columns],
     )
+    score_values = np.asarray(raw_score_values, dtype=float).ravel()
+    score_values_list = _array_to_float_list(score_values)
+
     working_dataframe[score_column_name] = score_values
 
     scoring_info: Dict[str, Any] = {
@@ -112,13 +157,17 @@ def score_baseline_model(
     }
 
     if threshold is not None:
-        predictions = build_prediction_flags_from_scores(score_values, threshold=float(threshold))
+        raw_predictions = build_prediction_flags_from_scores(
+            score_values_list,
+            threshold=float(threshold),
+        )
+        predictions = np.asarray(raw_predictions, dtype=int).ravel()
+
         working_dataframe[prediction_column_name] = predictions
         scoring_info["prediction_column_name"] = prediction_column_name
         scoring_info["predicted_positive_count"] = int(np.sum(predictions))
 
     return working_dataframe, scoring_info
-
 
 def evaluate_baseline_model(
     scored_dataframe: pd.DataFrame,
@@ -138,12 +187,11 @@ def evaluate_baseline_model(
         raise ValueError(f"Missing prediction column: {prediction_column}")
 
     metrics = evaluate_against_labels(
-        scored_dataframe[label_column],
-        scored_dataframe[prediction_column],
-        scores=scored_dataframe[score_column],
+        _series_to_object_list(scored_dataframe[label_column]),
+        _series_to_object_list(scored_dataframe[prediction_column]),
+        scores=_series_to_float_list(scored_dataframe[score_column]),
     )
     return metrics
-
 
 def run_baseline_pipeline(
     *,
@@ -179,8 +227,12 @@ def run_baseline_pipeline(
         prediction_column_name=prediction_column_name,
     )
 
+    train_scores_for_threshold = _series_to_float_list(
+        scored_train_no_threshold[score_column_name]
+    )
+
     threshold, threshold_info = choose_threshold_by_percentile(
-        scored_train_no_threshold[score_column_name].to_numpy(),
+        train_scores_for_threshold,
         percentile=threshold_percentile,
     )
 

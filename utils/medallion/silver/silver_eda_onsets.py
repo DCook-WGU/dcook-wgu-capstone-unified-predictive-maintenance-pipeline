@@ -6,7 +6,7 @@ Onset detection and alignment helpers for Silver EDA.
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Sequence, Any, cast
 
 import numpy as np
 import pandas as pd
@@ -129,22 +129,45 @@ def summarize_onset_windows(
     if aligned_windows.empty:
         return pd.DataFrame()
 
-    use_features = [column for column in feature_columns if column in aligned_windows.columns]
+    use_features = [
+        column
+        for column in feature_columns
+        if column in aligned_windows.columns
+    ]
+
     if len(use_features) == 0:
         return pd.DataFrame()
 
-    summary_rows = []
+    summary_rows: list[dict[str, Any]] = []
     grouped = aligned_windows.groupby("relative_step", dropna=False)
 
     for relative_step, group_frame in grouped:
-        row = {
-            "relative_step": int(relative_step),
-            "window_count": int(group_frame["onset_id"].nunique()) if "onset_id" in group_frame.columns else int(len(group_frame)),
+        relative_step_value = int(cast(Any, relative_step))
+
+        if "onset_id" in group_frame.columns:
+            window_count = int(group_frame["onset_id"].nunique())
+        else:
+            window_count = int(len(group_frame))
+
+        row: dict[str, Any] = {
+            "relative_step": relative_step_value,
+            "window_count": window_count,
         }
+
         for feature_name in use_features:
             series = pd.to_numeric(group_frame[feature_name], errors="coerce")
-            row[f"{feature_name}__mean"] = float(series.mean()) if series.notna().any() else None
-            row[f"{feature_name}__median"] = float(series.median()) if series.notna().any() else None
+
+            if series.notna().any():
+                row[f"{feature_name}__mean"] = float(series.mean())
+                row[f"{feature_name}__median"] = float(series.median())
+            else:
+                row[f"{feature_name}__mean"] = None
+                row[f"{feature_name}__median"] = None
+
         summary_rows.append(row)
 
-    return pd.DataFrame(summary_rows).sort_values("relative_step").reset_index(drop=True)
+    return (
+        pd.DataFrame(summary_rows)
+        .sort_values(by="relative_step")
+        .reset_index(drop=True)
+    )

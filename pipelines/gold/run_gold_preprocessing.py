@@ -660,7 +660,7 @@ def run_gold_preprocessing(
     set_wandb_dir_from_config(config)
     export_config_snapshot(
         config,
-        output_path=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_preprocessing__resolved_config.yaml",
+        destination=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_preprocessing__resolved_config.yaml",
     )
 
     dataframe, feature_registry, silver_data_path, feature_registry_path = _load_silver_inputs(

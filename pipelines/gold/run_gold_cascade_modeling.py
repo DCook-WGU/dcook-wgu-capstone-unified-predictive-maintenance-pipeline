@@ -529,7 +529,7 @@ def run_gold_cascade_modeling(
     set_wandb_dir_from_config(config)
     export_config_snapshot(
         config,
-        output_path=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_cascade__resolved_config.yaml",
+        destination=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_cascade__resolved_config.yaml",
     )
 
     gold_inputs = _load_gold_inputs(

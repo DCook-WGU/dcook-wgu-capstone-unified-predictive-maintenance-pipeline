@@ -332,7 +332,7 @@ def run_silver_eda(
     set_wandb_dir_from_config(config)
     export_config_snapshot(
         config,
-        output_path=runtime_inputs["silver_artifacts_path"] / f"{dataset}__silver_eda__resolved_config.yaml",
+        destination=runtime_inputs["silver_artifacts_path"] / f"{dataset}__silver_eda__resolved_config.yaml",
     )
 
     dataframe, feature_registry, silver_path, registry_path = _load_inputs(runtime_inputs, logger)

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple, Sequence
+from collections.abc import Mapping as MappingABC
+from typing import Any, Dict, List, Literal, Optional, Tuple, Sequence, cast
 
 import numpy as np
 import pandas as pd
@@ -34,6 +35,40 @@ StateCalibrationTargets = Dict[str, Dict[str, Dict[str, float]]]
 #   "recovery":{...},
 #   "buildup": { ... optional ... }
 # }
+
+def _as_float(value: object, default: float = 0.0) -> float:
+    if value is None:
+        return float(default)
+    return float(cast(Any, value))
+
+
+def _as_int(value: object, default: int = 0) -> int:
+    if value is None:
+        return int(default)
+    return int(cast(Any, value))
+
+
+def _as_object_dict(value: object) -> Dict[str, object]:
+    if value is None:
+        return {}
+    if not isinstance(value, MappingABC):
+        return {}
+    return {str(key): item for key, item in value.items()}
+
+
+def _as_object_list(value: object) -> List[object]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, tuple):
+        return list(value)
+    return []
+
+
+def _pair_key(left: str, right: str) -> Tuple[str, str]:
+    return (left, right) if left <= right else (right, left)
+
 
 BRIDGE_PAIRS = [("sensor_25", "sensor_26")]
 
@@ -318,7 +353,7 @@ class SyntheticGenerator:
             if abs(float(c)) < min_abs_corr:
                 continue
 
-            key = tuple(sorted((a, b)))
+            key = _pair_key(a, b)
             if key in seen:
                 continue
             seen.add(key)
@@ -431,15 +466,15 @@ class SyntheticGenerator:
 
 
     def _derive_hotspot_clusters_from_corr(self) -> List[List[str]]:
-        cfg = dict(self.correlation_cluster_derivation or {})
+        cfg = _as_object_dict(self.correlation_cluster_derivation)
 
         if not bool(cfg.get("enabled", True)):
             return []
 
-        min_abs_corr = float(cfg.get("min_abs_corr", 0.20))
-        top_n_pairs = int(cfg.get("top_n_pairs", 80))
-        min_cluster_size = int(cfg.get("min_cluster_size", 2))
-        max_cluster_size = int(cfg.get("max_cluster_size", 8))
+        min_abs_corr = _as_float(cfg.get("min_abs_corr"), 0.20)
+        top_n_pairs = _as_int(cfg.get("top_n_pairs"), 80)
+        min_cluster_size = _as_int(cfg.get("min_cluster_size"), 2)
+        max_cluster_size = _as_int(cfg.get("max_cluster_size"), 8)
 
         pairs: List[Tuple[str, str, float]] = []
         seen_pairs: set[Tuple[str, str]] = set()
@@ -448,7 +483,7 @@ class SyntheticGenerator:
             if a == b:
                 continue
 
-            key = tuple(sorted((a, b)))
+            key = _pair_key(a, b)
             if key in seen_pairs:
                 continue
             seen_pairs.add(key)
@@ -474,7 +509,7 @@ class SyntheticGenerator:
         for a, b, corr_value in pairs:
             adjacency[a].add(b)
             adjacency[b].add(a)
-            edge_strength[tuple(sorted((a, b)))] = abs(float(corr_value))
+            edge_strength[_pair_key(a, b)] = abs(float(corr_value))
 
         visited: set[str] = set()
         raw_clusters: List[List[str]] = []
@@ -509,7 +544,7 @@ class SyntheticGenerator:
             # split oversized connected components greedily by strongest nodes
             node_strength = {
                 node: sum(
-                    edge_strength.get(tuple(sorted((node, neighbor))), 0.0)
+                    edge_strength.get(_pair_key(node, neighbor), 0.0)
                     for neighbor in adjacency[node]
                     if neighbor in component
                 )
@@ -528,7 +563,7 @@ class SyntheticGenerator:
 
                 neighbors = sorted(
                     [n for n in adjacency[seed] if n in remaining],
-                    key=lambda n: (-edge_strength.get(tuple(sorted((seed, n))), 0.0), n),
+                    key=lambda n: (-edge_strength.get(_pair_key(seed, n), 0.0), n),
                 )
 
                 for neighbor in neighbors:
@@ -559,7 +594,8 @@ class SyntheticGenerator:
         self,
         section_name: str,
     ) -> Dict[str, object]:
-        return dict((self.correlation_tuning or {}).get(str(section_name), {}) or {})
+        tuning = _as_object_dict(self.correlation_tuning)
+        return _as_object_dict(tuning.get(str(section_name)))
 
     def _get_corr_tuning_block(
         self,
@@ -568,8 +604,9 @@ class SyntheticGenerator:
         defaults: Dict[str, object],
     ) -> Dict[str, object]:
         section = self._get_corr_tuning_section(section_name)
-        block = dict(section.get(block_name, {}) or {})
-        merged = dict(defaults)
+        block = _as_object_dict(section.get(block_name))
+
+        merged: Dict[str, object] = dict(defaults)
         merged.update(block)
         return merged
 
@@ -578,8 +615,9 @@ class SyntheticGenerator:
         Threshold used to split 3-sensor clusters into strong vs weak chain families.
         Pulled from correlation_tuning.family_split_rules.chain_cluster_avg_abs_corr_threshold.
         """
-        rules = dict((self.correlation_tuning or {}).get("family_split_rules", {}) or {})
-        return float(rules.get("chain_cluster_avg_abs_corr_threshold", 0.75))
+        tuning = _as_object_dict(self.correlation_tuning)
+        rules = _as_object_dict(tuning.get("family_split_rules"))
+        return _as_float(rules.get("chain_cluster_avg_abs_corr_threshold"), 0.75)
 
     def _cluster_avg_abs_corr(
         self,
@@ -647,12 +685,11 @@ class SyntheticGenerator:
         )
 
         section = self._get_corr_tuning_section(section_name)
-        family_overrides = dict(section.get("family_overrides", {}) or {})
-        family_block = dict(
-            (family_overrides.get(str(family_name), {}) or {}).get(block_name, {}) or {}
-        )
+        family_overrides = _as_object_dict(section.get("family_overrides"))
+        family_config = _as_object_dict(family_overrides.get(str(family_name)))
+        family_block = _as_object_dict(family_config.get(block_name))
 
-        merged = dict(base_block)
+        merged: Dict[str, object] = dict(base_block)
         merged.update(family_block)
         return merged
 
@@ -672,11 +709,11 @@ class SyntheticGenerator:
         """
 
         section = self._get_corr_tuning_section(section_name)
-        bridge_block = dict(section.get("bridge_pair_generation", {}) or {})
+        bridge_block = _as_object_dict(section.get("bridge_pair_generation"))
 
         # No bridge block at all: preserve historical default behavior.
         if "bridge_pair_generation" not in section:
-            bridge_pairs_raw = list(BRIDGE_PAIRS)
+            bridge_pairs_raw: List[object] = list(BRIDGE_PAIRS)
 
         # Bridge block exists, but bridge_pairs key is missing:
         # preserve historical default behavior.
@@ -691,7 +728,7 @@ class SyntheticGenerator:
             if raw_value is None:
                 bridge_pairs_raw = list(BRIDGE_PAIRS)
             else:
-                bridge_pairs_raw = list(raw_value)
+                bridge_pairs_raw = _as_object_list(raw_value)
 
         cleaned: List[Tuple[str, str]] = []
 
@@ -726,11 +763,11 @@ class SyntheticGenerator:
         if not bool(block.get("enabled", False)):
             return []
 
-        pair_specs_raw = list(block.get("pair_specs", []) or [])
+        pair_specs_raw = _as_object_list(block.get("pair_specs"))
         cleaned: List[Dict[str, object]] = []
 
         for raw in pair_specs_raw:
-            if not isinstance(raw, dict):
+            if not isinstance(raw, MappingABC):
                 continue
 
             anchor_sensor = str(raw.get("anchor_sensor", "")).strip()
@@ -743,10 +780,10 @@ class SyntheticGenerator:
                 {
                     "anchor_sensor": anchor_sensor,
                     "member_sensor": member_sensor,
-                    "blend": float(raw.get("blend", 0.985)),
-                    "min_abs_corr": float(raw.get("min_abs_corr", 0.05)),
-                    "residual_floor": float(raw.get("residual_floor", 0.010)),
-                    "smooth_alpha": float(raw.get("smooth_alpha", 0.985)),
+                    "blend": _as_float(raw.get("blend"), 0.985),
+                    "min_abs_corr": _as_float(raw.get("min_abs_corr"), 0.05),
+                    "residual_floor": _as_float(raw.get("residual_floor"), 0.010),
+                    "smooth_alpha": _as_float(raw.get("smooth_alpha"), 0.985),
                 }
             )
 
@@ -779,13 +816,13 @@ class SyntheticGenerator:
             target_corr = float(self.corr.get((anchor_sensor, member_sensor), 0.0))
             target_corr = float(np.clip(target_corr, -0.98, 0.98))
 
-            min_abs_corr = float(spec["min_abs_corr"])
+            min_abs_corr = _as_float(spec.get("min_abs_corr"))
             if abs(target_corr) < min_abs_corr:
                 continue
 
-            blend = float(spec["blend"])
-            residual_floor = float(spec["residual_floor"])
-            smooth_alpha = float(spec["smooth_alpha"])
+            blend = _as_float(spec.get("blend"))
+            residual_floor = _as_float(spec.get("residual_floor"))
+            smooth_alpha = _as_float(spec.get("smooth_alpha"))
 
             anchor_profile = profiles[anchor_sensor]
             member_profile = profiles[member_sensor]
@@ -842,11 +879,11 @@ class SyntheticGenerator:
         if not bool(block.get("enabled", False)):
             return []
 
-        pair_specs_raw = list(block.get("pair_specs", []) or [])
+        pair_specs_raw = _as_object_list(block.get("pair_specs"))
         cleaned: List[Dict[str, object]] = []
 
         for raw in pair_specs_raw:
-            if not isinstance(raw, dict):
+            if not isinstance(raw, MappingABC):
                 continue
 
             anchor_sensor = str(raw.get("anchor_sensor", "")).strip()
@@ -859,13 +896,13 @@ class SyntheticGenerator:
                 {
                     "anchor_sensor": anchor_sensor,
                     "member_sensor": member_sensor,
-                    "base_blend": float(raw.get("base_blend", 0.10)),
-                    "gap_gain": float(raw.get("gap_gain", 0.35)),
-                    "max_blend": float(raw.get("max_blend", 0.28)),
-                    "trigger_gap": float(raw.get("trigger_gap", 0.03)),
-                    "residual_floor": float(raw.get("residual_floor", 0.08)),
-                    "smooth_alpha": float(raw.get("smooth_alpha", 0.97)),
-                    "min_abs_corr": float(raw.get("min_abs_corr", 0.05)),
+                    "base_blend": _as_float(raw.get("base_blend"), 0.10),
+                    "gap_gain": _as_float(raw.get("gap_gain"), 0.35),
+                    "max_blend": _as_float(raw.get("max_blend"), 0.28),
+                    "trigger_gap": _as_float(raw.get("trigger_gap"), 0.03),
+                    "residual_floor": _as_float(raw.get("residual_floor"), 0.08),
+                    "smooth_alpha": _as_float(raw.get("smooth_alpha"), 0.97),
+                    "min_abs_corr": _as_float(raw.get("min_abs_corr"), 0.05),
                 }
             )
 
@@ -898,7 +935,7 @@ class SyntheticGenerator:
             target_corr = float(self.corr.get((anchor_sensor, member_sensor), 0.0))
             target_corr = float(np.clip(target_corr, -0.98, 0.98))
 
-            if abs(target_corr) < float(spec["min_abs_corr"]):
+            if abs(target_corr) < _as_float(spec.get("min_abs_corr")):
                 continue
 
             anchor_values = pd.to_numeric(
@@ -932,7 +969,7 @@ class SyntheticGenerator:
                 current_corr = 0.0
 
             gap = float(target_corr - current_corr)
-            if abs(gap) < float(spec["trigger_gap"]):
+            if abs(gap) < _as_float(spec.get("trigger_gap")):
                 continue
 
             raw_residual = member_z - current_corr * anchor_z
@@ -940,18 +977,18 @@ class SyntheticGenerator:
 
             residual_std = max(float(np.std(raw_residual[mask], ddof=1)), 1e-6)
             residual_z = raw_residual / residual_std
-            residual_z = self._smooth_vector(residual_z, alpha=float(spec["smooth_alpha"]))
+            residual_z = self._smooth_vector(residual_z, alpha=_as_float(spec.get("smooth_alpha")))
 
             target_residual_scale = max(
                 float(np.sqrt(max(0.0, 1.0 - target_corr**2))),
-                float(spec["residual_floor"]),
+                _as_float(spec.get("residual_floor")),
             )
 
             generated_z = target_corr * anchor_z + target_residual_scale * residual_z
 
             blend = min(
-                float(spec["max_blend"]),
-                float(spec["base_blend"]) + float(spec["gap_gain"]) * abs(gap),
+                _as_float(spec.get("max_blend")),
+                _as_float(spec.get("base_blend")) + _as_float(spec.get("gap_gain")) * abs(gap),
             )
 
             combined_z = (1.0 - blend) * member_z + blend * generated_z
@@ -980,11 +1017,11 @@ class SyntheticGenerator:
         if not bool(block.get("enabled", False)):
             return []
 
-        triad_specs_raw = list(block.get("triad_specs", []) or [])
+        triad_specs_raw = _as_object_list(block.get("triad_specs"))
         cleaned: List[Dict[str, object]] = []
 
         for raw in triad_specs_raw:
-            if not isinstance(raw, dict):
+            if not isinstance(raw, MappingABC):
                 continue
 
             left_sensor = str(raw.get("left_sensor", "")).strip()
@@ -999,12 +1036,12 @@ class SyntheticGenerator:
                     "left_sensor": left_sensor,
                     "middle_sensor": middle_sensor,
                     "right_sensor": right_sensor,
-                    "base_blend": float(raw.get("base_blend", 0.10)),
-                    "gap_gain": float(raw.get("gap_gain", 0.30)),
-                    "max_blend": float(raw.get("max_blend", 0.24)),
-                    "trigger_gap": float(raw.get("trigger_gap", 0.03)),
-                    "residual_floor": float(raw.get("residual_floor", 0.10)),
-                    "smooth_alpha": float(raw.get("smooth_alpha", 0.97)),
+                    "base_blend": _as_float(raw.get("base_blend"), 0.10),
+                    "gap_gain": _as_float(raw.get("gap_gain"), 0.30),
+                    "max_blend": _as_float(raw.get("max_blend"), 0.24),
+                    "trigger_gap": _as_float(raw.get("trigger_gap"), 0.03),
+                    "residual_floor": _as_float(raw.get("residual_floor"), 0.10),
+                    "smooth_alpha": _as_float(raw.get("smooth_alpha"), 0.97),
                 }
             )
 
@@ -1073,7 +1110,7 @@ class SyntheticGenerator:
             gap_lm = target_lm - current_lm
             gap_mr = target_mr - current_mr
 
-            if max(abs(gap_lm), abs(gap_mr)) < float(spec["trigger_gap"]):
+            if max(abs(gap_lm), abs(gap_mr)) < _as_float(spec.get("trigger_gap")):
                 continue
 
             w_l = abs(target_lm)
@@ -1088,14 +1125,14 @@ class SyntheticGenerator:
 
             residual_std = max(float(np.std(residual[mask], ddof=1)), 1e-6)
             residual_z = residual / residual_std
-            residual_z = self._smooth_vector(residual_z, alpha=float(spec["smooth_alpha"]))
+            residual_z = self._smooth_vector(residual_z, alpha=_as_float(spec.get("smooth_alpha")))
 
             target_projection = w_l * target_lm * z_l + w_r * target_mr * z_r
-            generated_z = target_projection + float(spec["residual_floor"]) * residual_z
+            generated_z = target_projection + _as_float(spec.get("residual_floor")) * residual_z
 
             blend = min(
-                float(spec["max_blend"]),
-                float(spec["base_blend"]) + float(spec["gap_gain"]) * max(abs(gap_lm), abs(gap_mr)),
+                _as_float(spec.get("max_blend")),
+                _as_float(spec.get("base_blend")) + _as_float(spec.get("gap_gain")) * max(abs(gap_lm), abs(gap_mr)),
             )
 
             combined_z = (1.0 - blend) * z_m + blend * generated_z
@@ -1880,10 +1917,10 @@ class SyntheticGenerator:
             self._apply_top_pairwise_overlay(
                 dataframe,
                 self.normal,
-                min_abs_corr=float(normal_top_pair_cfg["min_abs_corr"]),
-                top_n=int(normal_top_pair_cfg["top_n"]),
-                strength=float(normal_top_pair_cfg["strength"]),
-                smooth_alpha=float(normal_top_pair_cfg["smooth_alpha"]),
+                min_abs_corr=_as_float(normal_top_pair_cfg.get("min_abs_corr")),
+                top_n=_as_int(normal_top_pair_cfg.get("top_n")),
+                strength=_as_float(normal_top_pair_cfg.get("strength")),
+                smooth_alpha=_as_float(normal_top_pair_cfg.get("smooth_alpha")),
             )
 
             if self.correlation_hotspot_clusters:
@@ -1916,28 +1953,28 @@ class SyntheticGenerator:
                         dataframe,
                         self.normal,
                         clusters=[cluster],
-                        strength=float(named_cfg["strength"]),
-                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                        strength=_as_float(named_cfg.get("strength")),
+                        smooth_alpha=_as_float(named_cfg.get("smooth_alpha")),
                     )
 
                     self._apply_anchor_cluster_generation(
                         dataframe,
                         self.normal,
                         clusters=[cluster],
-                        blend=float(anchor_cfg["blend"]),
-                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
-                        residual_floor=float(anchor_cfg["residual_floor"]),
-                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                        blend=_as_float(anchor_cfg.get("blend")),
+                        min_abs_corr=_as_float(anchor_cfg.get("min_abs_corr")),
+                        residual_floor=_as_float(anchor_cfg.get("residual_floor")),
+                        smooth_alpha=_as_float(anchor_cfg.get("smooth_alpha")),
                     )
 
             self._apply_bridge_pair_generation(
                 dataframe,
                 self.normal,
                 bridge_pairs=self._get_bridge_pairs_from_tuning("normal"),
-                blend=float(normal_bridge_cfg["blend"]),
-                min_abs_corr=float(normal_bridge_cfg["min_abs_corr"]),
-                residual_floor=float(normal_bridge_cfg["residual_floor"]),
-                smooth_alpha=float(normal_bridge_cfg["smooth_alpha"]),
+                blend=_as_float(normal_bridge_cfg.get("blend")),
+                min_abs_corr=_as_float(normal_bridge_cfg.get("min_abs_corr")),
+                residual_floor=_as_float(normal_bridge_cfg.get("residual_floor")),
+                smooth_alpha=_as_float(normal_bridge_cfg.get("smooth_alpha")),
             )
             
 
@@ -2260,9 +2297,11 @@ class SyntheticGenerator:
                 }:
                     recommended_secondary_fault = "variance_burst"
 
+                secondary_fault_type = cast(FaultType, recommended_secondary_fault)
+
                 sec_values = self._inject_fault(
                     sec_values,
-                    recommended_secondary_fault,
+                    secondary_fault_type,
                     max(0.05, spec.magnitude * strength),
                     sec_profile,
                 )
@@ -2344,10 +2383,10 @@ class SyntheticGenerator:
             self._apply_top_pairwise_overlay(
                 df_window,
                 self.normal,
-                min_abs_corr=float(normal_top_pair_cfg["min_abs_corr"]),
-                top_n=int(normal_top_pair_cfg["top_n"]),
-                strength=float(normal_top_pair_cfg["strength"]),
-                smooth_alpha=float(normal_top_pair_cfg["smooth_alpha"]),
+                min_abs_corr=_as_float(normal_top_pair_cfg.get("min_abs_corr")),
+                top_n=_as_int(normal_top_pair_cfg.get("top_n")),
+                strength=_as_float(normal_top_pair_cfg.get("strength")),
+                smooth_alpha=_as_float(normal_top_pair_cfg.get("smooth_alpha")),
             )
 
             if self.correlation_hotspot_clusters:
@@ -2380,28 +2419,28 @@ class SyntheticGenerator:
                         df_window,
                         self.normal,
                         clusters=[cluster],
-                        strength=float(named_cfg["strength"]),
-                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                        strength=_as_float(named_cfg.get("strength")),
+                        smooth_alpha=_as_float(named_cfg.get("smooth_alpha")),
                     )
 
                     self._apply_anchor_cluster_generation(
                         df_window,
                         self.normal,
                         clusters=[cluster],
-                        blend=float(anchor_cfg["blend"]),
-                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
-                        residual_floor=float(anchor_cfg["residual_floor"]),
-                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                        blend=_as_float(anchor_cfg.get("blend")),
+                        min_abs_corr=_as_float(anchor_cfg.get("min_abs_corr")),
+                        residual_floor=_as_float(anchor_cfg.get("residual_floor")),
+                        smooth_alpha=_as_float(anchor_cfg.get("smooth_alpha")),
                     )
 
             self._apply_bridge_pair_generation(
                 df_window,
                 self.normal,
                 bridge_pairs=self._get_bridge_pairs_from_tuning("normal"),
-                blend=float(normal_bridge_cfg["blend"]),
-                min_abs_corr=float(normal_bridge_cfg["min_abs_corr"]),
-                residual_floor=float(normal_bridge_cfg["residual_floor"]),
-                smooth_alpha=float(normal_bridge_cfg["smooth_alpha"]),
+                blend=_as_float(normal_bridge_cfg.get("blend")),
+                min_abs_corr=_as_float(normal_bridge_cfg.get("min_abs_corr")),
+                residual_floor=_as_float(normal_bridge_cfg.get("residual_floor")),
+                smooth_alpha=_as_float(normal_bridge_cfg.get("smooth_alpha")),
             )
 
             self._apply_priority_pair_generation(
@@ -2462,10 +2501,10 @@ class SyntheticGenerator:
             self._apply_top_pairwise_overlay(
                 df_window,
                 self.normal,
-                min_abs_corr=float(buildup_top_pair_cfg["min_abs_corr"]),
-                top_n=int(buildup_top_pair_cfg["top_n"]),
-                strength=float(buildup_top_pair_cfg["strength"]),
-                smooth_alpha=float(buildup_top_pair_cfg["smooth_alpha"]),
+                min_abs_corr=_as_float(buildup_top_pair_cfg.get("min_abs_corr")),
+                top_n=_as_int(buildup_top_pair_cfg.get("top_n")),
+                strength=_as_float(buildup_top_pair_cfg.get("strength")),
+                smooth_alpha=_as_float(buildup_top_pair_cfg.get("smooth_alpha")),
             )
 
             if self.correlation_hotspot_clusters:
@@ -2498,28 +2537,28 @@ class SyntheticGenerator:
                         df_window,
                         self.normal,
                         clusters=[cluster],
-                        strength=float(named_cfg["strength"]),
-                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                        strength=_as_float(named_cfg.get("strength")),
+                        smooth_alpha=_as_float(named_cfg.get("smooth_alpha")),
                     )
 
                     self._apply_anchor_cluster_generation(
                         df_window,
                         self.normal,
                         clusters=[cluster],
-                        blend=float(anchor_cfg["blend"]),
-                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
-                        residual_floor=float(anchor_cfg["residual_floor"]),
-                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                        blend=_as_float(anchor_cfg.get("blend")),
+                        min_abs_corr=_as_float(anchor_cfg.get("min_abs_corr")),
+                        residual_floor=_as_float(anchor_cfg.get("residual_floor")),
+                        smooth_alpha=_as_float(anchor_cfg.get("smooth_alpha")),
                     )
 
             self._apply_bridge_pair_generation(
                 df_window,
                 self.normal,
                 bridge_pairs=self._get_bridge_pairs_from_tuning("normal"),
-                blend=float(buildup_bridge_cfg["blend"]),
-                min_abs_corr=float(buildup_bridge_cfg["min_abs_corr"]),
-                residual_floor=float(buildup_bridge_cfg["residual_floor"]),
-                smooth_alpha=float(buildup_bridge_cfg["smooth_alpha"]),
+                blend=_as_float(buildup_bridge_cfg.get("blend")),
+                min_abs_corr=_as_float(buildup_bridge_cfg.get("min_abs_corr")),
+                residual_floor=_as_float(buildup_bridge_cfg.get("residual_floor")),
+                smooth_alpha=_as_float(buildup_bridge_cfg.get("smooth_alpha")),
             )
 
             self._apply_priority_pair_generation(
@@ -2575,10 +2614,10 @@ class SyntheticGenerator:
             self._apply_top_pairwise_overlay(
                 df_window,
                 self.recovery,
-                min_abs_corr=float(recovery_top_pair_cfg["min_abs_corr"]),
-                top_n=int(recovery_top_pair_cfg["top_n"]),
-                strength=float(recovery_top_pair_cfg["strength"]),
-                smooth_alpha=float(recovery_top_pair_cfg["smooth_alpha"]),
+                min_abs_corr=_as_float(recovery_top_pair_cfg.get("min_abs_corr")),
+                top_n=_as_int(recovery_top_pair_cfg.get("top_n")),
+                strength=_as_float(recovery_top_pair_cfg.get("strength")),
+                smooth_alpha=_as_float(recovery_top_pair_cfg.get("smooth_alpha")),
             )
 
             if self.correlation_hotspot_clusters:
@@ -2611,28 +2650,28 @@ class SyntheticGenerator:
                         df_window,
                         self.recovery,
                         clusters=[cluster],
-                        strength=float(named_cfg["strength"]),
-                        smooth_alpha=float(named_cfg["smooth_alpha"]),
+                        strength=_as_float(named_cfg.get("strength")),
+                        smooth_alpha=_as_float(named_cfg.get("smooth_alpha")),
                     )
 
                     self._apply_anchor_cluster_generation(
                         df_window,
                         self.recovery,
                         clusters=[cluster],
-                        blend=float(anchor_cfg["blend"]),
-                        min_abs_corr=float(anchor_cfg["min_abs_corr"]),
-                        residual_floor=float(anchor_cfg["residual_floor"]),
-                        smooth_alpha=float(anchor_cfg["smooth_alpha"]),
+                        blend=_as_float(anchor_cfg.get("blend")),
+                        min_abs_corr=_as_float(anchor_cfg.get("min_abs_corr")),
+                        residual_floor=_as_float(anchor_cfg.get("residual_floor")),
+                        smooth_alpha=_as_float(anchor_cfg.get("smooth_alpha")),
                     )
 
             self._apply_bridge_pair_generation(
                 df_window,
                 self.recovery,
                 bridge_pairs=self._get_bridge_pairs_from_tuning("recovery"),
-                blend=float(recovery_bridge_cfg["blend"]),
-                min_abs_corr=float(recovery_bridge_cfg["min_abs_corr"]),
-                residual_floor=float(recovery_bridge_cfg["residual_floor"]),
-                smooth_alpha=float(recovery_bridge_cfg["smooth_alpha"]),
+                blend=_as_float(recovery_bridge_cfg.get("blend")),
+                min_abs_corr=_as_float(recovery_bridge_cfg.get("min_abs_corr")),
+                residual_floor=_as_float(recovery_bridge_cfg.get("residual_floor")),
+                smooth_alpha=_as_float(recovery_bridge_cfg.get("smooth_alpha")),
             )
 
             self._apply_priority_pair_generation(
@@ -2688,7 +2727,7 @@ class SyntheticGenerator:
         feature_columns: List[str],
         rng: np.random.Generator,
         # default policy: do NOT remove faults
-        apply_to_phases: Optional[Dict[str, str]] = None,
+        apply_to_phases: Optional[Dict[str, Optional[str]]] = None,
     ) -> pd.DataFrame:
         """
         Applies clustered masking to attempt to repliace the missingness.
@@ -2707,13 +2746,16 @@ class SyntheticGenerator:
         out = dataframe.copy()
 
         # choose default mapping
+        phase_to_state_map: Dict[str, Optional[str]]
         if apply_to_phases is None:
-            apply_to_phases = {
+            phase_to_state_map = {
                 "normal": "normal",
                 "buildup": "normal",
                 "abnormal": None,
                 "recovery": "recovery",
             }
+        else:
+            phase_to_state_map = dict(apply_to_phases)
 
         # only keep sensors that exist
         features = [column for column in feature_columns if column in out.columns]
@@ -2722,7 +2764,7 @@ class SyntheticGenerator:
 
         # Case A: phase-driven masking
         if "phase" in out.columns:
-            for phase_value, state_scope in apply_to_phases.items():
+            for phase_value, state_scope in phase_to_state_map.items():
                 mask = out["phase"].astype(str).eq(str(phase_value))
                 eligible_idx = out.index[mask].to_numpy()
 
@@ -2742,7 +2784,7 @@ class SyntheticGenerator:
                 for feature in features:
                     use_state = bool(missingness.missingness_state_dependent_flag.get(feature, False))
                     pct = pct_by_state.get(feature) if use_state else missingness.missingness_pct_all.get(feature, 0.0)
-                    present_counts[feature] = int(round(len(eligible_idx) * (1.0 - float(pct) / 100.0)))
+                    present_counts[feature] = int(round(len(eligible_idx) * (1.0 - _as_float(pct, 0.0) / 100.0)))
                     present_counts[feature] = max(0, min(len(eligible_idx), present_counts[feature]))
 
                 out = apply_clustered_missingness_mask(
@@ -2774,7 +2816,7 @@ class SyntheticGenerator:
                 for feature in features:
                     use_state = bool(missingness.missingness_state_dependent_flag.get(feature, False))
                     pct = pct_by_state.get(feature) if use_state else missingness.missingness_pct_all.get(feature, 0.0)
-                    present_counts[feature] = int(round(len(eligible_idx) * (1.0 - float(pct) / 100.0)))
+                    present_counts[feature] = int(round(len(eligible_idx) * (1.0 - _as_float(pct, 0.0) / 100.0)))
                     present_counts[feature] = max(0, min(len(eligible_idx), present_counts[feature]))
 
                 out = apply_clustered_missingness_mask(
