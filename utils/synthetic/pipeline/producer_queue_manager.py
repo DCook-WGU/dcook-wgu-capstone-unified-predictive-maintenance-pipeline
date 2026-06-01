@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from typing import Optional, Any, cast
+import math
 
 import pandas as pd
 from sqlalchemy import text
@@ -13,6 +14,21 @@ from utils.database.postgres import (
     read_sql_dataframe,
 )
 
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+def scalar_to_int(value: object, name: str = "value") -> int:
+    if value is None:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if value is pd.NA:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if isinstance(value, float) and math.isnan(value):
+        raise ValueError(f"{name} cannot be missing.")
+
+    return int(cast(Any, value))
 
 # -----------------------------------------------------------------------------
 # Internal permission/bootstrap helpers

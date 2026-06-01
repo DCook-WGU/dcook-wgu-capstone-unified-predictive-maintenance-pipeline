@@ -413,7 +413,7 @@ def run_gold_comparison(
     set_wandb_dir_from_config(config)
     export_config_snapshot(
         config,
-        output_path=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_comparison__resolved_config.yaml",
+        destination=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_comparison__resolved_config.yaml",
     )
 
     comparison_inputs = _load_comparison_inputs(

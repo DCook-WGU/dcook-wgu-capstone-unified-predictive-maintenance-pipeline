@@ -3,8 +3,9 @@ from __future__ import annotations
 import csv
 import io
 import json
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 
+import math
 import numpy as np
 import pandas as pd
 
@@ -21,6 +22,18 @@ from utils.database.layer_postgres import write_layer_dataframe
 # Sequence helpers
 # -----------------------------------------------------------------------------
 
+def scalar_to_int(value: object, name: str = "value") -> int:
+    if value is None:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if value is pd.NA:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if isinstance(value, float) and math.isnan(value):
+        raise ValueError(f"{name} cannot be missing.")
+
+    return int(cast(Any, value))
+
 def ensure_sequence(engine, *, schema: str, sequence_name: str) -> None:
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_sequence = sanitize_sql_identifier(sequence_name)
@@ -32,10 +45,15 @@ def ensure_sequence(engine, *, schema: str, sequence_name: str) -> None:
 def reserve_next_batch_id(engine, *, schema: str, sequence_name: str) -> int:
     safe_schema = sanitize_sql_identifier(schema)
     safe_sequence = sanitize_sql_identifier(sequence_name)
-    sql = f'SELECT nextval(\'"{safe_schema}"."{safe_sequence}"\') AS batch_id'
-    dataframe = read_sql_dataframe(engine, sql)
-    return int(dataframe.loc[0, "batch_id"])
 
+    sql = f'SELECT nextval(\'"{safe_schema}"."{safe_sequence}"\') AS batch_id'
+
+    dataframe = read_sql_dataframe(engine, sql)
+
+    return scalar_to_int(
+        dataframe.at[0, "batch_id"],
+        "batch_id",
+    )
 
 
 def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int) -> int:
@@ -49,7 +67,11 @@ def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int)
         engine,
         f'SELECT nextval(\'"{safe_schema}"."{safe_sequence}"\') AS v',
     )
-    start = int(start_dataframe.loc[0, "v"])
+
+    start = scalar_to_int(
+        start_dataframe.at[0, "v"],
+        "sequence_start_value",
+    )
 
     if n_rows > 1:
         execute_sql(

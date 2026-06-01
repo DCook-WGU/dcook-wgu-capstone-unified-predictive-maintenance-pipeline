@@ -30,6 +30,7 @@ from utils.core.truths import (
     stamp_truth_columns,
 )
 from utils.core.wandb_utils import finalize_wandb_stage
+
 from utils.core.config_loader import (
     load_pipeline_config,
     build_truth_config_block,
@@ -441,7 +442,7 @@ def run_bronze_preprocessing(
     set_wandb_dir_from_config(config)
     export_config_snapshot(
         config,
-        output_path=runtime_inputs["bronze_artifacts_path"] / f"{dataset}__bronze__resolved_config.yaml",
+        destination=runtime_inputs["bronze_artifacts_path"] / f"{dataset}__bronze__resolved_config.yaml",
     )
 
     logger.info(
@@ -551,7 +552,20 @@ def run_bronze_preprocessing(
         runtime_inputs["bronze_train_data_file_name"],
     )
 
-    finalize_wandb_stage()
+    #finalize_wandb_stage()
+    finalize_wandb_stage(
+        run=None,
+        stage="bronze",
+        dataframe=dataframe,
+        project_root=project_root,
+        logs_dir=runtime_inputs["logs_path"],
+        dataset_dirs=[
+            runtime_inputs["bronze_data_path"],
+        ],
+        dataset_artifact_name=f"{resolved_dataset_name}__bronze__dataset",
+        logger=logger,
+        profile=bool(runtime_inputs["profile"]),
+    )
 
     summary = {
         "status": "success",

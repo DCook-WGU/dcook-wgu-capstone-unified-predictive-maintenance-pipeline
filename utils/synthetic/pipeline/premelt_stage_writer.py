@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Sequence
-
+from typing import Sequence, Any, cast
+import math 
 import pandas as pd
 
 from utils.database.postgres import (
@@ -146,6 +146,31 @@ def _write_stage_sql_native(
 # Stage builder
 # -----------------------------------------------------------------------------
 
+def scalar_to_int(value: object, name: str = "value") -> int:
+    if value is None:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if value is pd.NA:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if isinstance(value, float) and math.isnan(value):
+        raise ValueError(f"{name} cannot be missing.")
+
+    return int(cast(Any, value))
+
+
+def dataframe_row_count_to_int(
+    dataframe: pd.DataFrame,
+    *,
+    column: str = "row_count",
+) -> int:
+    if dataframe.empty:
+        return 0
+
+    return scalar_to_int(
+        dataframe.at[0, column],
+        column,
+    )
 
 def build_observations_premelt_stage(
     engine,
@@ -171,10 +196,23 @@ def build_observations_premelt_stage(
     if not source_columns:
         raise ValueError(f"Source table does not exist or has no columns: {safe_schema}.{safe_source_table}")
 
-    row_count_sql = f'SELECT COUNT(*) AS row_count FROM "{safe_schema}"."{safe_source_table}"'
-    row_count = int(read_sql_dataframe(engine, row_count_sql).loc[0, "row_count"])
+    row_count_sql = (
+    f'SELECT COUNT(*) AS row_count FROM "{safe_schema}"."{safe_source_table}"'
+)
+
+    row_count_dataframe = read_sql_dataframe(
+        engine,
+        row_count_sql,
+    )
+
+    row_count = dataframe_row_count_to_int(
+        row_count_dataframe,
+        column="row_count",
+    )
+
     if row_count == 0:
         raise ValueError(f"Source table '{safe_schema}.{safe_source_table}' is empty.")
+
 
     required_columns = [
         "batch_id",

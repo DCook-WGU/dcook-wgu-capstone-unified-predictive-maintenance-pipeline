@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Sequence, Any
+from typing import Optional, Sequence, Any, cast
 
+import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -46,6 +47,17 @@ def _mad(series: pd.Series) -> float | None:
         return None
     return mad_value
 
+def scalar_to_int(value: object, name: str = "value") -> int:
+    if value is None:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if value is pd.NA:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if isinstance(value, float) and math.isnan(value):
+        raise ValueError(f"{name} cannot be missing.")
+
+    return int(cast(Any, value))
 
 def _plot_heatmap_from_pivot(
     plot_matrix: pd.DataFrame,

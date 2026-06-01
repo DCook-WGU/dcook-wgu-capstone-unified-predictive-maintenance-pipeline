@@ -18,18 +18,26 @@ def z_score(series: pd.Series) -> pd.Series:
     Returns a Series with the same index.
     If std is 0 or NaN, returns centered zeros for non-null rows.
     """
-    series = pd.to_numeric(series, errors="coerce").astype(float)
+    numeric_series = pd.to_numeric(series, errors="coerce")
+    values = numeric_series.to_numpy(dtype=float)
 
-    mean_value = np.nanmean(series.to_numpy())
-    std_value = np.nanstd(series.to_numpy())
+    mean_value: float = float(np.nanmean(values))
+    std_value: float = float(np.nanstd(values))
 
     if std_value == 0 or np.isnan(std_value):
         return pd.Series(
-            np.where(series.notna(), 0.0, np.nan),
+            np.where(~np.isnan(values), 0.0, np.nan),
             index=series.index,
+            name=series.name,
         )
 
-    return (series - mean_value) / std_value
+    z_values = (values - mean_value) / std_value
+
+    return pd.Series(
+        z_values,
+        index=series.index,
+        name=series.name,
+    )
 
 
 def build_silver_overview_summary(dataframe: pd.DataFrame) -> dict:

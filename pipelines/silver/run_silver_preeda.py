@@ -636,9 +636,10 @@ def run_silver_preeda(
     truthed_config["pipeline"] = runtime_inputs["pipeline_cfg"]
 
     set_wandb_dir_from_config(config)
+    
     export_config_snapshot(
         config,
-        output_path=runtime_inputs["silver_artifacts_path"] / f"{dataset}__silver_preeda__resolved_config.yaml",
+        destination=runtime_inputs["silver_artifacts_path"] / f"{dataset}__silver_preeda__resolved_config.yaml",
     )
 
     dataframe, bronze_data_path = _load_bronze_dataframe(

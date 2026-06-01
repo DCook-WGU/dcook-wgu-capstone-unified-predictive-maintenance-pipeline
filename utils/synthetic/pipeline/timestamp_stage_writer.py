@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Any, cast
 
+import math
 import pandas as pd
 
 from utils.database.chunk_stage_util import resolve_dataset_run_from_table
@@ -20,6 +21,9 @@ from utils.database.postgres import (
 This module keeps the existing notebook-facing API, but computes the timestamped
 stage entirely in Postgres rather than chunking the full table through pandas.
 """
+
+
+
 
 
 # -----------------------------------------------------------------------------
@@ -372,6 +376,32 @@ def _write_stage_sql_native(
 # Stage builder
 # -----------------------------------------------------------------------------
 
+def scalar_to_int(value: object, name: str = "value") -> int:
+    if value is None:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if value is pd.NA:
+        raise ValueError(f"{name} cannot be missing.")
+
+    if isinstance(value, float) and math.isnan(value):
+        raise ValueError(f"{name} cannot be missing.")
+
+    return int(cast(Any, value))
+
+
+def dataframe_row_count_to_int(
+    dataframe: pd.DataFrame,
+    *,
+    column: str = "row_count",
+) -> int:
+    if dataframe.empty:
+        return 0
+
+    return scalar_to_int(
+        dataframe.at[0, column],
+        column,
+    )
+
 
 def build_observations_timestamped_stage(
     engine,
@@ -402,12 +432,22 @@ def build_observations_timestamped_stage(
     _validate_source_columns(source_columns)
 
     source_row_count_sql = (
-        f'SELECT COUNT(*) AS row_count FROM "{safe_schema}"."{safe_source_table}"'
+    f'SELECT COUNT(*) AS row_count FROM "{safe_schema}"."{safe_source_table}"'
     )
-    source_row_count = int(read_sql_dataframe(engine, source_row_count_sql).loc[0, "row_count"])
+
+    source_row_count_dataframe = read_sql_dataframe(
+        engine,
+        source_row_count_sql,
+    )
+
+    source_row_count = dataframe_row_count_to_int(
+        source_row_count_dataframe,
+        column="row_count",
+    )
+
     if source_row_count == 0:
         raise ValueError(f"Source table '{safe_schema}.{safe_source_table}' is empty.")
-
+        
     resolved_dataset_id, resolved_run_id = resolve_dataset_run_from_table(
         engine,
         schema_name=safe_schema,

@@ -616,10 +616,11 @@ def run_gold_baseline_modeling(
     truthed_config["pipeline"] = runtime_inputs["pipeline_cfg"]
 
     set_wandb_dir_from_config(config)
+
     export_config_snapshot(
-        config,
-        output_path=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_baseline__resolved_config.yaml",
-    )
+    config,
+    destination=runtime_inputs["gold_artifacts_path"] / f"{dataset}__gold_baseline__resolved_config.yaml",
+)
 
     gold_inputs = _load_gold_inputs(
         runtime_inputs=runtime_inputs,
