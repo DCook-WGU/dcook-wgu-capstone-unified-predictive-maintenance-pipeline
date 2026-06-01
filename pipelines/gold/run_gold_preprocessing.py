@@ -11,7 +11,7 @@ import json
 import logging
 import pickle
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 import wandb
 
@@ -220,7 +220,7 @@ def _initialize_wandb_run(
         },
     )
 
-    logger.info("W&B initialized: %s", wandb.run.name)
+    logger.info("W&B initialized: %s", wandb_run.name)
     return wandb_run
 
 
@@ -517,20 +517,29 @@ def _run_lineage_sanity_checks(
     if not Path(gold_truth_path).exists():
         raise FileNotFoundError(f"Gold truth file was not created: {gold_truth_path}")
 
-    loaded_gold_truth = load_json(gold_truth_path)
 
-    if loaded_gold_truth.get("truth_hash") != gold_truth_hash:
+
+    loaded_gold_truth_raw = load_json(gold_truth_path)
+    loaded_gold_truth = require_dict(loaded_gold_truth_raw, "loaded_gold_truth")
+
+    if "truth_hash" not in loaded_gold_truth:
+        raise KeyError(f"Gold truth file is missing required key: truth_hash")
+
+    loaded_truth_hash = str(loaded_gold_truth["truth_hash"])
+    loaded_parent_truth_hash = str(loaded_gold_truth["parent_truth_hash"])
+
+    if loaded_truth_hash != gold_truth_hash:
         raise ValueError(
             "Saved Gold truth file hash does not match truth record:\n"
-            f"file={loaded_gold_truth.get('truth_hash')}\n"
+            f"file={loaded_truth_hash}\n"
             f"record={gold_truth_hash}"
         )
 
-    if loaded_gold_truth.get("parent_truth_hash") != gold_parent_truth_hash:
+    if loaded_parent_truth_hash != gold_parent_truth_hash:
         raise ValueError(
             "Saved Gold truth file parent hash does not match expected parent:\n"
-            f"truth={loaded_gold_truth.get('parent_truth_hash')}\n"
-            f"gold_parent={gold_parent_truth_hash}"
+            f"file={loaded_parent_truth_hash}\n"
+            f"record={gold_parent_truth_hash}"
         )
 
 
@@ -576,6 +585,17 @@ def _optionally_write_sql_output(
     )
 
     return gold_table_name
+
+def require_dict(value: Any | None, name: str) -> Dict[str, Any]:
+    if value is None:
+        raise ValueError(f"{name} cannot be None.")
+
+    if not isinstance(value, dict):
+        raise TypeError(
+            f"{name} must be a dictionary, got {type(value).__name__}: {value!r}"
+        )
+
+    return cast(Dict[str, Any], value)
 
 
 def run_gold_preprocessing(
@@ -654,6 +674,8 @@ def run_gold_preprocessing(
         logger=logger,
     )
 
+    feature_registry = require_dict(feature_registry, "feature_registry")
+
     ledger = Ledger(stage=runtime_inputs["stage"], recipe_id="gold_preprocessing")
     ledger.add(
         kind="step",
@@ -679,6 +701,8 @@ def run_gold_preprocessing(
     gold_parent_truth_hash = parent_context["gold_parent_truth_hash"]
     pipeline_mode = parent_context["pipeline_mode"]
     gold_truth = parent_context["gold_truth"]
+
+    feature_registry = require_dict(feature_registry, "feature_registry")
 
     frames, preprocessing_info, learned_objects = prepare_gold_model_inputs(
         dataframe,

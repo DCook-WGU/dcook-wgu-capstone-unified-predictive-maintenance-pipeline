@@ -167,12 +167,12 @@ def select_numeric_feature_columns(
     """
     Select numeric feature columns from the registered feature set.
     """
-    exclude_columns = set(exclude_columns or [])
+    exclude_columns_set: set[str] = set(exclude_columns or [])
     numeric_feature_columns: List[str] = []
     rejected_columns: List[Dict[str, Any]] = []
 
     for column_name in feature_columns:
-        if column_name in exclude_columns:
+        if column_name in exclude_columns_set:
             rejected_columns.append(
                 {"column_name": column_name, "reason": "explicit_exclude"}
             )

@@ -6,7 +6,7 @@ Baseline Isolation Forest helpers for Gold baseline stage.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple, Literal
 
 import numpy as np
 import pandas as pd
@@ -26,8 +26,8 @@ def fit_baseline_isolation_forest(
     *,
     feature_columns: Sequence[str],
     n_estimators: int = 200,
-    contamination: str | float = "auto",
-    max_samples: str | int | float = "auto",
+    contamination: IsolationForestContamination = "auto",
+    max_samples: IsolationForestMaxSamples = "auto",
     max_features: float = 1.0,
     bootstrap: bool = False,
     random_state: int = 42,
@@ -36,11 +36,17 @@ def fit_baseline_isolation_forest(
     """
     Fit baseline Isolation Forest on normal-only fit rows.
     """
-    feature_columns = [column_name for column_name in feature_columns if column_name in fit_dataframe.columns]
+    feature_columns = [
+        column_name
+        for column_name in feature_columns
+        if column_name in fit_dataframe.columns
+    ]
+
     if len(feature_columns) == 0:
         raise ValueError("No baseline feature columns available for model fitting.")
 
     fit_matrix = fit_dataframe[feature_columns].copy()
+
     if len(fit_matrix) == 0:
         raise ValueError("Fit dataframe has zero rows; cannot fit baseline model.")
 
@@ -53,6 +59,7 @@ def fit_baseline_isolation_forest(
         random_state=random_state,
         n_jobs=n_jobs,
     )
+
     model.fit(fit_matrix)
 
     fit_info = {
@@ -70,6 +77,7 @@ def fit_baseline_isolation_forest(
             "n_jobs": n_jobs,
         },
     }
+
     return model, fit_info
 
 

@@ -151,7 +151,7 @@ def mad_value(series: pd.Series) -> float:
     if len(clean) == 0:
         return np.nan
     median_value = clean.median()
-    return np.median(np.abs(clean - median_value))
+    return float(np.median(np.abs(clean - median_value)))
 
 
 def iqr_bounds(series: pd.Series) -> Tuple[float, float]:
@@ -173,7 +173,23 @@ def save_figure(config: EDAConfig, filename: str) -> None:
     plt.show()
     plt.close()
 
+from typing import SupportsFloat, cast
 
+
+def scalar_to_float(value: object, name: str = "value") -> float:
+    if isinstance(value, complex):
+        raise TypeError(
+            f"{name} must be real numeric, got complex value: {value!r}"
+        )
+
+    try:
+        return float(cast(SupportsFloat, value))
+    except (TypeError, ValueError) as exc:
+        raise TypeError(
+            f"{name} must be convertible to float, "
+            f"got {type(value).__name__}: {value!r}"
+        ) from exc
+    
 # ======================================================================================
 # STRUCTURAL OVERVIEW
 # ======================================================================================
@@ -262,28 +278,33 @@ def build_numeric_summary(dataframe: pd.DataFrame, numeric_columns: List[str]) -
 
         lower_bound, upper_bound = iqr_bounds(series)
 
+        q1 = scalar_to_float(series.quantile(0.25), f"{column} q1")
+        q3 = scalar_to_float(series.quantile(0.75), f"{column} q3")
+        minimum = scalar_to_float(series.min(), f"{column} min")
+        maximum = scalar_to_float(series.max(), f"{column} max")
+
         record = {
             "column": column,
             "count": int(series.count()),
-            "mean": float(series.mean()),
-            "median": float(series.median()),
+            "mean": scalar_to_float(series.mean(), f"{column} mean"),
+            "median": scalar_to_float(series.median(), f"{column} median"),
             "mode": safe_mode(series),
-            "std": float(series.std()),
-            "variance": float(series.var()),
-            "min": float(series.min()),
-            "q1": float(series.quantile(0.25)),
-            "q3": float(series.quantile(0.75)),
-            "max": float(series.max()),
-            "range": float(series.max() - series.min()),
-            "iqr": float(series.quantile(0.75) - series.quantile(0.25)),
-            "skewness": float(series.skew()),
-            "kurtosis": float(series.kurt()),
-            "cv": float(coefficient_of_variation(series)),
-            "mad": float(mad_value(series)),
+            "std": scalar_to_float(series.std(), f"{column} std"),
+            "variance": scalar_to_float(series.var(), f"{column} variance"),
+            "min": minimum,
+            "q1": q1,
+            "q3": q3,
+            "max": maximum,
+            "range": maximum - minimum,
+            "iqr": q3 - q1,
+            "skewness": scalar_to_float(series.skew(), f"{column} skewness"),
+            "kurtosis": scalar_to_float(series.kurt(), f"{column} kurtosis"),
+            "cv": scalar_to_float(coefficient_of_variation(series), f"{column} cv"),
+            "mad": scalar_to_float(mad_value(series), f"{column} mad"),
             "zero_count": int((series == 0).sum()),
             "negative_count": int((series < 0).sum()),
-            "iqr_lower_bound": float(lower_bound),
-            "iqr_upper_bound": float(upper_bound),
+            "iqr_lower_bound": scalar_to_float(lower_bound, f"{column} iqr_lower_bound"),
+            "iqr_upper_bound": scalar_to_float(upper_bound, f"{column} iqr_upper_bound"),
             "iqr_outlier_count": int(((series < lower_bound) | (series > upper_bound)).sum()),
         }
         records.append(record)
@@ -389,10 +410,14 @@ def plot_categorical_counts(
     plot_columns = categorical_columns[:max_plots] if max_plots is not None else categorical_columns
 
     for column in plot_columns:
+
         counts = dataframe[column].astype(str).value_counts(dropna=False).head(config.max_categories_to_plot)
 
+        labels = counts.index.astype(str).tolist()
+        heights = counts.astype(int).tolist()
+
         plt.figure(figsize=(12, 5))
-        plt.bar(counts.index.astype(str), counts.values)
+        plt.bar(labels, heights)
         plt.xticks(rotation=45, ha="right")
         plt.title(f"{config.dataset_name} - Count Plot: {column}")
         plt.xlabel(column)
@@ -432,14 +457,18 @@ def plot_correlation_heatmap(correlation_matrix: pd.DataFrame, config: EDAConfig
         print("Correlation heatmap skipped: not enough numeric columns.")
         return
 
+    x_labels: list[str] = correlation_matrix.columns.astype(str).tolist()
+    y_labels: list[str] = correlation_matrix.index.astype(str).tolist()
+
     plt.figure(figsize=(12, 10))
+
     if sns is not None:
         sns.heatmap(correlation_matrix, cmap="coolwarm", center=0)
     else:
         plt.imshow(correlation_matrix, aspect="auto")
         plt.colorbar()
-        plt.xticks(range(len(correlation_matrix.columns)), correlation_matrix.columns, rotation=90)
-        plt.yticks(range(len(correlation_matrix.index)), correlation_matrix.index)
+        plt.xticks(range(len(correlation_matrix.columns)), x_labels, rotation=90)
+        plt.yticks(range(len(correlation_matrix.index)), y_labels)
     plt.title(f"{config.dataset_name} - Correlation Heatmap")
     plt.tight_layout()
     save_figure(config, "correlation_heatmap.png")
@@ -506,12 +535,16 @@ def plot_target_distributions(
         return
 
     target_series = dataframe[config.target_column]
+    
 
     if not pd.api.types.is_numeric_dtype(target_series):
         counts = target_series.astype(str).value_counts(dropna=False)
 
+        x_labels: list[str] = counts.index.astype(str).tolist()
+        y_labels: list[int] = counts.astype(int).tolist()        
+
         plt.figure(figsize=(10, 5))
-        plt.bar(counts.index.astype(str), counts.values)
+        plt.bar(x_labels, y_labels)
         plt.xticks(rotation=45, ha="right")
         plt.title(f"{config.dataset_name} - Target Distribution: {config.target_column}")
         plt.ylabel("Count")
@@ -697,8 +730,11 @@ def plot_datetime_counts(dataframe: pd.DataFrame, datetime_columns: List[str], c
 
         counts = series.dt.date.value_counts().sort_index()
 
+        x_labels: list[str] = counts.index.astype(str).tolist()
+        y_labels: list[int] = counts.astype(int).tolist()
+
         plt.figure(figsize=(12, 5))
-        plt.plot(counts.index, counts.values)
+        plt.plot(x_labels, y_labels)
         plt.xticks(rotation=45)
         plt.title(f"{config.dataset_name} - Observation Counts Over Time: {column}")
         plt.xlabel("Date")

@@ -36,7 +36,9 @@ def _sanitize_dataframe_for_wandb_table(frame: pd.DataFrame) -> pd.DataFrame:
 
     # Convert datetime/tz-aware datetime columns to strings 
     for column in sanitized.columns:
-        if pd.api.types.is_datetime64_any_dtype(sanitized[column]) or pd.api.types.is_datetime64tz_dtype(sanitized[column]):
+        #if pd.api.types.is_datetime64_any_dtype(sanitized[column]) or pd.api.types.is_datetime64tz_dtype(sanitized[column]):
+        if pd.api.types.is_datetime64_any_dtype(sanitized[column]) or isinstance(sanitized[column].dtype, pd.DatetimeTZDtype):
+            
             sanitized[column] = sanitized[column].astype("string")
 
     # Convert pd.NA / NaN -> None (JSON serializable)

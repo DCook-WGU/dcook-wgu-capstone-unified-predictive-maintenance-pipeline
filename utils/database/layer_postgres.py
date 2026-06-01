@@ -70,7 +70,8 @@ def _infer_sqlalchemy_dtype_for_series(series: pd.Series):
     if pd.api.types.is_float_dtype(series):
         return FLOAT(precision=53)
 
-    if pd.api.types.is_datetime64tz_dtype(series):
+    #if pd.api.types.is_datetime64tz_dtype(series):
+    if isinstance(series.dtype, pd.DatetimeTZDtype):
         return TIMESTAMP(timezone=True)
 
     if pd.api.types.is_datetime64_any_dtype(series):

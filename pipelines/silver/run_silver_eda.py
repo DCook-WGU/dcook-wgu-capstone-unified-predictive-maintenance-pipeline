@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast, Dict
 
 import pandas as pd
 import wandb
@@ -267,6 +267,17 @@ def _pick_top_features(
 
     return top_features
 
+def require_dict(value: Any | None, name: str) -> Dict[str, Any]:
+    if value is None:
+        raise ValueError(f"{name} cannot be None.")
+
+    if not isinstance(value, dict):
+        raise TypeError(
+            f"{name} must be a dictionary, got {type(value).__name__}: {value!r}"
+        )
+
+    return cast(Dict[str, Any], value)
+
 
 def run_silver_eda(
     *,
@@ -364,6 +375,8 @@ def run_silver_eda(
         .unique()
         .tolist()
     )
+
+    feature_registry = require_dict(feature_registry, "feature_registry")
 
     top_features = _pick_top_features(
         dataframe,

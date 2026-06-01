@@ -10,7 +10,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal, cast
 
 import pandas as pd
 import wandb
@@ -160,7 +160,7 @@ def _initialize_wandb_run(
             "gold_artifacts_dir": str(runtime_inputs["gold_artifacts_path"]),
         },
     )
-    logger.info("W&B initialized: %s", wandb.run.name)
+    logger.info("W&B initialized: %s", wandb_run.name)
     return wandb_run
 
 
@@ -185,17 +185,32 @@ def _resolve_variant_summary_path(
     variant_name = f"{file_stem}__{variant}{suffix}"
     return gold_artifacts_path / variant_name
 
+def require_dict(value: Any | None, name: str) -> Dict[str, Any]:
+    if value is None:
+        raise ValueError(f"{name} cannot be None.")
+
+    if not isinstance(value, dict):
+        raise TypeError(
+            f"{name} must be a dictionary, got {type(value).__name__}: {value!r}"
+        )
+
+    return cast(Dict[str, Any], value)
 
 def _load_comparison_inputs(
     *,
     runtime_inputs: Dict[str, Any],
     logger: logging.Logger,
-):
-    baseline_summary_path = runtime_inputs["gold_artifacts_path"] / runtime_inputs["baseline_summary_file_name"]
+) -> Dict[str, Any]:
+    baseline_summary_path = (
+        runtime_inputs["gold_artifacts_path"]
+        / runtime_inputs["baseline_summary_file_name"]
+    )
+
     if not baseline_summary_path.exists():
         raise FileNotFoundError(f"Baseline summary not found: {baseline_summary_path}")
 
-    baseline_summary = load_json(baseline_summary_path)
+    baseline_summary_raw = load_json(baseline_summary_path)
+    baseline_summary = require_dict(baseline_summary_raw, "baseline_summary")
 
     cascade_summaries: List[Dict[str, Any]] = []
     cascade_paths: List[str] = []
@@ -206,13 +221,21 @@ def _load_comparison_inputs(
             runtime_inputs["cascade_summary_file_name"],
             variant,
         )
+
         if not variant_path.exists():
-            logger.warning("Cascade summary for variant '%s' not found at %s", variant, variant_path)
+            logger.warning(
+                "Cascade summary for variant '%s' not found at %s",
+                variant,
+                variant_path,
+            )
             continue
 
-        summary = load_json(variant_path)
+        summary_raw = load_json(variant_path)
+        summary = require_dict(summary_raw, f"cascade_summary[{variant}]")
+
         if "variant" not in summary:
             summary["variant"] = variant
+
         cascade_summaries.append(summary)
         cascade_paths.append(str(variant_path))
 

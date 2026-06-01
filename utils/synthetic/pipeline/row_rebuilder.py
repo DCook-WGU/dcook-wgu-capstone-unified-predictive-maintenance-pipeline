@@ -46,7 +46,8 @@ def _infer_alter_column_type(series: pd.Series) -> str:
         return "BIGINT"
     if pd.api.types.is_float_dtype(series):
         return "DOUBLE PRECISION"
-    if pd.api.types.is_datetime64tz_dtype(series):
+    #if pd.api.types.is_datetime64tz_dtype(series):
+    if isinstance(series.dtype, pd.DatetimeTZDtype):
         return "TIMESTAMPTZ"
     if pd.api.types.is_datetime64_any_dtype(series):
         return "TIMESTAMP"

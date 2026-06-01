@@ -549,6 +549,9 @@ def _parse_optional_bool(value: Optional[str]) -> Optional[bool]:
 
     raise ValueError(f"Could not parse boolean value: {value}")
 
+def _parse_bool_with_default(value: str | None, default: bool) -> bool:
+    parsed_value = _parse_optional_bool(value)
+    return parsed_value if parsed_value is not None else default
 
 def _parse_optional_json_dict(value: Optional[str]) -> Optional[Dict[str, str]]:
     """
@@ -644,6 +647,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     parser = _build_arg_parser()
     args = parser.parse_args()
+    
 
     result = run_full_pipeline(
         config_root=Path(args.config_root) if args.config_root else None,
@@ -654,7 +658,8 @@ if __name__ == "__main__":
         start_stage=args.start_stage,
         end_stage=args.end_stage,
         cascade_variants=args.cascade_variants,
-        stop_on_error=_parse_optional_bool(args.stop_on_error) if args.stop_on_error is not None else True,
+        #stop_on_error=_parse_optional_bool(args.stop_on_error) if args.stop_on_error is not None else True,
+        stop_on_error=_parse_bool_with_default(args.stop_on_error, default=True),
         run_id=args.run_id,
         asset_id=args.asset_id,
         raw_file_name=args.raw_file_name,

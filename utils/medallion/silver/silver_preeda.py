@@ -26,11 +26,12 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Any, Dict, List, Optional, Pattern, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Pattern, Sequence, Tuple, Union, Literal
 
 import numpy as np
 import pandas as pd
 
+DropKeep = Literal["first", "last", False]
 
 RegexLike = Union[str, Pattern[str]]
 
@@ -83,7 +84,7 @@ def _ensure_regex_pattern(pattern: RegexLike) -> Pattern[str]:
 def deduplicate_columns(
     dataframe: pd.DataFrame,
     *,
-    keep: str = "first",
+    keep: DropKeep = "first",
 ) -> Tuple[pd.DataFrame, List[str]]:
     """
     Remove duplicate column names while preserving the chosen keep strategy.
@@ -211,7 +212,7 @@ def resolve_label_or_status_source(
     - "label"
     - None
     """
-    label_exclude_columns = set(label_exclude_columns or [])
+    label_exclude_columns_set = set(label_exclude_columns or [])
 
     def _top_values(column: str) -> Dict[str, int]:
         value_counts = (
@@ -234,11 +235,11 @@ def resolve_label_or_status_source(
         }
 
     for column_name in status_column_candidates:
-        if column_name in dataframe.columns and column_name not in label_exclude_columns:
+        if column_name in dataframe.columns and column_name not in label_exclude_columns_set:
             return column_name, "status", _column_info(column_name)
 
     for column_name in label_column_candidates:
-        if column_name in dataframe.columns and column_name not in label_exclude_columns:
+        if column_name in dataframe.columns and column_name not in label_exclude_columns_set:
             return column_name, "label", _column_info(column_name)
 
     return None, None, {

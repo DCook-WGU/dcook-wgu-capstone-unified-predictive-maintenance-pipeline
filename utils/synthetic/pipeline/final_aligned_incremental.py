@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Any
+from numbers import Integral
 
 import pandas as pd
 
@@ -50,7 +51,8 @@ def _infer_alter_column_type(series: pd.Series) -> str:
         return "BIGINT"
     if pd.api.types.is_float_dtype(series):
         return "DOUBLE PRECISION"
-    if pd.api.types.is_datetime64tz_dtype(series):
+    #if pd.api.types.is_datetime64tz_dtype(series):
+    if isinstance(series, pd.DatetimeTZDtype):
         return "TIMESTAMPTZ"
     if pd.api.types.is_datetime64_any_dtype(series):
         return "TIMESTAMP"
@@ -514,7 +516,16 @@ def requeue_failed_final_aligns(
         WHERE final_align_status = 'pending'
         """
     )
-    return int(result.loc[0, "row_count"])
+
+    result_row_count = result.at[0, "row_count"]
+
+    if not isinstance(result_row_count, Integral):
+        raise TypeError(
+            f"Expected result_row_count to be an integer-compatible value."
+            f"got {type(result_row_count).__name__}: {result_row_count}"
+        )
+
+    return int(result_row_count)
 
 
 # -----------------------------------------------------------------------------

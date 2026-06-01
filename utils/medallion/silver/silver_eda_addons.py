@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Any
 
 import numpy as np
 import pandas as pd
@@ -434,14 +434,14 @@ def build_state_transition_artifacts(
         )
     else:
         dwell_summary_df = (
-            dwell_events_df.groupby("state", as_index=False)["dwell_length_rows"]
+            dwell_events_df.groupby("state", as_index=False)
             .agg(
-                dwell_event_count="count",
-                mean_dwell_length_rows="mean",
-                median_dwell_length_rows="median",
-                max_dwell_length_rows="max",
+                dwell_event_count=("dwell_length_rows", "count"),
+                mean_dwell_length_rows=("dwell_length_rows", "mean"),
+                median_dwell_length_rows=("dwell_length_rows", "median"),
+                max_dwell_length_rows=("dwell_length_rows", "max"),
             )
-            .sort_values("mean_dwell_length_rows", ascending=False)
+            .sort_values(by="mean_dwell_length_rows", ascending=False)
             .reset_index(drop=True)
         )
 
@@ -577,7 +577,14 @@ def build_robust_feature_comparison_artifacts(
             if baseline_iqr not in (0.0, np.nan) and not np.isnan(baseline_iqr) and baseline_iqr != 0:
                 iqr_ratio = comparison_iqr / baseline_iqr
 
-            ks_result = ks_2samp(baseline_values.values, comparison_values.values, method="auto")
+            ks_result: Any = ks_2samp(
+                baseline_values.to_numpy(),
+                comparison_values.to_numpy(),
+                method="auto",
+            )
+
+            ks_statistic = float(ks_result.statistic)
+            ks_pvalue = float(ks_result.pvalue)
 
             rows.append(
                 {
@@ -593,8 +600,8 @@ def build_robust_feature_comparison_artifacts(
                     "median_shift": float(median_shift),
                     "standardized_median_shift": float(standardized_median_shift) if standardized_median_shift is not None else None,
                     "iqr_ratio": float(iqr_ratio) if iqr_ratio is not None else None,
-                    "ks_statistic": float(ks_result.statistic),
-                    "ks_pvalue": float(ks_result.pvalue),
+                    "ks_statistic": float(ks_statistic),
+                    "ks_pvalue": float(ks_pvalue),
                 }
             )
 
@@ -661,17 +668,20 @@ def build_robust_feature_comparison_artifacts(
         plot_df = pd.DataFrame(plot_rows)
 
         plt.figure(figsize=(9, 4))
+
         ordered_values = [
             plot_df.loc[plot_df["state"].eq(state_value), "value"].values
             for state_value in state_plot_order
             if state_value in plot_df["state"].unique()
         ]
+
         ordered_labels = [
             state_value
             for state_value in state_plot_order
             if state_value in plot_df["state"].unique()
         ]
-        plt.boxplot(ordered_values, labels=ordered_labels, showfliers=False)
+
+        plt.boxplot(ordered_values, label=ordered_labels, showfliers=False)
         plt.title(f"State boxplot: {feature_name}")
         plt.ylabel(feature_name)
         plt.tight_layout()

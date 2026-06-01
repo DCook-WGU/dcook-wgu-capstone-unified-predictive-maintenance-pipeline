@@ -217,90 +217,92 @@ def get_unloaded_source_batch_ids(
         "new_batch_count": len(new_batch_ids),
     }
 
-def get_unloaded_source_batch_ids(
-    engine: Engine,
-    *,
-    source_schema: str,
-    source_table: str,
-    target_schema: str,
-    target_table: str,
-    requested_batch_ids: Optional[Iterable[int]] = None,
-    batch_column: str = "batch_id",
-) -> dict[str, Any]:
-    """
-    Compare source and target tables and return which source batches have not
-    yet been loaded into the target append table.
-    """
-    source_batch_ids = set(
-        get_distinct_batch_ids(
-            engine,
-            schema=source_schema,
-            table_name=source_table,
-            batch_column=batch_column,
-        )
-    )
+#def get_unloaded_source_batch_ids(
+#    engine: Engine,
+#    *,
+#    source_schema: str,
+#    source_table: str,
+#    target_schema: str,
+#    target_table: str,
+#    requested_batch_ids: Optional[Iterable[int]] = None,
+#    batch_column: str = "batch_id",
+#) -> dict[str, Any]:
+#    """
+#    Compare source and target tables and return which source batches have not
+#    yet been loaded into the target append table.
+#    """
+#    source_batch_ids = set(
+#        get_distinct_batch_ids(
+#            engine,
+#            schema=source_schema,
+#            table_name=source_table,
+#            batch_column=batch_column,
+#        )
+#    )
+#
+#    if requested_batch_ids is None:
+#        candidate_batch_ids = sorted(source_batch_ids)
+#    else:
+#        requested_batch_ids = {int(value) for value in requested_batch_ids}
+#        candidate_batch_ids = sorted(source_batch_ids.intersection(requested_batch_ids))
+#
+#    target_batch_ids = set(
+#        get_distinct_batch_ids(
+#            engine,
+#            schema=target_schema,
+#            table_name=target_table,
+#            batch_column=batch_column,
+#        )
+#    )
+#
+#    already_loaded_batch_ids = sorted(set(candidate_batch_ids).intersection(target_batch_ids))
+#    new_batch_ids = sorted(set(candidate_batch_ids) - target_batch_ids)
+#
+#    return {
+#        "candidate_batch_ids": candidate_batch_ids,
+#        "already_loaded_batch_ids": already_loaded_batch_ids,
+#        "new_batch_ids": new_batch_ids,
+#        "candidate_batch_count": len(candidate_batch_ids),
+#        "already_loaded_batch_count": len(already_loaded_batch_ids),
+#        "new_batch_count": len(new_batch_ids),
+#    }
 
-    if requested_batch_ids is None:
-        candidate_batch_ids = sorted(source_batch_ids)
-    else:
-        requested_batch_ids = {int(value) for value in requested_batch_ids}
-        candidate_batch_ids = sorted(source_batch_ids.intersection(requested_batch_ids))
 
-    target_batch_ids = set(
-        get_distinct_batch_ids(
-            engine,
-            schema=target_schema,
-            table_name=target_table,
-            batch_column=batch_column,
-        )
-    )
+#def ensure_handoff_control_table(
+#    engine: Engine,
+#    *,
+#    schema: str = "capstone",
+#    table_name: str = "synthetic_bronze_handoff_control",
+#) -> None:
+#    safe_schema = sanitize_sql_identifier(schema)
+#    safe_table = sanitize_sql_identifier(table_name)
+#
+#    sql = f'''
+#    CREATE TABLE IF NOT EXISTS "{safe_schema}"."{safe_table}" (
+#        dataset_name TEXT NOT NULL,
+#        target_schema TEXT NOT NULL,
+#        target_table TEXT NOT NULL,
+#        last_loaded_batch_id BIGINT,
+#        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
+#        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
+#        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
+#        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
+#        next_timestamp TIMESTAMP NOT NULL,
+#        last_append_row_count BIGINT NOT NULL DEFAULT 0,
+#        last_loaded_batch_ids_json JSONB,
+#        last_truth_hash TEXT,
+#        last_process_run_id TEXT,
+#        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+#        notes TEXT,
+#        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+#        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+#        PRIMARY KEY (dataset_name, target_schema, target_table)
+#    )
+#    '''
+#
+#    with engine.begin() as conn:
+#        conn.exec_driver_sql(sql)
 
-    already_loaded_batch_ids = sorted(set(candidate_batch_ids).intersection(target_batch_ids))
-    new_batch_ids = sorted(set(candidate_batch_ids) - target_batch_ids)
-
-    return {
-        "candidate_batch_ids": candidate_batch_ids,
-        "already_loaded_batch_ids": already_loaded_batch_ids,
-        "new_batch_ids": new_batch_ids,
-        "candidate_batch_count": len(candidate_batch_ids),
-        "already_loaded_batch_count": len(already_loaded_batch_ids),
-        "new_batch_count": len(new_batch_ids),
-    }
-
-def ensure_handoff_control_table(
-    engine: Engine,
-    *,
-    schema: str = "capstone",
-    table_name: str = "synthetic_bronze_handoff_control",
-) -> None:
-    safe_schema = sanitize_sql_identifier(schema)
-    safe_table = sanitize_sql_identifier(table_name)
-
-    sql = f'''
-    CREATE TABLE IF NOT EXISTS "{safe_schema}"."{safe_table}" (
-        dataset_name TEXT NOT NULL,
-        target_schema TEXT NOT NULL,
-        target_table TEXT NOT NULL,
-        last_loaded_batch_id BIGINT,
-        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
-        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
-        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
-        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
-        next_timestamp TIMESTAMP NOT NULL,
-        last_append_row_count BIGINT NOT NULL DEFAULT 0,
-        last_loaded_batch_ids_json JSONB,
-        last_truth_hash TEXT,
-        last_process_run_id TEXT,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE,
-        notes TEXT,
-        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
-        PRIMARY KEY (dataset_name, target_schema, target_table)
-    )
-    '''
-
-    with engine.begin() as conn:
-        conn.exec_driver_sql(sql)
 
 def ensure_handoff_control_table(
     engine: Engine,
@@ -489,37 +491,37 @@ def upsert_handoff_control_record(
 
 
 
-def ensure_handoff_control_table(
-    engine,
-    *,
-    schema: str = "capstone",
-    table_name: str = "synthetic_bronze_handoff_control",
-) -> None:
-    create_sql = f'''
-    CREATE TABLE IF NOT EXISTS "{schema}"."{table_name}" (
-        dataset_name TEXT NOT NULL,
-        target_schema TEXT NOT NULL,
-        target_table TEXT NOT NULL,
-        last_loaded_batch_id BIGINT,
-        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
-        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
-        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
-        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
-        next_timestamp TIMESTAMP NOT NULL,
-        last_append_row_count BIGINT NOT NULL DEFAULT 0,
-        last_loaded_batch_ids_json JSONB,
-        last_truth_hash TEXT,
-        last_process_run_id TEXT,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE,
-        notes TEXT,
-        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
-        PRIMARY KEY (dataset_name, target_schema, target_table)
-    )
-    '''
-
-    with engine.begin() as conn:
-        conn.execute(text(create_sql))
+#def ensure_handoff_control_table(
+#    engine,
+#    *,
+#    schema: str = "capstone",
+#    table_name: str = "synthetic_bronze_handoff_control",
+#) -> None:
+#    create_sql = f'''
+#    CREATE TABLE IF NOT EXISTS "{schema}"."{table_name}" (
+#        dataset_name TEXT NOT NULL,
+#        target_schema TEXT NOT NULL,
+#        target_table TEXT NOT NULL,
+#        last_loaded_batch_id BIGINT,
+#        loaded_batch_count BIGINT NOT NULL DEFAULT 0,
+#        next_unified_row_id BIGINT NOT NULL DEFAULT 1,
+#        next_unified_episode_id BIGINT NOT NULL DEFAULT 0,
+#        next_observation_time_index BIGINT NOT NULL DEFAULT 0,
+#        next_timestamp TIMESTAMP NOT NULL,
+#        last_append_row_count BIGINT NOT NULL DEFAULT 0,
+#        last_loaded_batch_ids_json JSONB,
+#        last_truth_hash TEXT,
+#        last_process_run_id TEXT,
+#        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+#        notes TEXT,
+#        created_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+#        updated_at_utc TIMESTAMP NOT NULL DEFAULT NOW(),
+#        PRIMARY KEY (dataset_name, target_schema, target_table)
+#    )
+#    '''
+#
+#    with engine.begin() as conn:
+#        conn.execute(text(create_sql))
 
 def get_handoff_control_record(
     engine: Engine,
@@ -561,7 +563,12 @@ def get_handoff_control_record(
     if dataframe.empty:
         return None
 
-    record = dataframe.iloc[0].to_dict()
+    raw_record = dataframe.iloc[0].to_dict()
+    
+    record: dict[str, Any] = {
+        str(key): value
+        for key, value in raw_record.items()
+    }
 
     if record.get("next_timestamp") is not None:
         record["next_timestamp"] = pd.to_datetime(record["next_timestamp"])
@@ -836,15 +843,22 @@ def add_synthetic_anomaly_flag(
     if machine_status_column not in out.columns:
         raise ValueError(f"Missing machine status column: {machine_status_column}")
 
-    normal_statuses = normal_statuses or ["NORMAL"]
-    normal_statuses = {str(value).strip().upper() for value in normal_statuses}
+    resolved_normal_statuses: Sequence[str] = normal_statuses or ["NORMAL"]
+
+    normal_status_set: set[str] = {
+        str(value).strip().upper()
+        for value in resolved_normal_statuses
+    }
 
     out[output_column] = (
-        ~out[machine_status_column].astype(str).str.upper().isin(normal_statuses)
+        ~out[machine_status_column]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .isin(normal_status_set)
     ).astype("int8")
 
     return out
-
 
 def trim_unified_dataframe(
     dataframe: pd.DataFrame,
@@ -1226,7 +1240,7 @@ def write_bronze_handoff_to_postgres(
     )
 
 
-__all__ = [
+__all__: list[str] = [
     "DEFAULT_STREAM_STATE_TO_MACHINE_STATUS",
     "DEFAULT_PHASE_TO_MACHINE_STATUS",
     "build_engine_from_project_env",
@@ -1235,7 +1249,6 @@ __all__ = [
     "read_synthetic_stream_dataframe",
     "get_distinct_batch_ids",
     "get_unloaded_source_batch_ids",
-    "get_handoff_control_record"
     "get_handoff_control_record",
     "get_effective_handoff_offsets",
     "upsert_handoff_control_record",

@@ -145,11 +145,11 @@ def build_categorical_cardinality_table(
     """
     Build categorical cardinality table.
     """
-    exclude_columns = set(exclude_columns or [])
+    exclude_columns_set = set(exclude_columns or [])
 
     rows = []
     for column_name in dataframe.columns:
-        if column_name in exclude_columns:
+        if column_name in exclude_columns_set:
             continue
         if pd.api.types.is_numeric_dtype(dataframe[column_name]):
             continue

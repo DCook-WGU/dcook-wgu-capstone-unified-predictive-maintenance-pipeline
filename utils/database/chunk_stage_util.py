@@ -4,6 +4,7 @@ import os
 import gc
 import psutil
 
+from numbers import Integral
 from typing import Any, Callable, Mapping, Optional
 
 import pandas as pd
@@ -114,7 +115,7 @@ def get_table_row_count(
 ) -> int:
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
-    params = dict(params or {})
+    query_params = dict(params or {})
 
     sql = f'''
     SELECT COUNT(*) AS row_count
@@ -123,9 +124,17 @@ def get_table_row_count(
     '''
 
     with engine.begin() as connection:
-        dataframe = pd.read_sql(text(sql), connection, params=params)
+        dataframe = pd.read_sql(text(sql), connection, params=query_params)
 
-    return int(dataframe.loc[0, "row_count"])
+    raw_row_count = dataframe.at[0, "row_count"]
+
+    if not isinstance(raw_row_count, Integral):
+        raise TypeError(
+            f"Expected row_count to be an integer-compatible value, "
+            f"got {type(raw_row_count).__name__}: {raw_row_count!r}"
+        )
+
+    return int(raw_row_count)
 
 # -----------------------------------------------------------------------------
 # Read Table Chunk By Row Number
@@ -299,11 +308,23 @@ def get_observation_index_bounds(
     with engine.begin() as connection:
         dataframe = pd.read_sql(text(sql), connection, params=params)
 
-    min_value = dataframe.loc[0, "min_observation_index"]
-    max_value = dataframe.loc[0, "max_observation_index"]
+    min_value = dataframe.at[0, "min_observation_index"]
+    max_value = dataframe.at[0, "max_observation_index"]
 
     if pd.isna(min_value) or pd.isna(max_value):
         return None, None
+
+    if not isinstance(min_value, Integral):
+        raise TypeError(
+            f"Expected min_observation_index to be integer-compatible, "
+            f"got {type(min_value).__name__}: {min_value!r}"
+        )
+
+    if not isinstance(max_value, Integral):
+        raise TypeError(
+            f"Expected max_observation_index to be integer-compatible, "
+            f"got {type(max_value).__name__}: {max_value!r}"
+        )
 
     return int(min_value), int(max_value)
 

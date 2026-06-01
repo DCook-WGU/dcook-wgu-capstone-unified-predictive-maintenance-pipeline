@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Literal, Any
 
 from datetime import datetime
 import pandas as pd
@@ -415,13 +415,11 @@ def ingest_data(
 
 
 def load_data(
-        file_path, 
-        file_name=None, 
-        engine: str = "pyarrow", 
-        **read_kwargs
-    ):
-    
-
+    file_path: str | Path,
+    file_name: str | None = None,
+    engine: Literal["pyarrow"] = "pyarrow",
+    **read_kwargs: Any,
+) -> pd.DataFrame:
     path = _resolve_path(file_path, file_name)
     suffix = path.suffix.lower()
 
@@ -430,12 +428,11 @@ def load_data(
             logger.info("Loading CSV: %s", path)
             return pd.read_csv(path, **read_kwargs)
 
-        elif suffix in {".parquet", ".pq"}:
+        if suffix in {".parquet", ".pq"}:
             logger.info("Loading Parquet: %s", path)
             return pd.read_parquet(path, engine=engine, **read_kwargs)
 
-        else:
-            raise ValueError(f"Unsupported file type: {suffix}")
+        raise ValueError(f"Unsupported file type: {suffix}")
 
     except Exception:
         logger.exception("Error reading file: %s", path)

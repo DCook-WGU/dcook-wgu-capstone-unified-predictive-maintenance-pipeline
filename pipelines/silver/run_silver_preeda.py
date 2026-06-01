@@ -10,7 +10,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 import re
 import wandb
@@ -212,7 +212,7 @@ def _initialize_wandb_run(
         },
     )
 
-    logger.info("W&B initialized: %s", wandb.run.name)
+    logger.info("W&B initialized: %s", wandb_run.name)
     return wandb_run
 
 
@@ -441,6 +441,16 @@ def _build_and_save_silver_truth(
         "silver_truth_path": str(silver_truth_path),
     }
 
+def require_dict(value: Any | None, name: str) -> Dict[str, Any]:
+    if value is None:
+        raise ValueError(f"{name} cannot be None.")
+
+    if not isinstance(value, dict):
+        raise TypeError(
+            f"{name} must be a dictionary, got {type(value).__name__}: {value!r}"
+        )
+
+    return cast(Dict[str, Any], value)
 
 def _run_lineage_sanity_checks(
     *,
@@ -499,33 +509,39 @@ def _run_lineage_sanity_checks(
     if not Path(silver_truth_path).exists():
         raise FileNotFoundError(f"Silver truth file was not created: {silver_truth_path}")
 
-    loaded_silver_truth = load_json(silver_truth_path)
+    loaded_silver_truth_raw = load_json(silver_truth_path)
+    loaded_silver_truth = require_dict(loaded_silver_truth_raw, "loaded_silver_truth")
 
-    if loaded_silver_truth.get("truth_hash") != silver_truth_hash:
+    loaded_truth_hash = loaded_silver_truth.get("truth_hash")
+    loaded_parent_truth_hash = loaded_silver_truth.get("partent_truth_hash")
+    loaded_row_count = loaded_silver_truth.get("row_count")
+    loaded_column_count = loaded_silver_truth.get("row_count")
+
+    if loaded_truth_hash != silver_truth_hash:
         raise ValueError(
-            "Saved Silver truth file hash does not match truth record:\n"
-            f"file={loaded_silver_truth.get('truth_hash')}\n"
+            "Saved Gold truth file hash does not match truth record:\n"
+            f"file={loaded_truth_hash}\n"
             f"record={silver_truth_hash}"
         )
 
-    if loaded_silver_truth.get("parent_truth_hash") != silver_parent_truth_hash:
+    if loaded_parent_truth_hash != silver_parent_truth_hash:
         raise ValueError(
             "Saved Silver truth file parent hash does not match expected parent:\n"
-            f"truth={loaded_silver_truth.get('parent_truth_hash')}\n"
-            f"silver_parent={silver_parent_truth_hash}"
+            f"file={loaded_parent_truth_hash}\n"
+            f"record={silver_truth_hash}"
         )
 
-    if loaded_silver_truth.get("row_count") != len(dataframe):
+    if loaded_row_count != len(dataframe):
         raise ValueError(
             "Silver truth row_count does not match dataframe row count:\n"
-            f"truth={loaded_silver_truth.get('row_count')}\n"
+            f"file={loaded_row_count}\n"
             f"dataframe={len(dataframe)}"
         )
 
-    if loaded_silver_truth.get("column_count") != dataframe.shape[1]:
+    if loaded_column_count != dataframe.shape[1]:
         raise ValueError(
             "Silver truth column_count does not match stamped dataframe column count:\n"
-            f"truth={loaded_silver_truth.get('column_count')}\n"
+            f"truth={loaded_column_count}\n"
             f"dataframe={dataframe.shape[1]}"
         )
 

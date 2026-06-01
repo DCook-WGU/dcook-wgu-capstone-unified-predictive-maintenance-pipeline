@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Any, cast
 
 import pandas as pd
 
@@ -44,7 +44,8 @@ def _infer_alter_column_type(series: pd.Series) -> str:
         return "BIGINT"
     if pd.api.types.is_float_dtype(series):
         return "DOUBLE PRECISION"
-    if pd.api.types.is_datetime64tz_dtype(series):
+    #if pd.api.types.is_datetime64tz_dtype(series):
+    if isinstance(series.dtype, pd.DatetimeTZDtype):
         return "TIMESTAMPTZ"
     if pd.api.types.is_datetime64_any_dtype(series):
         return "TIMESTAMP"
@@ -82,6 +83,12 @@ def _validate_handoff_mode(mode: str) -> str:
         raise ValueError(f"mode must be one of {sorted(allowed)}")
     return resolved
 
+def dataframe_row_count_to_int(dataframe: pd.DataFrame, *, column: str = "row_count") -> int:
+    if dataframe.empty:
+        return 0
+
+    raw_value = dataframe.at[0, column]
+    return int(cast(Any, raw_value))
 
 def _resolve_effective_batch_size(
     engine,
@@ -104,7 +111,6 @@ def _resolve_effective_batch_size(
             raise ValueError("batch_size must be > 0 for row_batch mode.")
         return int(batch_size)
 
-    # full_batch
     count_sql = f"""
     SELECT COUNT(*) AS row_count
     FROM "{sanitize_sql_identifier(schema)}"."{sanitize_sql_identifier(source_table)}"
@@ -113,16 +119,17 @@ def _resolve_effective_batch_size(
       {"AND dataset_id = :dataset_id" if dataset_id is not None else ""}
       {"AND run_id = :run_id" if run_id is not None else ""}
     """
-    params = {}
+
+    params: dict[str, Any] = {}
+
     if dataset_id is not None:
         params["dataset_id"] = str(dataset_id).strip()
+
     if run_id is not None:
         params["run_id"] = str(run_id).strip()
 
     count_df = read_sql_dataframe(engine, count_sql, params=params)
-    if count_df.empty:
-        return 0
-    return int(count_df.loc[0, "row_count"])
+    return dataframe_row_count_to_int(count_df)
 
 
 # -----------------------------------------------------------------------------
@@ -529,16 +536,19 @@ def requeue_failed_bronze_handoffs(
         bronze_handoff_error = NULL
     WHERE bronze_handoff_status = 'failed'
     """
+
     execute_sql(engine, sql)
+
     result = read_sql_dataframe(
         engine,
         f"""
         SELECT COUNT(*) AS row_count
         FROM "{safe_schema}"."{safe_source}"
         WHERE bronze_handoff_status = 'pending'
-        """
+        """,
     )
-    return int(result.loc[0, "row_count"])
+
+    return dataframe_row_count_to_int(result)
 
 
 # -----------------------------------------------------------------------------

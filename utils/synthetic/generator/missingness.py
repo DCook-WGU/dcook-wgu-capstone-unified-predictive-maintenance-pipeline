@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from collections.abc import Iterable as IterableABC
+from collections.abc import Mapping
+from typing import Dict, List, Optional, Sequence, Tuple, Mapping, Any
 import numpy as np
 import pandas as pd
 
@@ -21,8 +23,107 @@ class MissingnessSpec:
     state_list: List[str]
     state_col_synth: str
 
+def _payload_mapping(
+    payload: Mapping[str, object],
+    key: str,
+) -> Mapping[Any, Any]:
+    value = payload.get(key)
 
-def build_missingness_spec_from_truth_payload(payload: Dict[str, object]) -> MissingnessSpec:
+    if value is None:
+        return {}
+
+    if not isinstance(value, Mapping):
+        raise TypeError(
+            f"Expected payload[{key!r}] to be a mapping, "
+            f"got {type(value).__name__}: {value!r}"
+        )
+
+    return value
+
+
+def _payload_str_float_dict(
+    payload: Mapping[str, object],
+    key: str,
+) -> Dict[str, float]:
+    raw_mapping = _payload_mapping(payload, key)
+
+    return {
+        str(raw_key): float(raw_value)
+        for raw_key, raw_value in raw_mapping.items()
+    }
+
+
+def _payload_str_bool_dict(
+    payload: Mapping[str, object],
+    key: str,
+) -> Dict[str, bool]:
+    raw_mapping = _payload_mapping(payload, key)
+
+    return {
+        str(raw_key): bool(raw_value)
+        for raw_key, raw_value in raw_mapping.items()
+    }
+
+
+def _payload_nested_str_float_dict(
+    payload: Mapping[str, object],
+    key: str,
+) -> Dict[str, Dict[str, float]]:
+    raw_outer_mapping = _payload_mapping(payload, key)
+
+    normalized: Dict[str, Dict[str, float]] = {}
+
+    for raw_state, raw_inner_mapping in raw_outer_mapping.items():
+        state_key = str(raw_state)
+
+        if raw_inner_mapping is None:
+            normalized[state_key] = {}
+            continue
+
+        if not isinstance(raw_inner_mapping, Mapping):
+            raise TypeError(
+                f"Expected payload[{key!r}][{state_key!r}] to be a mapping, "
+                f"got {type(raw_inner_mapping).__name__}: {raw_inner_mapping!r}"
+            )
+
+        normalized[state_key] = {
+            str(raw_sensor): float(raw_pct)
+            for raw_sensor, raw_pct in raw_inner_mapping.items()
+        }
+
+    return normalized
+
+
+def _payload_string_list(
+    payload: Mapping[str, object],
+    key: str,
+) -> list[str]:
+    value = payload.get(key)
+
+    if value is None:
+        return []
+
+    if isinstance(value, str):
+        raw_values: IterableABC[object] = [value]
+    elif isinstance(value, bytes):
+        raw_values = [value.decode("utf-8")]
+    elif isinstance(value, IterableABC):
+        raw_values = value
+    else:
+        raise TypeError(
+            f"Expected payload[{key!r}] to be iterable, "
+            f"got {type(value).__name__}: {value!r}"
+        )
+
+    return [
+        str(raw_value).strip()
+        for raw_value in raw_values
+        if str(raw_value).strip()
+    ]
+
+def build_missingness_spec_from_truth_payload(
+    payload: Dict[str, object],
+) -> MissingnessSpec:
     """
     Build MissingnessSpec from truth.runtime_facts.missingness_quarantine.
 
@@ -34,26 +135,76 @@ def build_missingness_spec_from_truth_payload(payload: Dict[str, object]) -> Mis
     - ensure dropped sensors get a default dependency flag
     - normalize the historical typo in state_col_synth
     """
-    pct_all = dict(payload.get("missingness_pct_all") or {})
-    pct_by_state = dict(payload.get("missingness_pct_by_state") or {})
-    dep = dict(payload.get("missingness_state_dependent_flag") or {})
-    gate = dict(payload.get("missingness_state_gate_params") or {})
+    pct_all: Dict[str, float] = _payload_str_float_dict(
+        payload,
+        "missingness_pct_all",
+    )
 
-    dropped_features = [str(s).strip() for s in (payload.get("dropped_features") or []) if str(s).strip()]
-    dropped_missing_pct = dict(payload.get("dropped_missing_pct") or {})
-    dropped_missing_pct_by_state = dict(payload.get("dropped_missing_pct_by_state") or {})
+    pct_by_state: Dict[str, Dict[str, float]] = _payload_nested_str_float_dict(
+        payload,
+        "missingness_pct_by_state",
+    )
 
-    state_list = list(gate.get("state_list") or ["normal", "abnormal", "recovery"])
-    state_col_synth = str(gate.get("state_col_synth") or "machine_status__synthetic")
+    dep: Dict[str, bool] = _payload_str_bool_dict(
+        payload,
+        "missingness_state_dependent_flag",
+    )
+
+    gate: Mapping[Any, Any] = _payload_mapping(
+        payload,
+        "missingness_state_gate_params",
+    )
+
+    dropped_features: list[str] = _payload_string_list(
+        payload,
+        "dropped_features",
+    )
+
+    dropped_missing_pct: Dict[str, float] = _payload_str_float_dict(
+        payload,
+        "dropped_missing_pct",
+    )
+
+    dropped_missing_pct_by_state: Dict[str, Dict[str, float]] = (
+        _payload_nested_str_float_dict(
+            payload,
+            "dropped_missing_pct_by_state",
+        )
+    )
+
+    raw_state_list = gate.get("state_list")
+
+    if raw_state_list is None:
+        state_list: list[str] = ["normal", "abnormal", "recovery"]
+    elif isinstance(raw_state_list, str):
+        state_list = [raw_state_list]
+    elif isinstance(raw_state_list, IterableABC):
+        state_list = [
+            str(raw_state).strip()
+            for raw_state in raw_state_list
+            if str(raw_state).strip()
+        ]
+    else:
+        raise TypeError(
+            "missingness_state_gate_params['state_list'] must be iterable "
+            f"or string, got {type(raw_state_list).__name__}: {raw_state_list!r}"
+        )
+
+    state_col_synth = str(
+        gate.get("state_col_synth") or "machine_status__synthetic"
+    )
 
     # normalize the historical typo
     if state_col_synth == "machine_status__synethic":
         state_col_synth = "machine_status__synthetic"
 
-    # normalize nested by-state dict first
     pct_by_state_norm: Dict[str, Dict[str, float]] = {}
-    for st in state_list:
-        pct_by_state_norm[str(st)] = dict(pct_by_state.get(st) or {})
+
+    for state_name in state_list:
+        state_key = str(state_name)
+        pct_by_state_norm[state_key] = dict(
+            pct_by_state.get(state_key, {})
+        )
 
     # ------------------------------------------------------------
     # Permanent fix 1:
@@ -78,33 +229,43 @@ def build_missingness_spec_from_truth_payload(payload: Dict[str, object]) -> Mis
     #   "recovery": {"sensor_50": 55.0, ...},
     # }
     # ------------------------------------------------------------
-    for st in state_list:
-        st_key = str(st)
-        dropped_state_map = dict(dropped_missing_pct_by_state.get(st_key) or {})
+    for state_name in state_list:
+        state_key = str(state_name)
+        dropped_state_map = dropped_missing_pct_by_state.get(state_key, {})
 
         if not dropped_state_map:
             continue
 
-        for sensor_name, pct_value in dropped_state_map.items():
-            sensor_name = str(sensor_name).strip()
+        state_missingness = pct_by_state_norm.setdefault(state_key, {})
+
+        for raw_sensor_name, pct_value in dropped_state_map.items():
+            sensor_name = str(raw_sensor_name).strip()
+
             if sensor_name == "":
                 continue
 
-            pct_by_state_norm.setdefault(st_key, {})
-            pct_by_state_norm[st_key][sensor_name] = float(pct_value)
+            state_missingness[sensor_name] = float(pct_value)
             dep[sensor_name] = True
 
     return MissingnessSpec(
-        missingness_pct_all={str(k): float(v) for k, v in pct_all.items()},
-        missingness_pct_by_state={
-            str(st): {
-                str(k): float(v)
-                for k, v in (pct_by_state_norm.get(str(st)) or {}).items()
-            }
-            for st in state_list
+        missingness_pct_all={
+            str(sensor_name): float(pct_value)
+            for sensor_name, pct_value in pct_all.items()
         },
-        missingness_state_dependent_flag={str(k): bool(v) for k, v in dep.items()},
-        state_list=[str(s) for s in state_list],
+        missingness_pct_by_state={
+            str(state_name): {
+                str(sensor_name): float(pct_value)
+                for sensor_name, pct_value in (
+                    pct_by_state_norm.get(str(state_name)) or {}
+                ).items()
+            }
+            for state_name in state_list
+        },
+        missingness_state_dependent_flag={
+            str(sensor_name): bool(is_state_dependent)
+            for sensor_name, is_state_dependent in dep.items()
+        },
+        state_list=[str(state_name) for state_name in state_list],
         state_col_synth=state_col_synth,
     )
 
@@ -162,7 +323,10 @@ def apply_exact_missingness_mask(
         keep_mask = pd.Series(False, index=idx)
         keep_mask.loc[keep_idx] = True
 
-        drop_idx = idx[~keep_mask.values]
+        #drop_idx = idx[~keep_mask.values]
+        #keep_mask_array = np.asarray(keep_mask, dtype=bool)
+        keep_mask_array = keep_mask.to_numpy(dtype=bool)
+        drop_idx = idx[~keep_mask_array]
         out.loc[drop_idx, sensor] = np.nan
 
     return out

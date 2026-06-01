@@ -244,7 +244,7 @@ def _initialize_wandb_run(
         },
     )
 
-    logger.info("W&B initialized: %s", wandb.run.name)
+    logger.info("W&B initialized: %s", wandb_run.name)
     return wandb_run
 
 

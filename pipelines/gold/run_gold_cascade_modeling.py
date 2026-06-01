@@ -193,7 +193,7 @@ def _initialize_wandb_run(
             "gold_artifacts_dir": str(runtime_inputs["gold_artifacts_path"]),
         },
     )
-    logger.info("W&B initialized: %s", wandb.run.name)
+    logger.info("W&B initialized: %s", wandb_run.name)
     return wandb_run
 
 

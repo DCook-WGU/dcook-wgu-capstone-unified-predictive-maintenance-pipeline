@@ -1,10 +1,13 @@
 {
   "include": [
-    "."
+    "app",
+    "utils",
+    "pipelines",
+    "scripts",
+    "notebooks"
   ],
 
   "exclude": [
-    "**/.*",
     "**/.git",
     "**/.venv",
     "**/venv",
@@ -13,7 +16,7 @@
     "**/node_modules",
     "**/site-packages",
     "**/dist-packages",
-
+    ".tmp.driveupload",
     "data",
     "artifacts",
     "logs",
@@ -28,18 +31,27 @@
     "**/bundled/native-stubs/**"
   ],
 
-  "pythonVersion": "3.11",
+  "pythonVersion": "3.10",
   "pythonPlatform": "Linux",
 
   "typeCheckingMode": "basic",
   "reportMissingImports": "warning",
   "reportMissingTypeStubs": false,
 
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportOptionalCall": "warning",
+  "reportOptionalIterable": "warning",
+  "reportOptionalContextManager": "warning",
+  "reportOptionalOperand": "warning",
+
   "executionEnvironments": [
     {
       "root": ".",
       "extraPaths": [
-        "."
+        ".",
+        "app",
+        "utils"
       ]
     }
   ]
