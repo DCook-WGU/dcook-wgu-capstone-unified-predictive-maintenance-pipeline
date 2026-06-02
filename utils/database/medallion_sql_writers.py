@@ -769,6 +769,7 @@ def log_silver_eda_sql(
         "eda_dataframe",
         "cleaned_dataframe",
         "dataframe",
+        "silver_subset_df",
     ]
 
     source_dataframe = _resolve_dataframe(

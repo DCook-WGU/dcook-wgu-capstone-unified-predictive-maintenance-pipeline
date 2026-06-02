@@ -82,10 +82,10 @@ silver_eda:
   cleaning_recipe_id: silver_eda__v001
   process_run_id_prefix: silver_eda_process
   versions:
-    silver: silver__eda__clean__dataset__agnostic__v001
+    silver: silver__eda__profiled__v001
     truth: truth_v001
   artifact_layout:
-    stage: silver_subsets
+    stage: silver_eda
     family: null
     subdirs:
     - sensor_profiles
@@ -299,4 +299,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/silver_eda.yaml
   project_root: /workspace
-  config_hash: 379b98a22ed249a7e6102ec7fa36c862a0f354514361f38c225a637575409372
+  config_hash: 10dbcf78e26bfcb72f7e011229eac8c3cb149013ecf45cb80f7fa0696bc4daea

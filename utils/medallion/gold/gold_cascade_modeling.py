@@ -67,7 +67,7 @@ def _evaluate_scored_frame(
     label_column: str,
     prediction_column: str,
     score_column: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Pylance-safe wrapper around evaluate_against_labels.
     """
@@ -82,8 +82,8 @@ def fit_stage1_model(
     fit_dataframe: pd.DataFrame,
     *,
     feature_columns: Sequence[str],
-    model_params: Dict[str, Any],
-) -> Tuple[IsolationForest, Dict[str, Any]]:
+    model_params: dict[str, Any],
+) -> Tuple[IsolationForest, dict[str, Any]]:
     """
     Fit broad Stage 1 Isolation Forest.
     """
@@ -109,8 +109,8 @@ def fit_stage2_model(
     fit_dataframe: pd.DataFrame,
     *,
     feature_columns: Sequence[str],
-    model_params: Dict[str, Any],
-) -> Tuple[IsolationForest, Dict[str, Any]]:
+    model_params: dict[str, Any],
+) -> Tuple[IsolationForest, dict[str, Any]]:
     """
     Fit narrower Stage 2 Isolation Forest.
     """
@@ -140,7 +140,7 @@ def _score_stage_dataframe(
     score_column: str,
     threshold: float | None = None,
     prediction_column: str | None = None,
-) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+) -> Tuple[pd.DataFrame, dict[str, Any]]:
     """
     Score dataframe with fitted IF model and optionally add predictions.
     """
@@ -155,7 +155,7 @@ def _score_stage_dataframe(
     score_list = _array_to_float_list(score_values)
     working_dataframe[score_column] = score_values
 
-    info: Dict[str, Any] = {
+    info: dict[str, Any] = {
         "score_column": score_column,
         "row_count": int(len(working_dataframe)),
         "feature_count": int(len(use_features)),
@@ -196,7 +196,7 @@ def evaluate_stage2_model_with_thresholds(
         prediction_column=None,
     )
 
-    results: list[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     scores = pd.to_numeric(scored_frame[score_column], errors="coerce").to_numpy(dtype=float)
     score_list = _array_to_float_list(scores)
     true_label_list = _series_to_object_list(scored_frame[label_column])
@@ -237,7 +237,7 @@ def run_stage2_selection(
     threshold_percentiles: Sequence[float],
     min_recall: float = 0.0,
     optimization_metric: str = "f1",
-) -> Tuple[float, Dict[str, Any], pd.DataFrame]:
+) -> Tuple[float, dict[str, Any], pd.DataFrame]:
     """
     Select Stage 2 threshold from a threshold grid.
     """
@@ -281,7 +281,7 @@ def run_stage2_selection(
     return selected_threshold, selection_info, threshold_table
 
 
-def _variant_defaults(variant: str) -> Dict[str, Any]:
+def _variant_defaults(variant: str) -> dict[str, Any]:
     """
     Variant-specific defaults for cascade behavior.
     """
@@ -352,13 +352,13 @@ def run_cascade_pipeline(
     all_dataframe: pd.DataFrame,
     stage1_feature_columns: Sequence[str],
     stage2_feature_columns: Sequence[str],
-    reference_profile: Dict[str, Any],
+    reference_profile: dict[str, Any],
     stage3_sensor_groups: Dict[str, Sequence[str]],
     label_column: str = "anomaly_flag",
-    stage1_model_params: Dict[str, Any],
-    stage2_model_params: Dict[str, Any],
+    stage1_model_params: dict[str, Any],
+    stage2_model_params: dict[str, Any],
     variant: str = "default",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     End-to-end 3-stage cascade modeling pipeline.
     """
@@ -586,10 +586,10 @@ def run_cascade_pipeline(
 def build_cascade_summary(
     *,
     variant: str,
-    summary: Dict[str, Any],
+    summary: dict[str, Any],
     stage1_feature_columns: Sequence[str],
     stage2_feature_columns: Sequence[str],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Add compact comparison-friendly summary fields.
     """

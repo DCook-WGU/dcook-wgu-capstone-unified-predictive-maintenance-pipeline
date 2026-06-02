@@ -201,7 +201,7 @@ def run_baseline_pipeline(
     all_dataframe: pd.DataFrame,
     feature_columns: Sequence[str],
     threshold_percentile: float = 95.0,
-    model_params: Dict[str, Any] | None = None,
+    model_params: dict[str, Any] | None = None,
     score_column_name: str = "baseline_anomaly_score",
     prediction_column_name: str = "baseline_predicted_anomaly",
     label_column: str = "anomaly_flag",
