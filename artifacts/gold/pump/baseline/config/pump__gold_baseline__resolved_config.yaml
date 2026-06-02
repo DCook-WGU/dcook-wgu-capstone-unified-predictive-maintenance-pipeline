@@ -2,7 +2,7 @@ project:
   name: capstone
 runtime:
   mode: train
-  stage: silver_eda
+  stage: gold_baseline
   dataset: pump
   profile: default
 pipeline:
@@ -77,49 +77,31 @@ dataset:
   - ok
   - healthy
   - running
-silver_eda:
-  layer_name: silver_eda
-  cleaning_recipe_id: silver_eda__v001
-  process_run_id_prefix: silver_eda_process
+gold_baseline:
+  layer_name: gold
+  recipe_id: gold_modeling__v001_baseline
   versions:
-    silver: silver__eda__profiled__v001
+    gold: gold__modeling__baseline__v001
     truth: truth_v001
+  process_run_id_prefix: gold_baseline_process
   artifact_layout:
-    stage: silver_eda
-    family: null
+    stage: gold
+    family: baseline
     subdirs:
-    - sensor_profiles
-    - correlation_analysis
-    - pca
-    - distribution_plots
-    - aligned_onset_plots
-    - generator_inputs
+    - models
+    - scores
+    - thresholds
     - summaries
     - metadata
     - config
     - lineage
-    - timeline_overlays
-  min_time_parse_success_percent: 95.0
-  min_step_parse_success_percent: 95.0
-  quarantine_missing_pct: 30.0
-  correlation_threshold: 0.85
-  use_robust_scaler: true
-  top_n_sensors_for_plots: 8
-  pairplot_sensor_cap: 8
-  pairplot_sample_n: 2000
-  top_plot_cols: 8
-  top_corr_cols: 15
-  rolling_minutes: 60
-  lookback_hours: 48
-  baseline_days: 7
-  baseline_gap_hours: 12
-  sustain_minutes: 180
-  top_sensor_pre_hours: 6
-  pre_window_steps: 200
-  post_window_steps: 200
-  max_onsets_to_use: 30
-  pca_sample_row_count: 8000
-  impute_sample_row_count: 20000
+  random_seed: 42
+  train_fraction: 0.7
+  use_robust_scaler: false
+  baseline_threshold_percentile: 97.0
+  stage1_threshold_percentile: 95.0
+  stage2_threshold_percentile: 97.0
+  baseline_estimator_count: 200
 filenames:
   raw_file_name: sensor.csv
   bronze_train_file_name: pump__bronze__train.parquet
@@ -297,6 +279,6 @@ config_meta:
   - /workspace/configs/base.yaml
   - /workspace/configs/datasets/pump.yaml
   - /workspace/configs/modes/train.yaml
-  - /workspace/configs/stages/silver_eda.yaml
+  - /workspace/configs/stages/gold_baseline.yaml
   project_root: /workspace
-  config_hash: 10dbcf78e26bfcb72f7e011229eac8c3cb149013ecf45cb80f7fa0696bc4daea
+  config_hash: 168bf35c39eec204cecfcdce6bf3642febbc3e39dc2aeb756b8a664d35802ea1

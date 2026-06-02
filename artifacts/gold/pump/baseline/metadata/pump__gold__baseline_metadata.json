@@ -1,0 +1,21 @@
+{
+  "gold_preprocessed_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
+  "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
+  "baseline_results_path_csv": "/workspace/artifacts/gold/pump/baseline/scores/pump__gold__baseline_results.csv",
+  "baseline_results_path_pickle": "/workspace/artifacts/gold/pump/baseline/scores/pump__gold__baseline_results.pkl",
+  "baseline_model_artifact_path": "/workspace/artifacts/gold/pump/baseline/models/pump__gold__baseline_isolation_forest.joblib",
+  "baseline_models_path": "/workspace/artifacts/gold/pump/baseline/models/pump__gold__baseline_isolation_forest.joblib",
+  "baseline_thresholds_path": "/workspace/artifacts/gold/pump/baseline/thresholds/pump__gold__baseline_thresholds.json",
+  "baseline_summary_path": "/workspace/artifacts/gold/pump/baseline/summaries/pump__gold__baseline_summary.json",
+  "baseline_metadata_path": "/workspace/artifacts/gold/pump/baseline/metadata/pump__gold__baseline_metadata.json",
+  "gold_truth_hash": "cff00e0e2e89d5d30c735137fa043d263c6e636c713d2680772b88c7dfc5f039",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__cff00e0e2e89d5d30c735137fa043d263c6e636c713d2680772b88c7dfc5f039.json",
+  "gold_process_run_id": "gold_process__20260602T155246Z",
+  "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+  "gold_scaler_path": "/workspace/artifacts/gold/pump/preprocessing/models/pump__gold__robust_scaler.joblib",
+  "gold_scaler_kind": "robust",
+  "gold_recommended_imputation": "forward_fill_within_group_then_median",
+  "baseline_truth_hash": "82629d1cea0ccbcf31da647926efeb2dc6f1f5d154c120f0e0449940ee808c4e",
+  "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__82629d1cea0ccbcf31da647926efeb2dc6f1f5d154c120f0e0449940ee808c4e.json",
+  "baseline_process_run_id": "gold_baseline_process__20260602T171842Z"
+}

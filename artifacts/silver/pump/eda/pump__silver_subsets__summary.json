@@ -1,7 +1,7 @@
 {
   "dataset_name": "pump",
-  "stage": "silver_subsets",
-  "layer_name": "silver_subsets",
+  "stage": "silver_eda",
+  "layer_name": "silver_eda",
   "profiled_state_counts": {
     "normal_clean": 153885,
     "normal_suspect": 33269,
