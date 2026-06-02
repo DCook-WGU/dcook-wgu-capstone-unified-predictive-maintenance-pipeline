@@ -18,6 +18,9 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from utils.database.postgres import read_sql_dataframe
+
+from utils.database.layer_postgres import sanitize_sql_identifier
+
 from utils.database.sql_notebook_helpers import (
     get_row_value,
     row_to_payload,
@@ -401,9 +404,10 @@ def _log_pipeline_artifact(
 # =============================================================================
 
 def write_bronze_sensor_observations_sql(
+    engine,
     *,
-    engine: Engine,
     capstone_schema: str,
+    layer_schema: str = "bronze",
     dataset_id: str,
     run_id: str,
     notebook_globals: Optional[dict[str, Any]] = None,
@@ -414,7 +418,9 @@ def write_bronze_sensor_observations_sql(
     """
     Write final Bronze dataframe rows to bronze.sensor_observations.
     """
-    schema = "bronze"
+    schema = sanitize_sql_identifier(layer_schema)
+    metadata_schema = sanitize_sql_identifier(capstone_schema)
+
     table = "sensor_observations"
 
     candidates = candidate_names or [
@@ -504,7 +510,7 @@ def write_bronze_sensor_observations_sql(
 
     _upsert_pipeline_run(
         engine,
-        capstone_schema=capstone_schema,
+        capstone_schema=metadata_schema,
         dataset_id=dataset_id,
         run_id=run_id,
         pipeline_stage="bronze_preprocessing",
@@ -518,7 +524,7 @@ def write_bronze_sensor_observations_sql(
 
     _log_data_quality_event(
         engine,
-        capstone_schema=capstone_schema,
+        capstone_schema=metadata_schema,
         dataset_id=dataset_id,
         run_id=run_id,
         layer_name=schema,
@@ -762,6 +768,7 @@ def log_silver_eda_sql(
         "analysis_dataframe",
         "eda_dataframe",
         "cleaned_dataframe",
+        "dataframe",
     ]
 
     source_dataframe = _resolve_dataframe(

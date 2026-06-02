@@ -21,6 +21,121 @@ def _clean_path_part(value: str | None) -> str | None:
     return clean_value
 
 
+def _copy_artifact_mapping(value: Mapping[Any, Any] | None = None) -> dict[str, Any]:
+    """
+    Copy an artifact configuration mapping into a plain string-keyed dictionary.
+
+    This avoids Pylance incorrectly inferring config dictionaries as byte-keyed
+    mappings after calls such as dict(config or {}).
+    """
+    if value is None:
+        return {}
+
+    return {
+        str(key): item
+        for key, item in value.items()
+    }
+
+
+def _require_mapping(value: Any, label: str) -> dict[str, Any]:
+    """
+    Validate that a value is a mapping and return it as a string-keyed dictionary.
+    """
+    if not isinstance(value, Mapping):
+        raise TypeError(
+            f"Expected {label} to be a mapping, "
+            f"got {type(value).__name__}: {value!r}"
+        )
+
+    return _copy_artifact_mapping(value)
+
+
+def _get_artifact_mapping(
+    mapping: Mapping[str, Any],
+    key: str,
+) -> dict[str, Any]:
+    """
+    Return a nested artifact mapping as a plain string-keyed dictionary.
+    """
+    raw_value = mapping.get(key)
+
+    if raw_value is None:
+        return {}
+
+    return _require_mapping(raw_value, f"artifact config key '{key}'")
+
+
+def _get_optional_artifact_str(
+    mapping: Mapping[str, Any],
+    key: str,
+    default: str | None = None,
+) -> str | None:
+    """
+    Return an optional artifact config value as str | None.
+    """
+    raw_value = mapping.get(key, default)
+
+    if raw_value is None:
+        return None
+
+    return str(raw_value)
+
+
+def _get_required_artifact_str(
+    mapping: Mapping[str, Any],
+    key: str,
+    label: str,
+) -> str:
+    """
+    Return a required artifact config value as a non-empty string.
+    """
+    raw_value = mapping.get(key)
+
+    if raw_value is None:
+        raise KeyError(f"Required artifact config value missing: {label}")
+
+    clean_value = str(raw_value).strip()
+
+    if clean_value == "":
+        raise ValueError(f"Required artifact config value is blank: {label}")
+
+    return clean_value
+
+
+def _get_artifact_subdirs(
+    mapping: Mapping[str, Any],
+    key: str = "subdirs",
+    default: list[str] | None = None,
+) -> list[str]:
+    """
+    Return artifact subdirectories as a list of strings.
+    """
+    if default is None:
+        default = []
+
+    raw_value = mapping.get(key, default)
+
+    if raw_value is None:
+        return list(default)
+
+    if isinstance(raw_value, bytes):
+        return [raw_value.decode("utf-8")]
+
+    if isinstance(raw_value, str):
+        return [raw_value]
+
+    if isinstance(raw_value, list):
+        return [str(item) for item in raw_value]
+
+    if isinstance(raw_value, tuple):
+        return [str(item) for item in raw_value]
+
+    raise TypeError(
+        f"Expected artifact config key '{key}' to be a list/tuple/string, "
+        f"got {type(raw_value).__name__}: {raw_value!r}"
+    )
+
+
 def build_artifact_dirs(
     *,
     artifacts_root: str | Path,
@@ -44,7 +159,6 @@ def build_artifact_dirs(
         root               -> family root or stage-dataset root
         <subdir>           -> root / <subdir>
     """
-
     stage_clean = _clean_path_part(stage)
     dataset_clean = _clean_path_part(dataset_name)
     family_clean = _clean_path_part(family)
@@ -55,8 +169,8 @@ def build_artifact_dirs(
     if dataset_clean is None:
         raise ValueError("dataset_name must be a non-empty string.")
 
-    artifacts_root = Path(artifacts_root)
-    stage_dataset_root = artifacts_root / stage_clean / dataset_clean
+    artifacts_root_path = Path(artifacts_root)
+    stage_dataset_root = artifacts_root_path / stage_clean / dataset_clean
 
     if family_clean is None:
         artifact_root = stage_dataset_root
@@ -70,7 +184,8 @@ def build_artifact_dirs(
 
     if subdirs is not None:
         for subdir in subdirs:
-            subdir_clean = _clean_path_part(subdir)
+            subdir_clean = _clean_path_part(str(subdir))
+
             if subdir_clean is None:
                 continue
 
@@ -118,44 +233,114 @@ def build_artifact_dirs_from_config(
               tuned:
                 family: cascade_tuned
     """
+    config_map: dict[str, Any] = _copy_artifact_mapping(config)
 
-    if stage_key not in config:
+    if stage_key not in config_map:
         raise KeyError(f"stage_key not found in config: {stage_key}")
 
-    stage_config = config[stage_key]
-    layout = dict(stage_config.get("artifact_layout", {}))
+    stage_config: dict[str, Any] = _require_mapping(
+        config_map[stage_key],
+        f"config['{stage_key}']",
+    )
+
+    layout: dict[str, Any] = _get_artifact_mapping(
+        stage_config,
+        "artifact_layout",
+    )
 
     if variant is not None:
-        variant_layout = layout.get("variants", {}).get(variant, {})
+        variants: dict[str, Any] = _get_artifact_mapping(
+            layout,
+            "variants",
+        )
 
-        if not variant_layout:
+        variant_key = str(variant)
+
+        if variant_key not in variants:
             raise KeyError(
                 f"Variant '{variant}' was requested, but no artifact_layout "
                 f"variant exists under config['{stage_key}']['artifact_layout']['variants']."
             )
 
-        merged_layout = dict(layout)
+        variant_layout: dict[str, Any] = _require_mapping(
+            variants[variant_key],
+            (
+                f"config['{stage_key}']['artifact_layout']"
+                f"['variants']['{variant_key}']"
+            ),
+        )
+
+        merged_layout: dict[str, Any] = {
+            str(key): value
+            for key, value in layout.items()
+            if key != "variants"
+        }
+
         merged_layout.update(variant_layout)
-        merged_layout.pop("variants", None)
         layout = merged_layout
 
-    artifact_stage = layout.get(
-        "stage",
-        stage_config.get("layer_name", config.get("runtime", {}).get("stage")),
+    runtime_config: dict[str, Any] = _get_artifact_mapping(
+        config_map,
+        "runtime",
     )
 
-    dataset_name = config["dataset"]["name"]
+    default_stage = _get_optional_artifact_str(
+        stage_config,
+        "layer_name",
+        _get_optional_artifact_str(runtime_config, "stage"),
+    )
 
-    family = family_override if family_override is not None else layout.get("family")
+    artifact_stage = _get_optional_artifact_str(
+        layout,
+        "stage",
+        default_stage,
+    )
 
-    subdirs = (
-        subdirs_override
-        if subdirs_override is not None
-        else list(layout.get("subdirs", []))
+    if artifact_stage is None:
+        raise KeyError(
+            "Could not resolve artifact stage. Expected one of: "
+            f"config['{stage_key}']['artifact_layout']['stage'], "
+            f"config['{stage_key}']['layer_name'], or config['runtime']['stage']."
+        )
+
+    dataset_config: dict[str, Any] = _get_artifact_mapping(
+        config_map,
+        "dataset",
+    )
+
+    dataset_name = _get_required_artifact_str(
+        dataset_config,
+        "name",
+        "config['dataset']['name']",
+    )
+
+    if family_override is not None:
+        family = str(family_override)
+    else:
+        family = _get_optional_artifact_str(layout, "family")
+
+    if subdirs_override is not None:
+        subdirs = [str(subdir) for subdir in subdirs_override]
+    else:
+        subdirs = _get_artifact_subdirs(
+            layout,
+            "subdirs",
+            default=[],
+        )
+
+    resolved_paths: dict[str, Any] = _get_artifact_mapping(
+        config_map,
+        "resolved_paths",
+    )
+
+    artifacts_root = _get_required_artifact_str(
+        resolved_paths,
+        "artifacts_root",
+        "config['resolved_paths']['artifacts_root']",
     )
 
     return build_artifact_dirs(
-        artifacts_root=Path(config["resolved_paths"]["artifacts_root"]),
+        artifacts_root=artifacts_root,
         stage=artifact_stage,
         dataset_name=dataset_name,
         family=family,
@@ -170,7 +355,6 @@ def artifact_file_path(
     file_name: str,
 ) -> Path:
     """Build a file path inside one standardized artifact subdirectory."""
-
     if subdir_key not in artifact_dirs:
         raise KeyError(
             f"Artifact directory key not found: {subdir_key}. "

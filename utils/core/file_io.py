@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from typing import List, Optional, Tuple, Literal, Any
+from typing import List, Optional, Tuple, Literal, Any, Mapping
 
 from datetime import datetime
 import pandas as pd
@@ -40,6 +40,41 @@ def _resolve_path(file_path, file_name=None):
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
+def _copy_read_options(read_options: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """
+    Copy pandas read options into a plain string-keyed dictionary.
+
+    This avoids Pylance incorrectly inferring byte-keyed dictionaries when
+    the options are passed into pandas with **kwargs.
+    """
+    if read_options is None:
+        return {}
+
+    return {
+        str(key): value
+        for key, value in read_options.items()
+    }
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+def _copy_write_options(write_options: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """
+    Copy pandas write options into a plain string-keyed dictionary.
+
+    This keeps Pylance from incorrectly inferring byte-keyed dictionaries when
+    the options are passed into pandas with **kwargs.
+    """
+    if write_options is None:
+        return {}
+
+    return {
+        str(key): value
+        for key, value in write_options.items()
+    }
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
 
 def _clean_values(series: pd.Series) -> pd.Series:
@@ -234,7 +269,7 @@ def ingest_data(
     path = _resolve_path(file_path, file_name)
     suffix = path.suffix.lower()
     
-    rk = dict(read_kwargs)
+    rk: dict[str, Any] = _copy_read_options(read_kwargs)
     
     logger.info("Loading Data file: %s", path)
 
@@ -413,7 +448,6 @@ def ingest_data(
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
-
 def load_data(
     file_path: str | Path,
     file_name: str | None = None,
@@ -423,14 +457,16 @@ def load_data(
     path = _resolve_path(file_path, file_name)
     suffix = path.suffix.lower()
 
+    read_options: dict[str, Any] = _copy_read_options(read_kwargs)
+
     try:
         if suffix == ".csv":
             logger.info("Loading CSV: %s", path)
-            return pd.read_csv(path, **read_kwargs)
+            return pd.read_csv(path, **read_options)
 
         if suffix in {".parquet", ".pq"}:
             logger.info("Loading Parquet: %s", path)
-            return pd.read_parquet(path, engine=engine, **read_kwargs)
+            return pd.read_parquet(path, engine=engine, **read_options)
 
         raise ValueError(f"Unsupported file type: {suffix}")
 
@@ -438,20 +474,17 @@ def load_data(
         logger.exception("Error reading file: %s", path)
         raise
 
-
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
 def save_data(
-        dataframe, 
-        file_path, 
-        file_name=None, 
-        create_dirs=True, 
-        index=False, 
-        **write_kwargs
-    ):
-    
-
+    dataframe: pd.DataFrame,
+    file_path: str | Path | tuple[Any, Any],
+    file_name: str | None = None,
+    create_dirs: bool = True,
+    index: bool = False,
+    **write_kwargs: Any,
+) -> Path:
     path = _resolve_path(file_path, file_name)
 
     if not path.suffix:
@@ -461,17 +494,25 @@ def save_data(
         path.parent.mkdir(parents=True, exist_ok=True)
 
     suffix = path.suffix.lower()
+    write_options: dict[str, Any] = _copy_write_options(write_kwargs)
 
     try:
         if suffix == ".csv":
             logger.info("Saving DataFrame to CSV: %s", path)
-            dataframe.to_csv(path, index=index, **write_kwargs)
+            dataframe.to_csv(path, index=index, **write_options)
 
         elif suffix in {".parquet", ".pq"}:
             logger.info("Saving DataFrame to Parquet: %s", path)
-            compression = write_kwargs.pop("compression", "snappy")
-            engine = write_kwargs.pop("engine", "pyarrow")
-            dataframe.to_parquet(path, index=index, engine=engine, compression=compression, **write_kwargs)
+            compression: Any = write_options.pop("compression", "snappy")
+            parquet_engine: Any = write_options.pop("engine", "pyarrow")
+
+            dataframe.to_parquet(
+                path,
+                index=index,
+                engine=parquet_engine,
+                compression=compression,
+                **write_options,
+            )
 
         else:
             raise ValueError(f"Unsupported file type: {suffix}")
@@ -480,9 +521,13 @@ def save_data(
         logger.exception("Error writing file: %s", path)
         raise
 
-    logger.info("Saved: %s | shape=%s | columns=%s", path.name, dataframe.shape, list(dataframe.columns))
+    logger.info(
+        "Saved: %s | shape=%s | columns=%s",
+        path.name,
+        dataframe.shape,
+        list(dataframe.columns),
+    )
     return path
-
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 

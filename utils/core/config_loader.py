@@ -864,14 +864,58 @@ def load_pipeline_config(
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
+def _plain_config_value(value: Any) -> Any:
+    """
+    Convert config values into plain Python values suitable for YAML/JSON export.
+    """
+    if isinstance(value, Path):
+        return str(value)
 
-def export_config_snapshot(config: Mapping[str, Any], destination: str | Path) -> Path:
-    destination = Path(destination).resolve()
+    if isinstance(value, Mapping):
+        return {
+            str(key): _plain_config_value(item)
+            for key, item in value.items()
+        }
+
+    if isinstance(value, list):
+        return [_plain_config_value(item) for item in value]
+
+    if isinstance(value, tuple):
+        return [_plain_config_value(item) for item in value]
+
+    return value
+
+
+def _plain_config_dict(config: Mapping[str, Any]) -> dict[str, Any]:
+    """
+    Convert a config mapping into a plain string-keyed dictionary.
+    """
+    return {
+        str(key): _plain_config_value(value)
+        for key, value in config.items()
+    }
+
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+#### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
+
+def export_config_snapshot(
+    config: Mapping[str, Any],
+    destination: Path,
+) -> Path:
+    destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with destination.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(dict(config), f, sort_keys=False)
-    return destination
 
+    snapshot_payload = _plain_config_dict(config)
+
+    with destination.open("w", encoding="utf-8") as file:
+        yaml.safe_dump(
+            snapshot_payload,
+            file,
+            sort_keys=False,
+            allow_unicode=True,
+        )
+
+    return destination
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 

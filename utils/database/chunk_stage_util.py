@@ -26,6 +26,24 @@ def memory_gb() -> float:
 def log_memory(label: str) -> None:
     print(f"[memory] {label}: {memory_gb():.2f} GB")
 
+
+def copy_sql_params(params: Mapping[Any, Any] | None = None) -> dict[str, Any]:
+    """
+    Copy SQL query parameters into a mutable string-keyed dictionary.
+
+    This avoids Pylance incorrectly inferring byte-keyed dictionaries from
+    dict(params or {}) while still preserving runtime behavior for pandas /
+    SQLAlchemy named parameters.
+    """
+    if params is None:
+        return {}
+
+    return {
+        str(key): value
+        for key, value in params.items()
+    }
+
+
 # -----------------------------------------------------------------------------
 # Get Table Columns
 # -----------------------------------------------------------------------------
@@ -67,7 +85,7 @@ def resolve_dataset_run_from_table(
 ) -> tuple[str, str]:
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
-    params = dict(params or {})
+    query_params: dict[str, Any] = copy_sql_params(params)
 
     if dataset_id is not None and run_id is not None:
         return str(dataset_id).strip(), str(run_id).strip()
@@ -80,7 +98,7 @@ def resolve_dataset_run_from_table(
         ORDER BY dataset_id, run_id
         '''
         with engine.begin() as connection:
-            dataframe = pd.read_sql(text(sql), connection, params=params)
+            dataframe = pd.read_sql(text(sql), connection, params=query_params)
 
         if dataframe.empty:
             raise ValueError(
@@ -115,7 +133,7 @@ def get_table_row_count(
 ) -> int:
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
-    query_params = dict(params or {})
+    query_params: dict[str, Any] = copy_sql_params(params)
 
     sql = f'''
     SELECT COUNT(*) AS row_count
@@ -155,7 +173,7 @@ def read_table_chunk_by_row_number(
 ) -> pd.DataFrame:
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
-    params = dict(params or {})
+    query_params: dict[str, Any] = copy_sql_params(params)
 
     quoted_columns = ", ".join([f'"{column}"' for column in select_columns])
     end_row = int(start_row) + int(chunk_size)
@@ -175,11 +193,11 @@ def read_table_chunk_by_row_number(
     ORDER BY __row_num
     '''
 
-    params["start_row"] = int(start_row)
-    params["end_row"] = int(end_row)
+    query_params["start_row"] = int(start_row)
+    query_params["end_row"] = int(end_row)
 
     with engine.begin() as connection:
-        dataframe = pd.read_sql(text(sql), connection, params=params)
+        dataframe = pd.read_sql(text(sql), connection, params=query_params)
 
     return dataframe
 

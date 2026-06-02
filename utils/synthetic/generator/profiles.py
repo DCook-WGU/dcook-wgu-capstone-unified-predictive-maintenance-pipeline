@@ -45,7 +45,7 @@ def _require_columns(dataframe: pd.DataFrame, required: list[str], name: str) ->
     
 
 
-def load_rich_profile_csv(path: str, state_scope: str) -> Dict[str, SensorRichProfile]:
+def load_rich_profile_csv(path: str, state_scope: str) -> dict[str, SensorRichProfile]:
     dataframe = pd.read_csv(path)
 
     _require_columns(
@@ -147,9 +147,9 @@ def load_fault_pairings_csv(path: str) -> pd.DataFrame:
     return dataframe
 
 def merge_profile_dicts(
-    base: Dict[str, SensorRichProfile],
-    extra: Dict[str, SensorRichProfile],
-) -> Dict[str, SensorRichProfile]:
+    base: dict[str, SensorRichProfile],
+    extra: dict[str, SensorRichProfile],
+) -> dict[str, SensorRichProfile]:
     """
     Merge two profile dicts. 'extra' overwrites 'base' on collisions.
     """
@@ -163,7 +163,7 @@ def load_and_merge_rich_profiles(
     base_profile_csv_path: str,
     state_scope: str,
     dropped_profile_csv_path: Optional[str] = None,
-) -> Dict[str, SensorRichProfile]:
+) -> dict[str, SensorRichProfile]:
     """
     Load base profile CSV (normal/abnormal/recovery) and optionally merge dropped-sensor profiles
     for the same state.

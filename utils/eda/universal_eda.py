@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, SupportsFloat, cast
 
 import warnings
 
@@ -35,16 +35,31 @@ warnings.filterwarnings("ignore")
 
 
 # ======================================================================================
+# Helpers
+# ======================================================================================
+def _empty_overview() -> dict[str, Any]:
+    """
+    Return a fresh overview dictionary for each EDAResults instance.
+
+    This is equivalent to field(default_factory=dict), but it gives Pylance a
+    concrete typed factory instead of an unparameterized built-in dict factory.
+    """
+    return {}
+
+
+
+
+# ======================================================================================
 # CONFIG / RESULTS OBJECTS
 # ======================================================================================
 
 @dataclass
 class EDAConfig:
     dataset_name: str = "dataset"
-    target_column: Optional[str] = None
-    datetime_columns: Optional[List[str]] = None
-    id_columns: Optional[List[str]] = None
-    exclude_columns: Optional[List[str]] = None
+    target_column: str | None = None
+    datetime_columns: list[str] | None = None
+    id_columns: list[str] | None = None
+    exclude_columns: list[str] | None = None
     sample_size_for_pairplot: int = 1000
     max_categories_to_plot: int = 20
     top_n_correlations: int = 25
@@ -60,7 +75,7 @@ class EDAConfig:
 
 @dataclass
 class EDAResults:
-    overview: Dict[str, Any] = field(default_factory=dict)
+    overview: dict[str, Any] = field(default_factory=_empty_overview)
     column_summary: pd.DataFrame = field(default_factory=pd.DataFrame)
     missing_summary: pd.DataFrame = field(default_factory=pd.DataFrame)
     numeric_summary: pd.DataFrame = field(default_factory=pd.DataFrame)
@@ -72,8 +87,7 @@ class EDAResults:
     target_summary: pd.DataFrame = field(default_factory=pd.DataFrame)
     pca_summary: pd.DataFrame = field(default_factory=pd.DataFrame)
     clustering_summary: pd.DataFrame = field(default_factory=pd.DataFrame)
-    notes: List[str] = field(default_factory=list)
-
+    notes: list[str] = field(default_factory=list)
 
 # ======================================================================================
 # CORE HELPERS
@@ -86,7 +100,7 @@ def ensure_output_dir(config: EDAConfig) -> Path:
     return output_path
 
 
-def infer_datetime_columns(dataframe: pd.DataFrame, config: EDAConfig) -> List[str]:
+def infer_datetime_columns(dataframe: pd.DataFrame, config: EDAConfig) -> list[str]:
     if config.datetime_columns is not None:
         return [column for column in config.datetime_columns if column in dataframe.columns]
 
@@ -97,7 +111,7 @@ def infer_datetime_columns(dataframe: pd.DataFrame, config: EDAConfig) -> List[s
     return detected
 
 
-def get_excluded_columns(config: EDAConfig) -> List[str]:
+def get_excluded_columns(config: EDAConfig) -> list[str]:
     excluded = []
     if config.exclude_columns:
         excluded.extend(config.exclude_columns)
@@ -106,7 +120,10 @@ def get_excluded_columns(config: EDAConfig) -> List[str]:
     return list(dict.fromkeys(excluded))
 
 
-def get_numeric_columns(dataframe: pd.DataFrame, excluded_columns: Optional[List[str]] = None) -> List[str]:
+def get_numeric_columns(
+    dataframe: pd.DataFrame,
+    excluded_columns: list[str] | None = None,
+) -> list[str]:
     excluded_columns = excluded_columns or []
     numeric_columns = dataframe.select_dtypes(include=[np.number]).columns.tolist()
     return [column for column in numeric_columns if column not in excluded_columns]
@@ -114,20 +131,23 @@ def get_numeric_columns(dataframe: pd.DataFrame, excluded_columns: Optional[List
 
 def get_categorical_columns(
     dataframe: pd.DataFrame,
-    datetime_columns: Optional[List[str]] = None,
-    excluded_columns: Optional[List[str]] = None,
-) -> List[str]:
+    datetime_columns: list[str] | None = None,
+    excluded_columns: list[str] | None = None,
+) -> list[str]:
     datetime_columns = datetime_columns or []
     excluded_columns = excluded_columns or []
 
-    categorical_columns = dataframe.select_dtypes(include=["object", "category", "bool"]).columns.tolist()
+    categorical_columns = dataframe.select_dtypes(
+        include=["object", "category", "bool"]
+    ).columns.tolist()
+
     final_columns = [
         column
         for column in categorical_columns
         if column not in datetime_columns and column not in excluded_columns
     ]
-    return final_columns
 
+    return final_columns
 
 def safe_mode(series: pd.Series) -> Any:
     mode_values = series.mode(dropna=True)
@@ -173,7 +193,7 @@ def save_figure(config: EDAConfig, filename: str) -> None:
     plt.show()
     plt.close()
 
-from typing import SupportsFloat, cast
+
 
 
 def scalar_to_float(value: object, name: str = "value") -> float:
@@ -194,7 +214,7 @@ def scalar_to_float(value: object, name: str = "value") -> float:
 # STRUCTURAL OVERVIEW
 # ======================================================================================
 
-def build_overview(dataframe: pd.DataFrame, config: EDAConfig) -> Dict[str, Any]:
+def build_overview(dataframe: pd.DataFrame, config: EDAConfig) -> dict[str, Any]:
     overview = {
         "dataset_name": config.dataset_name,
         "n_rows": int(dataframe.shape[0]),
@@ -268,7 +288,7 @@ def plot_missingness_bar(dataframe: pd.DataFrame, config: EDAConfig) -> None:
 # DESCRIPTIVE STATISTICS
 # ======================================================================================
 
-def build_numeric_summary(dataframe: pd.DataFrame, numeric_columns: List[str]) -> pd.DataFrame:
+def build_numeric_summary(dataframe: pd.DataFrame, numeric_columns: list[str]) -> pd.DataFrame:
     records = []
 
     for column in numeric_columns:
@@ -315,7 +335,7 @@ def build_numeric_summary(dataframe: pd.DataFrame, numeric_columns: List[str]) -
     return pd.DataFrame(records).sort_values("iqr_outlier_count", ascending=False).reset_index(drop=True)
 
 
-def build_categorical_summary(dataframe: pd.DataFrame, categorical_columns: List[str]) -> pd.DataFrame:
+def build_categorical_summary(dataframe: pd.DataFrame, categorical_columns: list[str]) -> pd.DataFrame:
     records = []
 
     for column in categorical_columns:
@@ -349,7 +369,7 @@ def build_categorical_summary(dataframe: pd.DataFrame, categorical_columns: List
     return pd.DataFrame(records).sort_values(["unique_count", "top_percent"], ascending=[False, False]).reset_index(drop=True)
 
 
-def build_datetime_summary(dataframe: pd.DataFrame, datetime_columns: List[str]) -> pd.DataFrame:
+def build_datetime_summary(dataframe: pd.DataFrame, datetime_columns: list[str]) -> pd.DataFrame:
     records = []
 
     for column in datetime_columns:
@@ -380,9 +400,9 @@ def build_datetime_summary(dataframe: pd.DataFrame, datetime_columns: List[str])
 
 def plot_numeric_distributions(
     dataframe: pd.DataFrame,
-    numeric_columns: List[str],
+    numeric_columns: list[str],
     config: EDAConfig,
-    max_plots: Optional[int] = None,
+    max_plots: int | None,
 ) -> None:
     plot_columns = numeric_columns[:max_plots] if max_plots is not None else numeric_columns
 
@@ -403,9 +423,9 @@ def plot_numeric_distributions(
 
 def plot_categorical_counts(
     dataframe: pd.DataFrame,
-    categorical_columns: List[str],
+    categorical_columns: list[str],
     config: EDAConfig,
-    max_plots: Optional[int] = None,
+    max_plots: int | None = None,
 ) -> None:
     plot_columns = categorical_columns[:max_plots] if max_plots is not None else categorical_columns
 
@@ -430,7 +450,7 @@ def plot_categorical_counts(
 # CORRELATION / ASSOCIATION
 # ======================================================================================
 
-def build_correlation_matrix(dataframe: pd.DataFrame, numeric_columns: List[str]) -> pd.DataFrame:
+def build_correlation_matrix(dataframe: pd.DataFrame, numeric_columns: list[str]) -> pd.DataFrame:
     if len(numeric_columns) < 2:
         return pd.DataFrame()
     return dataframe[numeric_columns].corr(numeric_only=True)
@@ -481,7 +501,7 @@ def plot_correlation_heatmap(correlation_matrix: pd.DataFrame, config: EDAConfig
 def build_target_summary(
     dataframe: pd.DataFrame,
     config: EDAConfig,
-    numeric_columns: List[str],
+    numeric_columns: list[str],
 ) -> pd.DataFrame:
     if config.target_column is None or config.target_column not in dataframe.columns:
         return pd.DataFrame()
@@ -528,7 +548,7 @@ def build_target_summary(
 def plot_target_distributions(
     dataframe: pd.DataFrame,
     config: EDAConfig,
-    numeric_columns: List[str],
+    numeric_columns: list[str],
     max_plots: int = 10,
 ) -> None:
     if config.target_column is None or config.target_column not in dataframe.columns:
@@ -566,7 +586,7 @@ def plot_target_distributions(
 # OUTLIER DETECTION
 # ======================================================================================
 
-def build_outlier_summary(dataframe: pd.DataFrame, numeric_columns: List[str]) -> pd.DataFrame:
+def build_outlier_summary(dataframe: pd.DataFrame, numeric_columns: list[str]) -> pd.DataFrame:
     records = []
 
     for column in numeric_columns:
@@ -601,7 +621,7 @@ def build_outlier_summary(dataframe: pd.DataFrame, numeric_columns: List[str]) -
 
 def run_isolation_forest_outliers(
     dataframe: pd.DataFrame,
-    numeric_columns: List[str],
+    numeric_columns: list[str],
     config: EDAConfig,
 ) -> pd.DataFrame:
     if IsolationForest is None or not numeric_columns:
@@ -637,7 +657,7 @@ def run_isolation_forest_outliers(
 
 def run_pca_summary(
     dataframe: pd.DataFrame,
-    numeric_columns: List[str],
+    numeric_columns: list[str],
     config: EDAConfig,
 ) -> pd.DataFrame:
     if PCA is None or StandardScaler is None or len(numeric_columns) < 2:
@@ -680,7 +700,7 @@ def run_pca_summary(
 
 def run_kmeans_summary(
     dataframe: pd.DataFrame,
-    numeric_columns: List[str],
+    numeric_columns: list[str],
     config: EDAConfig,
 ) -> pd.DataFrame:
     if KMeans is None or StandardScaler is None or len(numeric_columns) < 2:
@@ -722,7 +742,7 @@ def run_kmeans_summary(
 # TIME SERIES EDA
 # ======================================================================================
 
-def plot_datetime_counts(dataframe: pd.DataFrame, datetime_columns: List[str], config: EDAConfig) -> None:
+def plot_datetime_counts(dataframe: pd.DataFrame, datetime_columns: list[str], config: EDAConfig) -> None:
     for column in datetime_columns:
         series = pd.to_datetime(dataframe[column], errors="coerce").dropna()
         if len(series) == 0:
@@ -809,7 +829,7 @@ def save_tables(results: EDAResults, config: EDAConfig) -> None:
 # ORCHESTRATOR
 # ======================================================================================
 
-def run_universal_eda(dataframe: pd.DataFrame, config: Optional[EDAConfig] = None) -> EDAResults:
+def run_universal_eda(dataframe: pd.DataFrame, config: EDAConfig | None = None) -> EDAResults:
     if config is None:
         config = EDAConfig()
 

@@ -198,7 +198,7 @@ def build_missingness_spec_from_truth_payload(
     if state_col_synth == "machine_status__synethic":
         state_col_synth = "machine_status__synthetic"
 
-    pct_by_state_norm: Dict[str, Dict[str, float]] = {}
+    pct_by_state_norm: dict[str, dict[str, float]] = {}
 
     for state_name in state_list:
         state_key = str(state_name)

@@ -170,37 +170,61 @@ def log_dir_as_artifact(
     """
     Create a W&B artifact and attach files from a directory matching glob patterns.
 
-    Example:
-        log_dir_as_artifact(run, artifact_name="silver-artifacts", artifact_type="eda",
-                            dir_path=paths.root/"artifacts"/"silver",
-                            patterns=("*.csv","*.log"), recursive=True)
+    This preserves each file's path relative to dir_path so files with the same
+    basename in different subdirectories do not collide inside the W&B artifact.
     """
     wandb = _require_wandb()
+
     if run is None:
         raise ValueError("run is None. Call wandb.init(...) in your notebook/entry point first.")
 
     directory_path = Path(dir_path)
+
     if not directory_path.exists() or not directory_path.is_dir():
         raise NotADirectoryError(f"dir_path is not a directory: {directory_path}")
 
-    artifact = wandb.Artifact(name=artifact_name, type=artifact_type, metadata=metadata or {})
+    artifact = wandb.Artifact(
+        name=artifact_name,
+        type=artifact_type,
+        metadata=metadata or {},
+    )
 
     matches: list[Path] = []
+
     for pattern in patterns:
         if recursive:
             matches.extend(directory_path.rglob(pattern))
         else:
             matches.extend(directory_path.glob(pattern))
 
-    matches = [file_path for file_path in matches if file_path.is_file()]
+    matches = sorted(
+        {
+            file_path.resolve()
+            for file_path in matches
+            if file_path.is_file()
+        }
+    )
 
     if not matches:
-        raise FileNotFoundError(f"No files matched patterns {patterns} in {directory_path}")
+        raise FileNotFoundError(
+            f"No files matched patterns {patterns} in {directory_path}"
+        )
+
+    directory_root = directory_path.resolve()
 
     for file_path in matches:
-        artifact.add_file(str(file_path))
+        artifact_relative_name = file_path.relative_to(directory_root).as_posix()
 
-    run.log_artifact(artifact, aliases=list(aliases) if aliases else None)
+        artifact.add_file(
+            str(file_path),
+            name=artifact_relative_name,
+        )
+
+    run.log_artifact(
+        artifact,
+        aliases=list(aliases) if aliases else None,
+    )
+
     return artifact
 
 

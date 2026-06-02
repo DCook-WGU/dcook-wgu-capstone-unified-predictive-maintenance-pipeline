@@ -184,8 +184,11 @@ def get_episode_status_state_stats(
         "episode_status_percent_means": episode_status_percent_means.to_dict(orient="records"),
         "episode_totals": episode_totals.to_dict(orient="records"),
         "episode_status_mean_lookup": dict(
-            zip(episode_status_means["status_state"], episode_status_means["mean_count_per_episode"])
-        ),
+            zip(
+                episode_status_means["status_state"], 
+                episode_status_means["mean_count_per_episode"],
+                )
+            ),
         "episode_status_percent_mean_lookup": dict(
             zip(
                 episode_status_percent_means["status_state_percent"],

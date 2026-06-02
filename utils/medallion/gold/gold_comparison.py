@@ -13,8 +13,8 @@ import pandas as pd
 
 def load_model_result_artifacts(
     *,
-    baseline_summary: Dict[str, Any],
-    cascade_summaries: Sequence[Dict[str, Any]],
+    baseline_summary: dict[str, Any],
+    cascade_summaries: Sequence[dict[str, Any]],
 ) -> Dict[str, Any]:
     """
     Normalize baseline and cascade summaries into one comparison payload.

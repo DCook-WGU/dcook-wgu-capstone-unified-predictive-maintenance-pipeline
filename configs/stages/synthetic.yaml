@@ -1,5 +1,10 @@
 synthetic:
   layer_name: "synthetic"
+
+  versions:
+    synthetic: synthetic__v001
+    truth: truth_v001
+
   process_run_id_prefix: "synthetic"
   random_seed: 42
 

@@ -3,9 +3,9 @@ silver_preeda:
   cleaning_recipe_id: silver__clean__dataset__agnostic__v001
   process_run_id_prefix: silver_process
 
-versions:
-  silver: silver__clean__dataset__agnostic__v001
-  truth: truth_v001
+  versions:
+    silver: silver__preeda__v001
+    truth: truth_v001
 
   artifact_layout:
     stage: silver
