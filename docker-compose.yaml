@@ -516,12 +516,14 @@ services:
 
       # Conda env name used inside the container
       ENV_NAME: ${ENV_NAME}
+    
+    scale: 3
 
     command:
       [
-        "/opt/miniconda/envs/capstone/bin/python",
-        "-m",
-        "infrastructure.kafka.consumers.run_kafka_db_consumer"
+        "/bin/bash",
+        "-lc",
+        "export SYNTHETIC_CONSUMER_WORKER_ID=$$(hostname); export KAFKA_CONSUMER_WORKER_ID=$$(hostname); exec /opt/miniconda/envs/capstone/bin/python -m infrastructure.kafka.consumers.run_kafka_db_consumer"
       ]
     networks:
       - capstone_net

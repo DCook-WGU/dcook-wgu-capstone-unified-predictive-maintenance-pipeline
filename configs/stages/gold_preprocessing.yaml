@@ -2,6 +2,10 @@ gold_preprocessing:
   layer_name: gold
   recipe_id: gold_preprocessing__v001_cascade
   
+  versions:
+    gold: gold__preprocessing__v001
+    truth: truth_v001
+
   process_run_id_prefix: gold_process
 
   artifact_layout:

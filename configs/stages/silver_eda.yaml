@@ -3,6 +3,11 @@ silver_eda:
   cleaning_recipe_id: silver_eda__v001
   process_run_id_prefix: silver_eda_process
 
+  versions:
+    silver: silver__eda__clean__dataset__agnostic__v001
+    truth: truth_v001
+
+
   artifact_layout:
     stage: silver_subsets
     family: null

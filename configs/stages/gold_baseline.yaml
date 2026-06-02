@@ -1,6 +1,11 @@
 gold_baseline:
   layer_name: gold
   recipe_id: gold_modeling__v001_baseline
+
+  versions:
+    gold: gold__modeling__baseline__v001
+    truth: truth_v001
+
   process_run_id_prefix: gold_baseline_process
 
   artifact_layout:

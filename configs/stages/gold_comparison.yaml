@@ -1,6 +1,12 @@
 gold_comparison:
   layer_name: gold
   recipe_id: gold_modeling__v001_model_comparison
+  
+  versions:
+    gold: gold__comparision__v001
+    truth: truth_v001
+
+
   process_run_id_prefix: gold_comparison
 
   artifact_layout:

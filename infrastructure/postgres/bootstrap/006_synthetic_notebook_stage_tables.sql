@@ -1,6 +1,27 @@
 \echo '[db-bootstrap] 006 synthetic notebook stage tables'
 
 -- =============================================================================
+-- Reset synthetic notebook stage tables
+--
+-- These are generated/intermediate tables, not durable capstone metadata.
+-- Dropping them here keeps the bootstrap idempotent when table contracts change.
+-- =============================================================================
+
+DROP TABLE IF EXISTS capstone.synthetic_pump_stream CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_observations_premelt_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_observations_timestamped_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_messages_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_messages_send_queue CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_messages_consumed_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_observations_rebuilt_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_rebuild_comparison_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_observations_final_aligned_stage CASCADE;
+DROP TABLE IF EXISTS capstone.synthetic_sensor_observations_final_output CASCADE;
+DROP TABLE IF EXISTS capstone.bronze_observations_input_stage CASCADE;
+
+
+
+-- =============================================================================
 -- Synthetic Notebook Stage Tables
 -- =============================================================================
 -- Purpose:
