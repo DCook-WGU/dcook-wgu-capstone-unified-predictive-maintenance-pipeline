@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Maximum allowed staged file size in MB
+SIZE_LIMIT_MB=50
+LIMIT_BYTES=$((SIZE_LIMIT_MB * 1024 * 1024))
+
+echo "Checking staged files for files larger than ${SIZE_LIMIT_MB}MB..."
+
+git diff --cached --name-only --diff-filter=ACM | while IFS= read -r file; do
+    if git cat-file -e ":$file" 2>/dev/null; then
+        size_bytes=$(git cat-file -s ":$file")
+
+        if [ "$size_bytes" -gt "$LIMIT_BYTES" ]; then
+            size_mb=$((size_bytes / 1024 / 1024))
+
+            echo "Unstaging oversized file:"
+            echo "  $file"
+            echo "  Size: ${size_mb}MB"
+
+            git restore --staged "$file"
+        fi
+    fi
+done
+
+exit 0

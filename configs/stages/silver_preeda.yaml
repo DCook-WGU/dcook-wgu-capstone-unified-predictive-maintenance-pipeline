@@ -59,8 +59,10 @@ silver_preeda:
     - is_normal
     - status_normal_value
 
-  asset_id_default_fallback: asset__001
-  run_id_default_fallback: run__001
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
   raw_prefix: raw__
 
   time_column_candidates: [timestamp, event_time, time, datetime, date]

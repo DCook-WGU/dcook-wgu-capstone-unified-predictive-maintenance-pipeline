@@ -7,6 +7,10 @@ gold_cascade:
     truth: truth_v001
 
   process_run_id_prefix: gold_cascade_process
+  
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
 
   artifact_layout:
     stage: gold
@@ -39,6 +43,7 @@ gold_cascade:
     threshold_percentile: 95.0
 
   stage2:
+    selection_source: auto # "previous_best" | "configured_search" | "auto"
     selection_mode: parameter_search
     min_recall: 0.5
     random_state: 42

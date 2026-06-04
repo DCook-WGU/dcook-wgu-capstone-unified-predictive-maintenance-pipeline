@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-06-02T15:52:52.095615+00:00",
+    "ts_utc": "2026-06-02T19:20:01.067490+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -11,7 +11,7 @@
     "data": {}
   },
   {
-    "ts_utc": "2026-06-02T15:53:06.902428+00:00",
+    "ts_utc": "2026-06-02T19:20:11.788652+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -34,7 +34,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:51:16.559288+00:00",
+    "ts_utc": "2026-06-02T19:20:13.991021+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -54,7 +54,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:51:38.456415+00:00",
+    "ts_utc": "2026-06-02T19:20:18.290775+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -70,7 +70,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:51:43.784332+00:00",
+    "ts_utc": "2026-06-02T19:20:20.005653+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -102,7 +102,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:51:45.366294+00:00",
+    "ts_utc": "2026-06-02T19:20:21.347349+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -134,7 +134,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:51:46.075121+00:00",
+    "ts_utc": "2026-06-02T19:20:22.249485+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -203,7 +203,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:11.275005+00:00",
+    "ts_utc": "2026-06-02T19:20:32.370687+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -219,7 +219,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:11.740239+00:00",
+    "ts_utc": "2026-06-02T19:20:33.333007+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -235,7 +235,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:20.372521+00:00",
+    "ts_utc": "2026-06-02T19:20:35.545191+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "transform",
@@ -304,7 +304,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:20.381606+00:00",
+    "ts_utc": "2026-06-02T19:20:35.552970+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -320,7 +320,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:24.345007+00:00",
+    "ts_utc": "2026-06-02T19:20:37.589852+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -341,7 +341,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:25.550926+00:00",
+    "ts_utc": "2026-06-02T19:20:39.226267+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -667,7 +667,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:26.615437+00:00",
+    "ts_utc": "2026-06-02T19:20:40.578499+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1091,7 +1091,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:27.674116+00:00",
+    "ts_utc": "2026-06-02T19:20:42.352014+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1451,7 +1451,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:28.632170+00:00",
+    "ts_utc": "2026-06-02T19:20:43.370939+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1467,7 +1467,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:30.930341+00:00",
+    "ts_utc": "2026-06-02T19:20:44.734979+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1484,7 +1484,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:35.872280+00:00",
+    "ts_utc": "2026-06-02T19:20:47.266053+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1503,7 +1503,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:52:59.795111+00:00",
+    "ts_utc": "2026-06-02T19:21:10.344216+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1512,16 +1512,16 @@
     "why": null,
     "consequence": null,
     "data": {
-      "gold_truth_hash": "cff00e0e2e89d5d30c735137fa043d263c6e636c713d2680772b88c7dfc5f039",
+      "gold_truth_hash": "c8b635f049d9957221b1f08dc11d261152a65d7cf4a68c16968db63e66bc34f6",
       "gold_parent_truth_hash": "e6ca1b7d8df1c76bdb7754a40c0d50951622eecc39b2e107ffa7876b3268ff4a",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__cff00e0e2e89d5d30c735137fa043d263c6e636c713d2680772b88c7dfc5f039.json",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__c8b635f049d9957221b1f08dc11d261152a65d7cf4a68c16968db63e66bc34f6.json",
       "gold_prescaled_path": "/workspace/data/gold/pump__gold__preprocessed_prescaled.parquet",
       "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
       "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
       "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "pipeline_mode": "batch",
-      "process_run_id": "gold_process__20260602T155246Z",
+      "process_run_id": "gold_process__20260602T191952Z",
       "train_rows": 136431,
       "test_rows": 83889,
       "fit_rows_normal_only": 77395,
@@ -1530,7 +1530,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-02T16:53:00.879958+00:00",
+    "ts_utc": "2026-06-02T19:21:11.286578+00:00",
     "stage": "gold",
     "recipe": "gold_preprocessing__v001_cascade",
     "kind": "step",
@@ -1541,8 +1541,8 @@
     "data": {
       "preprocessing_summary_path": "/workspace/artifacts/gold/pump/preprocessing/summaries/pump__gold__preprocessing_summary.json",
       "preprocessing_metadata_path": "/workspace/artifacts/gold/pump/preprocessing/metadata/pump__gold__preprocessing_metadata.json",
-      "gold_truth_hash": "cff00e0e2e89d5d30c735137fa043d263c6e636c713d2680772b88c7dfc5f039",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__cff00e0e2e89d5d30c735137fa043d263c6e636c713d2680772b88c7dfc5f039.json"
+      "gold_truth_hash": "c8b635f049d9957221b1f08dc11d261152a65d7cf4a68c16968db63e66bc34f6",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__c8b635f049d9957221b1f08dc11d261152a65d7cf4a68c16968db63e66bc34f6.json"
     }
   }
 ]

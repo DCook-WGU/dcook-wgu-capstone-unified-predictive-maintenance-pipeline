@@ -7,6 +7,11 @@ gold_preprocessing:
     truth: truth_v001
 
   process_run_id_prefix: gold_process
+  
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
 
   artifact_layout:
     stage: gold

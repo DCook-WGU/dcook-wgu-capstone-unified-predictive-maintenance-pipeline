@@ -7,6 +7,9 @@ silver_eda:
     silver: silver__eda__profiled__v001
     truth: truth_v001
 
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
 
   artifact_layout:
     stage: silver_eda

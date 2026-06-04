@@ -6,8 +6,12 @@ gold_comparison:
     gold: gold__comparision__v001
     truth: truth_v001
 
-
   process_run_id_prefix: gold_comparison
+
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
 
   artifact_layout:
     stage: gold

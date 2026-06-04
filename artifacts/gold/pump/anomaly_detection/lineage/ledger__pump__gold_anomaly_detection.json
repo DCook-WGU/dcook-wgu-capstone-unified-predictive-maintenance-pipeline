@@ -1,0 +1,212 @@
+[
+  {
+    "ts_utc": "2026-06-04T02:36:00.862181+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "init",
+    "message": "Initialized ledger",
+    "why": null,
+    "consequence": null,
+    "data": {}
+  },
+  {
+    "ts_utc": "2026-06-04T02:36:00.872186+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "decision",
+    "step": "notebook_init",
+    "message": "Initialized Gold 05 anomaly detection notebook with utils-based paths/config/logging.",
+    "why": "Gold 05 should align with the rest of the capstone project architecture.",
+    "consequence": "Result loading, exports, logs, and truths will follow project-standard utilities.",
+    "data": {
+      "dataset_name": "pump",
+      "stage": "gold",
+      "pipeline_mode": "batch",
+      "process_run_id": "gold05_anomaly_detection__20260604T023600Z",
+      "selected_run_key": "stage3_improved"
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:36:01.680621+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "decision",
+    "step": "resolved_run_paths",
+    "message": "Resolved selected run artifact path from pipeline config.",
+    "why": "Gold 05 should load scored outputs from config-derived artifact paths by default.",
+    "consequence": "Notebook can run standalone after kernel reset.",
+    "data": {
+      "selected_run_key": "stage3_improved",
+      "selected_run_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/scores/pump__gold__cascade_stage3_improved_results.pkl"
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:36:12.833758+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "load_selected_results",
+    "message": "Loaded selected scored dataframe for Gold 05 anomaly validation.",
+    "why": "Timeline validation operates on a single scored run at a time.",
+    "consequence": "All downstream summaries and plots will use the selected run output.",
+    "data": {
+      "selected_run_key": "stage3_improved",
+      "row_count": 220320,
+      "column_count": 374
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:37:24.299684+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "build_timeline_dataframe",
+    "message": "Built anomaly timeline dataframe with failure/recovery phase annotations.",
+    "why": "Gold 05 needs one canonical row-level validation frame.",
+    "consequence": "All summaries, plots, and exports will derive from this dataframe.",
+    "data": {
+      "time_axis_column": "time_index",
+      "status_column": "machine_status",
+      "target_flag_column": "cascade_final_flag",
+      "recovery_boundary_payload": {
+        "first_broken_plot_order_index": 17155,
+        "recovery_start_plot_order_index": 17156,
+        "recovery_end_plot_order_index": 17156,
+        "recovery_stability_rows": 30
+      },
+      "row_count": 220320,
+      "column_count": 384
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:37:24.946438+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "detected_rows_review",
+    "message": "Built detected-row review dataframe for selected run.",
+    "why": "Gold 05 should provide row-level review of all alert rows.",
+    "consequence": "Detected rows can now be exported, inspected, and compared across runs.",
+    "data": {
+      "detected_row_count": 37024
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:37:33.479006+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "build_summaries",
+    "message": "Built lead-time, alert-packet, and detection summary outputs.",
+    "why": "Gold 05 must quantify early warning timing and alert behavior.",
+    "consequence": "Notebook now has reportable summary artifacts.",
+    "data": {
+      "lead_time_minutes_to_failure": 11954,
+      "total_final_alert_rows": 37024,
+      "alert_packet_count": 874
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:39:02.516931+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "comparison_build",
+    "message": "Built baseline vs comparison-run timeline payloads and summary dataframe.",
+    "why": "Gold 05 should support direct baseline-vs-cascade timeline review.",
+    "consequence": "Comparison plots and metrics can now be generated on aligned windows.",
+    "data": {
+      "comparison_run_key": "cascade_tuned",
+      "baseline_row_count": 220320,
+      "comparison_row_count": 220320
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:43:27.404992+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "multi_run_lead_time_comparison",
+    "message": "Built multi-run lead-time comparison across baseline, cascade, and Stage 3 operating modes.",
+    "why": "Precision/recall alone does not show whether a model provides useful early warning.",
+    "consequence": "Gold 05 can now compare detection timing across operating modes.",
+    "data": {
+      "run_keys": [
+        "baseline",
+        "cascade_defaults",
+        "cascade_tuned",
+        "stage3_improved",
+        "stage3_medium",
+        "stage3_strict"
+      ],
+      "row_count": 6,
+      "output_path": "/workspace/artifacts/gold/pump/anomaly_detection/summaries/multi_run_lead_time_comparison.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:43:37.746427+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "top_k_alert_packets",
+    "message": "Built top-k alert packet review dataframe.",
+    "why": "Gold 05 should surface the most illustrative alert packets for focused inspection.",
+    "consequence": "Notebook can highlight the strongest early-warning examples.",
+    "data": {
+      "top_k_alert_packets": 5
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:43:54.196138+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "export_outputs",
+    "message": "Exported Gold 05 timeline outputs and plots.",
+    "why": "Notebook artifacts should be persisted for reporting, dashboarding, and downstream reuse.",
+    "consequence": "Gold 05 artifacts are now available outside the active kernel.",
+    "data": {
+      "timeline_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/exports/stage3_improved__timeline_export.parquet",
+      "failure_lead_time_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/summaries/stage3_improved__failure_lead_time_summary.csv",
+      "alert_packet_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/packets/stage3_improved__alert_packet_summary.csv",
+      "summary_payload_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/summaries/stage3_improved__detection_summary.json",
+      "timeline_plot_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/plots/stage3_improved__timeline_plot.png",
+      "stacked_waveform_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/plots/stage3_improved__stacked_sensor_waveform.png"
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:43:59.486407+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "additional_exports",
+    "message": "Exported detected-row review, comparison outputs, heatmap, 3D surface, and packet review artifacts.",
+    "why": "Gold 05 should provide a complete visualization and validation export bundle.",
+    "consequence": "Notebook now writes the full anomaly-review artifact set.",
+    "data": {
+      "detected_rows_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/exports/stage3_improved__detected_rows_review.csv",
+      "comparison_summary_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/summaries/baseline_vs_cascade_tuned__comparison_summary.csv",
+      "comparison_plot_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/plots/baseline_vs_cascade_tuned__comparison_plot.png",
+      "all_sensor_heatmap_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/plots/stage3_improved__all_sensors_heatmap.png",
+      "all_sensor_3d_plot_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/plots/stage3_improved__all_sensors_3d_surface.png",
+      "top_alert_packets_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/packets/stage3_improved__top_alert_packets.csv",
+      "lead_time_comparison_export_path": "/workspace/artifacts/gold/pump/anomaly_detection/summaries/multi_run_lead_time_comparison.csv"
+    }
+  },
+  {
+    "ts_utc": "2026-06-04T02:44:00.338359+00:00",
+    "stage": "gold",
+    "recipe": "gold05_anomaly_detection__20260604T023600Z",
+    "kind": "step",
+    "step": "truth_record",
+    "message": "Built and saved Gold 05 truth record and stamped the timeline dataframe.",
+    "why": "Gold 05 outputs are derived artifacts and should preserve lineage.",
+    "consequence": "Timeline export now participates in truth-based lineage tracking.",
+    "data": {
+      "truth_hash": "c481fe50cdda5df1d7e5cf0471660d813cf8b1c7d923e6921889a160a674ff53",
+      "truth_path": "/workspace/artifacts/truths/gold_anomaly_detection/pump__gold_anomaly_detection__truth__c481fe50cdda5df1d7e5cf0471660d813cf8b1c7d923e6921889a160a674ff53.json",
+      "parent_truth_hash": "ed7ad45008afca2304879368dc932a4ccafbed312d9811f6103a23e4f86d26ad"
+    }
+  }
+]

@@ -8,6 +8,12 @@ gold_anomaly_detection:
 
   process_run_id_prefix: gold_anomaly_detection
 
+
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
+
   artifact_layout:
     stage: gold
     family: anomaly_detection
