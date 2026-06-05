@@ -63,14 +63,29 @@ data/preprocessed/*
 !data/preprocessed/.gitkeep
 
 # Large Files:
+artifacts/bronze/pump/*results.csv
+artifacts/bronze/pump/*results.pkl
+artifacts/silver/pump/*results.csv
+artifacts/silver/pump/*results.pkl
+artifacts/silver_eda/pump/*results.csv
+artifacts/silver_eda/pump/*results.pkl
+artifacts/silver_subsets/pump/*results.csv
+artifacts/silver_subsets/pump/*results.pkl
 artifacts/gold/pump/*results.csv
 artifacts/gold/pump/*results.pkl
 artifacts/gold/pump/*.joblib
-
 artifacts/exports/synthetic_timestamped_export_full__*.csv
 
 # logs
 logs/
+
+# ============================
+# Data Lake Structure - Folders
+# Ignore folders, ignore contents
+# ============================
+
+/project_tools/
+/project_tools/*
 
 # ============================
 # Docker volumes (if they appear as local dirs)

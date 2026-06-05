@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, Mapping
 
 import pandas as pd
 from sqlalchemy import text
@@ -866,6 +866,133 @@ def log_silver_eda_sql(
         },
     )
 
+
+
+
+SILVER_EDA_TABLES = {
+    "profile_df": "eda_dataset_profile",
+    "feature_statistics_df": "eda_feature_statistics",
+    "missingness_summary_df": "eda_missingness_summary",
+    "correlation_pairs_df": "eda_correlation_pairs",
+    "outlier_summary_df": "eda_outlier_summary",
+    "categorical_distribution_df": "eda_categorical_distribution",
+    "artifact_index_df": "eda_artifact_index",
+}
+
+
+def write_silver_eda_sql_outputs(
+    engine: Engine,
+    dataset_id: str,
+    run_id: str,
+    notebook_name: str,
+    profile_df: pd.DataFrame | None = None,
+    feature_statistics_df: pd.DataFrame | None = None,
+    missingness_summary_df: pd.DataFrame | None = None,
+    correlation_pairs_df: pd.DataFrame | None = None,
+    outlier_summary_df: pd.DataFrame | None = None,
+    categorical_distribution_df: pd.DataFrame | None = None,
+    artifact_index_df: pd.DataFrame | None = None,
+    schema: str = "silver",
+) -> dict[str, int]:
+    """
+    Write Silver 02b EDA summary outputs to PostgreSQL.
+
+    This function writes durable EDA summary tables created by the Silver 02b
+    notebook. It is intended for reproducibility and SQL-based inspection of
+    the exploratory analysis layer. It does not write every temporary notebook
+    dataframe. Instead, it writes profile, feature-statistic, missingness,
+    correlation, outlier, categorical-distribution, and artifact-index summaries.
+
+    Existing rows for the same dataset/run/notebook are deleted before the new
+    rows are inserted so the notebook can be rerun without accumulating duplicate
+    summary records.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to the capstone PostgreSQL database.
+    dataset_id:
+        Dataset identifier for the current run.
+    run_id:
+        Run identifier for the current pipeline execution.
+    notebook_name:
+        Name of the notebook producing the EDA summaries.
+    profile_df:
+        Dataset/profile-level summary dataframe.
+    feature_statistics_df:
+        Numeric feature statistics dataframe.
+    missingness_summary_df:
+        Missingness summary dataframe.
+    correlation_pairs_df:
+        Long-form correlation pair dataframe.
+    outlier_summary_df:
+        Outlier summary dataframe.
+    categorical_distribution_df:
+        Categorical/status distribution dataframe.
+    artifact_index_df:
+        EDA artifact index dataframe.
+    schema:
+        Target database schema. Defaults to ``silver``.
+
+    Returns
+    -------
+    dict[str, int]
+        Mapping from SQL table name to number of rows written.
+
+    Side Effects
+    ------------
+    Deletes existing rows for the same dataset/run/notebook from the target
+    Silver EDA tables and inserts the provided summary records.
+    """
+    frames: Mapping[str, pd.DataFrame | None] = {
+        "eda_dataset_profile": profile_df,
+        "eda_feature_statistics": feature_statistics_df,
+        "eda_missingness_summary": missingness_summary_df,
+        "eda_correlation_pairs": correlation_pairs_df,
+        "eda_outlier_summary": outlier_summary_df,
+        "eda_categorical_distribution": categorical_distribution_df,
+        "eda_artifact_index": artifact_index_df,
+    }
+
+    rows_written: dict[str, int] = {}
+
+    with engine.begin() as conn:
+        for table_name, dataframe in frames.items():
+            if dataframe is None:
+                rows_written[table_name] = 0
+                continue
+
+            if dataframe.empty:
+                rows_written[table_name] = 0
+                continue
+
+            conn.execute(
+                text(
+                    f"""
+                    DELETE FROM {schema}.{table_name}
+                    WHERE dataset_id = :dataset_id
+                      AND run_id = :run_id
+                      AND notebook_name = :notebook_name
+                    """
+                ),
+                {
+                    "dataset_id": dataset_id,
+                    "run_id": run_id,
+                    "notebook_name": notebook_name,
+                },
+            )
+
+            dataframe.to_sql(
+                table_name,
+                conn,
+                schema=schema,
+                if_exists="append",
+                index=False,
+            )
+
+            rows_written[table_name] = int(len(dataframe))
+
+    return rows_written
 
 # =============================================================================
 # Gold writers
