@@ -12,20 +12,22 @@ silver_eda:
     run_id: run__001
 
   artifact_layout:
-    stage: silver_eda
-    family: null
+    stage: silver
+    family: eda
     subdirs:
-      - sensor_profiles
-      - correlation_analysis
-      - pca
-      - distribution_plots
       - aligned_onset_plots
-      - generator_inputs
-      - summaries
-      - metadata
       - config
+      - correlation_analysis
+      - distribution_plots
+      - generator_inputs
       - lineage
+      - metadata
+      - pca
+      - sensor_profiles
+      - subsets
+      - summaries
       - timeline_overlays
+
 
   min_time_parse_success_percent: 95.0
   min_step_parse_success_percent: 95.0

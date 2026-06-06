@@ -25,18 +25,29 @@ from utils.database.postgres import get_engine_from_env, read_sql_dataframe
 engine = get_engine_from_env()
 
 CAPSTONE_SCHEMA = os.getenv("CAPSTONE_SCHEMA", "capstone")
+
+#DATASET_ID = os.getenv(
+#    "SYNTHETIC_DATASET_ID",
+#    globals().get("DATASET_NAME", "pump_synthetic_v1"),
+#)
+#RUN_ID = os.getenv(
+#    "SYNTHETIC_RUN_ID",
+#    globals().get("RUN_ID", "synthetic_run_001"),
+#)
+
 DATASET_ID = os.getenv(
-    "SYNTHETIC_DATASET_ID",
-    globals().get("DATASET_NAME", "pump_synthetic_v1"),
+    "DATASET_ID",
+    globals().get("DATASET_NAME", "pump"),
 )
 RUN_ID = os.getenv(
-    "SYNTHETIC_RUN_ID",
-    globals().get("RUN_ID", "synthetic_run_001"),
+    "RUN_ID",
+    globals().get("RUN_ID", "run_001"),
 )
 
-print(f"SQL schema: {CAPSTONE_SCHEMA}")
-print(f"Dataset ID: {DATASET_ID}")
-print(f"Run ID: {RUN_ID}")
+
+#print(f"SQL schema: {CAPSTONE_SCHEMA}")
+#print(f"Dataset ID: {DATASET_ID}")
+#print(f"Run ID: {RUN_ID}")
 
 
 # -----------------------------------------------------------------------------
