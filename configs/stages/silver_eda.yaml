@@ -1,5 +1,7 @@
 silver_eda:
-  layer_name: silver_eda
+  layer_name: silver
+  stage_name: eda
+ 
   cleaning_recipe_id: silver_eda__v001
   process_run_id_prefix: silver_eda_process
 
