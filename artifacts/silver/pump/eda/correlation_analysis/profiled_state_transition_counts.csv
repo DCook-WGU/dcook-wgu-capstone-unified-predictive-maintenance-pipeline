@@ -1,0 +1,10 @@
+prev_state,next_state,transition_count
+normal_suspect,normal_clean,2699
+normal_clean,normal_suspect,2696
+normal_contaminated,normal_suspect,487
+normal_suspect,normal_contaminated,486
+abnormal,recovery,7
+normal_suspect,abnormal,4
+normal_clean,abnormal,2
+normal_clean,normal_contaminated,2
+normal_contaminated,abnormal,1
