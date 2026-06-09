@@ -1,0 +1,4 @@
+comparison,test,statistic,p_value,interpretation
+Baseline vs Stage 3 Improved,McNemar chi-square approximation,22609.570950015055,0.0,Tests whether the baseline and cascade differ in row-level paired correctness.
+Baseline vs Stage 3 Improved,False-positive-rate two-proportion z-test,143.80087389781292,0.0,Tests whether the cascade reduced normal-row false-positive rate compared with the baseline.
+Baseline vs Stage 3 Improved,Precision two-proportion z-test,-7.166532383433468,3.8460605288534235e-13,Tests whether the cascade improved the true-alert concentration compared with the baseline.

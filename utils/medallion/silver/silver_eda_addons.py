@@ -956,7 +956,14 @@ def build_outlier_audit_artifacts(
         robust_z_outlier_count = 0
         robust_z_outlier_pct = 0.0
         if mad_value is not None and mad_value > 0:
-            robust_scores = 0.6745 * (clean - median_value) / mad_value
+            robust_scores = (
+                pd.to_numeric(clean, errors="coerce")
+                .astype(float)
+                .sub(float(median_value))
+                .mul(0.6745)
+                .div(float(mad_value))
+            )
+
             robust_mask = robust_scores.abs() > robust_z_threshold
             robust_z_outlier_count = int(robust_mask.sum())
             robust_z_outlier_pct = float(robust_z_outlier_count / len(clean))

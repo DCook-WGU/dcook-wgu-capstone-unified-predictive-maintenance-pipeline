@@ -1,0 +1,4 @@
+state_value,run_count,mean_run_length,median_run_length,min_run_length,max_run_length
+abnormal,7,1.0,1.0,1,1
+normal,8,25729.5,21211.0,4700,53804
+recovery,7,2068.1428571428573,944.0,41,8390

@@ -1,0 +1,43 @@
+{
+  "dataset_name": "pump",
+  "cascade_variant": "tuned",
+  "cascade_metrics": {
+    "model": "3-Stage Cascade",
+    "stage1_alert_count_all_rows": 103054,
+    "stage2_alert_count_all_rows": 55684,
+    "final_alert_count_all_rows": 54598,
+    "stage1_alert_count_test_rows": 43236,
+    "stage2_alert_count_test_rows": 16108,
+    "final_alert_count_test_rows": 15153,
+    "precision": 0.005345476143337953,
+    "recall": 0.6864406779661016,
+    "f1": 0.01060834261017615
+  },
+  "stage1_alert_count_all_rows": 103054,
+  "stage2_alert_count_all_rows": 55684,
+  "final_cascade_alert_count_all_rows": 54598,
+  "stage1_alert_count_test_rows": 43236,
+  "stage2_alert_count_test_rows": 16108,
+  "final_cascade_alert_count_test_rows": 15153,
+  "result_row_count": 220320,
+  "stage1_feature_count": 50,
+  "stage2_feature_count": 12,
+  "stage3_primary_rule_count": 5,
+  "stage3_secondary_rule_count": 8,
+  "stage2_best_params": {
+    "bootstrap": false,
+    "contamination": "auto",
+    "max_features": 1.0,
+    "max_samples": "auto",
+    "n_estimators": 100
+  },
+  "stage2_search_candidate_count": 27,
+  "stage2_selection_mode": "parameter_search",
+  "cascade_truth_hash": "d532c219d2ad6aad6c6d8203e68f03a1a3eb62b3bba3deb4ac0ebec3d2883ef9",
+  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__d532c219d2ad6aad6c6d8203e68f03a1a3eb62b3bba3deb4ac0ebec3d2883ef9.json",
+  "cascade_process_run_id": "gold_cascade_process__20260609T060805Z",
+  "gold_truth_hash": "4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202.json",
+  "gold_process_run_id": "gold_process__20260609T053755Z",
+  "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40"
+}

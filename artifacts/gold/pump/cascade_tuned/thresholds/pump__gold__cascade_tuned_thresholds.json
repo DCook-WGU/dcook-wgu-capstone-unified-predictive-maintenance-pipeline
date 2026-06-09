@@ -1,0 +1,15 @@
+{
+  "cascade_variant": "tuned",
+  "stage1_threshold_percentile": 95.0,
+  "stage1_threshold": 0.4886482835351958,
+  "stage2_selection_mode": "parameter_search",
+  "stage2_selected_threshold_percentile": 99.5,
+  "stage2_threshold": 0.584003211617404,
+  "stage2_best_params": {
+    "bootstrap": false,
+    "contamination": "auto",
+    "max_features": 1.0,
+    "max_samples": "auto",
+    "n_estimators": 100
+  }
+}
