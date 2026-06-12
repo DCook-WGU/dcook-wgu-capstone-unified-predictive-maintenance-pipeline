@@ -15,7 +15,7 @@ The new contribution in 03C was the improved Stage 3 confirmation layer. Stage 3
 | ----- | ----------- | --------- | ------ | -------- | 
 
 | Gold 02 Baseline Isolation Forest | 31,200 | 0.0038 | 1.0000 | 0.0075 | 
-| Gold 03A Cascade Default | 24,894 | 0.0031 | 0.6525 | 0.0062 | 
+| Gold 03A Cascade Default | 24,895 | 0.0031 | 0.6525 | 0.0062 | 
 | Gold 03B Cascade Tuned | 15,153 | 0.0053 | 0.6864 | 0.0106 | 
 | Gold 03C Stage 3 Improved | 6,594 | 0.0106 | 0.5932 | 0.0209 | 
 

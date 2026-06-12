@@ -13,7 +13,7 @@ Gold 03B improved this design by tuning Stage 2 through parameter and threshold 
 | Model | Test Alerts | Precision | Recall | F1 Score |
 |---|---:|---:|---:|---:|
 | Gold 02 Baseline Isolation Forest | 31,200 | 0.0038 | 1.0000 | 0.0075 |
-| Gold 03A Cascade Default | 24,894 | 0.0031 | 0.6525 | 0.0062 |
+| Gold 03A Cascade Default | 24,895 | 0.0031 | 0.6525 | 0.0062 |
 | Gold 03B Cascade Tuned | 15,153 | 0.0053 | 0.6864 | 0.0106 |
 
 The tuned cascade produced `15,153` test alerts, reducing the baseline alert count by `16,047` alerts. This represents a `51.4%` reduction in test alerts compared with the baseline. It also improved precision from `0.0038` to `0.0053` and improved F1 from `0.0075` to `0.0106`, although recall decreased from `1.0000` to `0.6864`. Compared with the 03A default cascade, 03B improved every major tradeoff metric: it reduced alerts, increased precision, increased recall, and increased F1. 
@@ -48,6 +48,6 @@ At the same time, the 03B model is not the final optimal solution. The model sti
 
 ### Capstone Conclusion for Gold 03B
 
-The Gold 03B tuned cascade represents a meaningful improvement over the fixed cascade experiment. By adding Stage 2 parameter and threshold search, the model reduced test alerts from `24,894` in 03A to `15,153`, increased precision, increased recall, and improved F1 score. Compared with the baseline, it reduced test alerts by more than half and improved F1, while still maintaining useful failure detection.
+The Gold 03B tuned cascade represents a meaningful improvement over the fixed cascade experiment. By adding Stage 2 parameter and threshold search, the model reduced test alerts from `24,895` in 03A to `15,153`, increased precision, increased recall, and improved F1 score. Compared with the baseline, it reduced test alerts by more than half and improved F1, while still maintaining useful failure detection.
 
 The early-warning evaluation also showed that the tuned cascade produced a substantial lead time before the first failure event, with the first final alert occurring `11,954` minutes before the first `BROKEN` row. However, the model still produced a high false-positive burden across the full dataset. Therefore, 03B demonstrates that Stage 2 tuning improves the cascade, but it also motivates the next experiment: improving Stage 3 confirmation logic in Gold 03C to reduce false positives and produce a cleaner, more operationally credible alert stream.

@@ -31,6 +31,6 @@ This result was still valuable because it revealed the core tradeoff of the casc
 
 ### Capstone Conclusion for Gold 03A
 
-The Gold 03A default cascade reduced the alert burden produced by the baseline Isolation Forest, lowering test alerts from `31,200` to `24,894`. This demonstrated that a multi-stage cascade can filter the broad baseline alert stream. However, the fixed cascade also reduced recall and did not improve F1 score or early-onset warning behavior. Therefore, 03A should be interpreted as an initial cascade benchmark rather than a final improvement over the baseline.
+The Gold 03A default cascade reduced the alert burden produced by the baseline Isolation Forest, lowering test alerts from `31,200` to `24,895`. This demonstrated that a multi-stage cascade can filter the broad baseline alert stream. However, the fixed cascade also reduced recall and did not improve F1 score or early-onset warning behavior. Therefore, 03A should be interpreted as an initial cascade benchmark rather than a final improvement over the baseline.
 
 The main value of 03A was that it showed the staged architecture could reduce alerts, while also exposing the limitations of fixed Stage 2 thresholds and basic Stage 3 rules. This directly motivated Gold 03B, where Stage 2 parameter and threshold search was used to improve the tradeoff between alert reduction, recall, precision, and F1 score.
