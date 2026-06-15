@@ -1539,9 +1539,15 @@ def write_gold_cascade_scores_sql(
     notebook_globals: Optional[dict[str, Any]] = None,
     dataframe: Optional[pd.DataFrame] = None,
     dataset_name: Optional[str] = None,
+    model_stage: str = "cascade_final",
 ) -> pd.DataFrame:
     """
     Convenience wrapper for cascade anomaly scores.
+
+    The model_stage parameter should be stage-specific when multiple cascade
+    notebooks write to the same SQL table for the same dataset/run. For example:
+    cascade_default_final, cascade_tuned_final, or
+    cascade_stage3_improved_final.
     """
     return write_gold_anomaly_scores_sql(
         engine=engine,
@@ -1549,7 +1555,7 @@ def write_gold_cascade_scores_sql(
         dataset_id=dataset_id,
         run_id=run_id,
         model_name="cascade_isolation_forest_rule_confirmation",
-        model_stage="cascade_final",
+        model_stage=model_stage,
         score_column_candidates=[
             "cascade_final_score",
             "stage3_score",
@@ -1575,7 +1581,6 @@ def write_gold_cascade_scores_sql(
             "scored_dataframe",
             "scored_df",
             "cascade_results",
-            
         ],
         evidence_column_mode="cascade",
     )
