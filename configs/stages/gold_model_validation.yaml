@@ -1,0 +1,101 @@
+gold_model_validation:
+  layer_name: gold
+  recipe_id: gold_saved_model_validation__v001
+
+  versions:
+    gold: gold__model_validation__v001
+    truth: truth_v001
+
+  process_run_id_prefix: gold_model_validation
+
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
+  artifact_layout:
+    stage: gold
+    family: model_validation
+    subdirs:
+      - results
+      - scores
+      - summaries
+      - metadata
+      - config
+      - lineage
+      - plots
+
+  validation:
+    load_saved_models: true
+    retrain_models: false
+    require_test_split: true
+    require_threshold_files: false
+    compare_to_gold04: true
+    write_postgres_summary: false
+
+  inputs:
+    model_dir: models/pump
+    artifact_model_dir: artifacts/gold/pump
+    test_data_candidates:
+      - data/gold/pump__gold__test.parquet
+      - data/gold/pump__gold_test.parquet
+      - data/gold/pump__gold__model_test.parquet
+      - artifacts/gold/pump/preprocessing/results/pump__gold__test.parquet
+
+  models:
+    baseline:
+      model_path: models/pump/pump__gold__baseline_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/baseline/thresholds/pump__gold__baseline_thresholds.json
+      variant_family: baseline
+      stage_gate: baseline
+    cascade_default_stage1:
+      model_path: models/pump/pump__gold__cascade_defaults_stage1_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/cascade_defaults/thresholds/pump__gold__cascade_defaults_thresholds.json
+      variant_family: cascade_default
+      stage_gate: stage1
+    cascade_default_stage2:
+      model_path: models/pump/pump__gold__cascade_defaults_stage2_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/cascade_defaults/thresholds/pump__gold__cascade_defaults_thresholds.json
+      variant_family: cascade_default
+      stage_gate: stage2
+    cascade_tuned_stage1:
+      model_path: models/pump/pump__gold__cascade_tuned_stage1_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/cascade_tuned/thresholds/pump__gold__cascade_tuned_thresholds.json
+      variant_family: cascade_tuned
+      stage_gate: stage1
+    cascade_tuned_stage2:
+      model_path: models/pump/pump__gold__cascade_tuned_stage2_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/cascade_tuned/thresholds/pump__gold__cascade_tuned_thresholds.json
+      variant_family: cascade_tuned
+      stage_gate: stage2
+    stage3_improved_stage1:
+      model_path: models/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/cascade_stage3_improved/thresholds/pump__gold__cascade_stage3_improved_thresholds.json
+      variant_family: cascade_stage3_improved
+      stage_gate: stage1
+    stage3_improved_stage2:
+      model_path: models/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib
+      threshold_path: artifacts/gold/pump/cascade_stage3_improved/thresholds/pump__gold__cascade_stage3_improved_thresholds.json
+      variant_family: cascade_stage3_improved
+      stage_gate: stage2
+
+  outputs:
+    metrics_file: pump__gold__saved_model_validation_metrics.csv
+    scores_file: pump__gold__saved_model_validation_scores.csv
+    summary_file: pump__gold__saved_model_validation_summary.json
+    comparison_alignment_file: pump__gold__saved_model_validation_vs_gold04.csv
+
+pipeline:
+  execution_mode: batch
+  orchestration_mode: notebook
+
+runtime:
+  mode: test
+  profile: default
+
+execution:
+  fit_models: false
+  score_only: true
+  persist_models: false
+  persist_truths: true
+  persist_ledgers: true
+  save_config_snapshot: true

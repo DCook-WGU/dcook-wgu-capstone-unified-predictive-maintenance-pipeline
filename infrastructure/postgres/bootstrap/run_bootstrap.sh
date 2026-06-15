@@ -116,5 +116,6 @@ run_sql_file "004_medallion_schema_shells.sql"
 run_sql_file "005_synthetic_notebook_stage_tables.sql"
 run_sql_file "006_silver_eda_summary_tables.sql"
 run_sql_file "007_grants_ownership.sql"
+run_sql_file "008_gold_sql_contract_extensions.sql"
 
 echo "[db-bootstrap] Split bootstrap complete."

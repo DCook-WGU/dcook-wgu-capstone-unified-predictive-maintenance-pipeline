@@ -1599,6 +1599,7 @@ def write_gold_model_comparison_results_sql(
     table = "model_comparison_results"
 
     candidates = candidate_names or [
+        "gold04_metric_rows_df",
         "baseline_vs_cascade",
         "baseline_vs_cascade_df",
         "baseline_vs_cascade_dataframe",
@@ -1798,6 +1799,7 @@ def log_gold_05_anomaly_detection_summary_sql(
     Log Gold 05 anomaly-detection summary metadata.
     """
     candidates = candidate_names or [
+        "gold05_output_manifest_df",
         "baseline_vs_cascade",
         "baseline_vs_cascade_df",
         "comparison_dataframe",
