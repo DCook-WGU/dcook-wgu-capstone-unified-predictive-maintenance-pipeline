@@ -1,130 +1,24 @@
 {
   "artifact_paths": {
-    "baseline_metadata_path": "/workspace/artifacts/gold/pump/baseline/metadata/pump__gold__baseline_metadata.json",
-    "baseline_model_artifact_path": "/workspace/artifacts/gold/pump/baseline/models/pump__gold__baseline_isolation_forest.joblib",
-    "baseline_models_path": "/workspace/models/pump/pump__gold__baseline_isolation_forest.joblib",
-    "baseline_results_path_csv": "/workspace/artifacts/gold/pump/baseline/scores/pump__gold__baseline_results.csv",
-    "baseline_results_path_pickle": "/workspace/artifacts/gold/pump/baseline/scores/pump__gold__baseline_results.pkl",
-    "baseline_summary_path": "/workspace/artifacts/gold/pump/baseline/summaries/pump__gold__baseline_summary.json",
-    "baseline_thresholds_path": "/workspace/artifacts/gold/pump/baseline/thresholds/pump__gold__baseline_thresholds.json",
-    "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
-    "gold_preprocessed_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-    "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202.json"
+    "normal_clean_path": "/workspace/data/silver/train/pump__silver_subsets__normal_clean.parquet",
+    "normal_contaminated_path": "/workspace/data/silver/train/pump__silver_subsets__normal_contaminated.parquet",
+    "profiled_df_path": "/workspace/data/silver/train/pump__silver_subsets__profiled_dataframe.parquet",
+    "subset_artifact_dir": "/workspace/artifacts/silver/pump/eda",
+    "subset_data_dir": "/workspace/data/silver/train",
+    "subset_summary_path": "/workspace/artifacts/silver/pump/eda/summaries/pump__silver_subsets__summary.json"
   },
-  "column_count": 352,
+  "column_count": 339,
   "config_snapshot": {
-    "config_hash": "c6a6d6f825e58a932d2ec1d7d3bedcfd992fa35f0959b2a44f085989d8fb68f6",
-    "execution": {
-      "fit_models": true,
-      "persist_ledgers": true,
-      "persist_models": true,
-      "persist_truths": true,
-      "save_config_snapshot": true,
-      "score_only": false,
-      "use_existing_gold_truth": false
-    },
-    "lineage": {
-      "load_training_artifacts_from_truth": false,
-      "parent_truth_hash": null,
-      "training_truth_hash": null
-    },
-    "pipeline": {
-      "execution_mode": "batch",
-      "orchestration_mode": "notebook"
-    },
-    "runtime": {
-      "dataset": "pump",
-      "mode": "train",
-      "profile": "default",
-      "stage": "gold_baseline"
-    },
-    "source_files": [
-      "/workspace/configs/base.yaml",
-      "/workspace/configs/datasets/pump.yaml",
-      "/workspace/configs/modes/train.yaml",
-      "/workspace/configs/stages/gold_baseline.yaml"
-    ],
-    "stage_params": {
-      "artifact_layout": {
-        "family": "baseline",
-        "stage": "gold",
-        "subdirs": [
-          "models",
-          "scores",
-          "thresholds",
-          "summaries",
-          "metadata",
-          "config",
-          "lineage"
-        ]
-      },
-      "baseline_estimator_count": 200,
-      "baseline_threshold_percentile": 97.0,
-      "default_fallbacks": {
-        "asset_id": "asset__001",
-        "run_id": "run__001"
-      },
-      "layer_name": "gold",
-      "process_run_id_prefix": "gold_baseline_process",
-      "random_seed": 42,
-      "recipe_id": "gold_modeling__v001_baseline",
-      "stage1_threshold_percentile": 95.0,
-      "stage2_threshold_percentile": 97.0,
-      "train_fraction": 0.7,
-      "use_robust_scaler": false,
-      "versions": {
-        "gold": "gold__modeling__baseline__v001",
-        "truth": "truth_v001"
-      }
-    },
-    "versions": {
-      "bronze": "bronze__001",
-      "gold": "gold__001",
-      "silver": "silver__001",
-      "silver_eda": "silver_eda__001",
-      "truth": "truth__001"
-    },
-    "wandb": {
-      "enabled": true,
-      "entity": "dcoo230-western-governors-university",
-      "project": "capstone",
-      "run_name_template": "gold__001_train"
-    }
+    "dataset_name": "pump",
+    "effective_layer_name": "silver",
+    "effective_stage": "eda_subsets",
+    "pipeline_mode": "batch",
+    "run_mode": "train",
+    "source_config_stage": "silver_eda"
   },
-  "created_at_utc": "2026-06-09T05:42:18+00:00",
+  "created_at_utc": "2026-06-14T22:15:26+00:00",
   "dataset_name": "pump",
   "feature_columns": [
-    "__is_normal_candidate",
-    "__keep_after_episode_trim",
-    "__normal_episode_id",
-    "__status_group",
-    "__window_id",
-    "anomaly_flag",
-    "baseline_decision",
-    "baseline_flag",
-    "baseline_pred",
-    "baseline_predict_flag",
-    "baseline_score",
-    "baseline_score_samples_raw",
-    "baseline_threshold",
-    "baseline_threshold_percentile",
-    "event_date",
-    "event_step",
-    "event_time",
-    "final_row_quality_class",
-    "is_anomaly",
-    "is_clean_normal_for_training",
-    "is_normal",
-    "machine_status",
-    "machine_status__profiled",
-    "machine_status__synthetic",
-    "normal_delta_abnormal_sensor_count",
-    "normal_total_abnormal_sensor_count",
-    "normal_training_quality_class",
-    "normal_value_abnormal_sensor_count",
-    "row_is_clean_normal",
-    "row_is_exclude_from_normal_training",
-    "row_is_suspect_normal",
     "sensor_00",
     "sensor_00__any_abnormal_flag",
     "sensor_00__delta_abnormal_flag",
@@ -424,48 +318,55 @@
     "sensor_51__delta_abnormal_flag",
     "sensor_51__delta_deviation",
     "sensor_51__value_abnormal_flag",
-    "sensor_51__value_deviation",
-    "status_normal_value",
-    "time_index",
-    "timestamp"
+    "sensor_51__value_deviation"
   ],
-  "layer_name": "gold_baseline",
+  "layer_name": "silver",
   "meta_columns": [
     "meta__asset_id",
     "meta__dataset",
     "meta__episode_id",
     "meta__event_id",
     "meta__ingested_at_utc",
-    "meta__is_train_flag",
     "meta__parent_truth_hash",
     "meta__pipeline_mode",
     "meta__record_id",
-    "meta__row_id",
     "meta__run_id",
     "meta__source_file",
     "meta__source_row_id",
     "meta__split",
     "meta__truth_hash"
   ],
-  "notes": {},
-  "parent_truth_hash": "4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202",
+  "notebook_name": "silver_02a_eda_subsets",
+  "notes": {
+    "purpose": "Silver EDA subset-building truth record. This record documents the profiled dataframe and subset outputs created for downstream EDA, generator input review, and Gold-stage preparation."
+  },
+  "parent_truth_hash": "6d78344b915d1f5c31dac560d155433f966c3cfca60380e4ba597c2f918860a3",
   "pipeline_mode": "batch",
-  "process_run_id": "gold_baseline_process__20260609T054151Z",
+  "process_run_id": "silver_subset_process__20260614T221350Z",
   "row_count": 220320,
   "runtime_facts": {
-    "alert_count_all_rows": 87735,
-    "alert_count_test_rows": 31200,
-    "baseline_estimator_count": 200,
-    "baseline_threshold": 0.5040984526829705,
-    "baseline_threshold_percentile": 97.0,
-    "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
-    "gold_process_run_id": "gold_process__20260609T053755Z",
-    "parent_truth_hash": "4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202",
-    "random_seed": 42,
-    "result_row_count": 220320,
-    "train_fraction": 0.7
+    "final_method": "trimmed_normal_episode_sensor_profile",
+    "parent_layer_name": "silver",
+    "parent_truth_hash": "6d78344b915d1f5c31dac560d155433f966c3cfca60380e4ba597c2f918860a3",
+    "profiled_counts": {
+      "abnormal": 7,
+      "normal_clean": 153885,
+      "normal_contaminated": 18682,
+      "normal_suspect": 33269,
+      "recovery": 14477
+    },
+    "row_count": 220320,
+    "source_counts": {
+      "abnormal": 7,
+      "normal": 205836,
+      "recovery": 14477
+    },
+    "state_col_profiled": "machine_status__profiled",
+    "state_col_source": "machine_status__synthetic"
   },
   "source_fingerprint": {},
-  "truth_hash": "e4d400aab05fd5be052524ddb8fbce164e261c46c0eee40fe6fa358ced641b27",
+  "truth_hash": "1d9f19f3ce4967a8d5226b90d205a072a7e21f8a817da1d6a335e11cdfd4438b",
+  "truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__1d9f19f3ce4967a8d5226b90d205a072a7e21f8a817da1d6a335e11cdfd4438b.json",
+  "truth_stage": "eda_subsets",
   "truth_version": "truth__001"
 }

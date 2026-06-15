@@ -24,10 +24,10 @@
   "gold_train_path": "/workspace/data/gold/pump__gold__train.parquet",
   "gold_test_path": "/workspace/data/gold/pump__gold__test.parquet",
   "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
-  "gold_truth_hash": "4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202",
-  "gold_parent_truth_hash": "c84839d132e08fef545ea2cd0eac695ed9a9f4f86d8572da30262065bfce7787",
-  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202.json",
-  "process_run_id": "gold_process__20260609T053755Z",
+  "gold_truth_hash": "1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5",
+  "gold_parent_truth_hash": "6d78344b915d1f5c31dac560d155433f966c3cfca60380e4ba597c2f918860a3",
+  "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5.json",
+  "process_run_id": "gold_process__20260614T233251Z",
   "gold_input_source": "silver_subset_profiled_dataframe",
   "gold_training_normal_source": "machine_status__profiled == normal_clean"
 }

@@ -1000,16 +1000,21 @@ def write_silver_eda_sql_outputs(
 
 def _ensure_gold_preprocessed_features_table(engine: Engine) -> None:
     """
-    Create gold.preprocessed_features if the bootstrap has not created it yet.
+    Create or migrate gold.preprocessed_features.
+
+    CREATE TABLE IF NOT EXISTS only handles brand-new databases. The ALTER TABLE
+    statements below protect reruns against schema drift when an older bootstrap
+    already created gold.preprocessed_features without newer columns.
     """
     schema = "gold"
     table = "preprocessed_features"
+    table_reference = sql_table_ref(schema, table)
 
     with engine.begin() as connection:
         connection.execute(
             text(
                 f"""
-                CREATE TABLE IF NOT EXISTS {sql_table_ref(schema, table)} (
+                CREATE TABLE IF NOT EXISTS {table_reference} (
                     preprocessed_id BIGSERIAL PRIMARY KEY,
                     dataset_id TEXT NOT NULL,
                     run_id TEXT NOT NULL,
@@ -1032,8 +1037,47 @@ def _ensure_gold_preprocessed_features_table(engine: Engine) -> None:
         connection.execute(
             text(
                 f"""
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS asset_id TEXT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS event_time TIMESTAMPTZ;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS event_step BIGINT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS time_index BIGINT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS feature_set_id TEXT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS split_name TEXT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS is_train BOOLEAN;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS features_json JSONB NOT NULL DEFAULT '{{}}'::jsonb;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS meta_truth_hash TEXT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS meta_parent_truth_hash TEXT;
+
+                ALTER TABLE {table_reference}
+                ADD COLUMN IF NOT EXISTS created_at_utc TIMESTAMPTZ NOT NULL DEFAULT now();
+                """
+            )
+        )
+
+        connection.execute(
+            text(
+                f"""
                 CREATE INDEX IF NOT EXISTS "idx_gold_preprocessed_dataset_run"
-                ON {sql_table_ref(schema, table)} (dataset_id, run_id)
+                ON {table_reference} (dataset_id, run_id)
                 """
             )
         )
@@ -1042,7 +1086,7 @@ def _ensure_gold_preprocessed_features_table(engine: Engine) -> None:
             text(
                 f"""
                 CREATE INDEX IF NOT EXISTS "idx_gold_preprocessed_split"
-                ON {sql_table_ref(schema, table)} (dataset_id, run_id, split_name)
+                ON {table_reference} (dataset_id, run_id, split_name)
                 """
             )
         )
@@ -1069,6 +1113,8 @@ def write_gold_preprocessed_features_sql(
     _ensure_gold_preprocessed_features_table(engine)
 
     candidates = candidate_names or [
+        "gold_preprocessed_prescaled_dataframe",
+        "gold_preprocessed_scaled_dataframe",
         "gold_preprocessed_dataframe",
         "gold_preprocessed_df",
         "preprocessed_dataframe",
@@ -1076,6 +1122,9 @@ def write_gold_preprocessed_features_sql(
         "gold_preprocessed_scaled",
         "gold_dataframe",
         "gold_df",
+        "gold_train_dataframe",
+        "gold_test_dataframe",
+        "gold_fit_dataframe",
     ]
 
     source_dataframe = _resolve_dataframe(
@@ -1475,6 +1524,7 @@ def write_gold_baseline_scores_sql(
             "baseline_results_df",
             "scored_dataframe",
             "scored_df",
+            "baseline_results",
         ],
         evidence_column_mode="basic",
     )
@@ -1524,6 +1574,8 @@ def write_gold_cascade_scores_sql(
             "cascade_results_df",
             "scored_dataframe",
             "scored_df",
+            "cascade_results",
+            
         ],
         evidence_column_mode="cascade",
     )
@@ -1752,6 +1804,11 @@ def log_gold_05_anomaly_detection_summary_sql(
         "comparison_results_dataframe",
         "final_results_dataframe",
         "results_dataframe",
+        "lead_time_comparison_df",
+        "detected_rows_review_df",
+        "comparison_summary_df", 
+        "failure_lead_time_df",
+        
     ]
 
     source_dataframe = _resolve_dataframe(

@@ -19,7 +19,7 @@
     "run_id": "run__001",
     "split_status": "unsplit"
   },
-  "created_at_utc": "2026-06-09T05:06:08+00:00",
+  "created_at_utc": "2026-06-14T20:37:34+00:00",
   "dataset_name": "pump",
   "feature_columns": [
     "Unnamed: 0",
@@ -97,7 +97,7 @@
   },
   "parent_truth_hash": null,
   "pipeline_mode": "batch",
-  "process_run_id": "bronze_process__20260609T050549Z",
+  "process_run_id": "bronze_process__20260614T203612Z",
   "row_count": 220320,
   "runtime_facts": {
     "dataset_method": "config",
@@ -115,6 +115,6 @@
     "modified_time_ns": 1780374882688769100,
     "size_bytes": 124058460
   },
-  "truth_hash": "1961ea823c80654f4551f1051fe48f3fa0c9bc839645ed208772ef64e8422a7a",
+  "truth_hash": "b90b025534b790481484fe4870e5bff95c50143212898e9ff02b88401303da69",
   "truth_version": "truth__001"
 }

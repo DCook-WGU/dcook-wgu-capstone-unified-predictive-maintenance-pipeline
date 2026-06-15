@@ -1,18 +1,73 @@
 [
   {
-    "ts_utc": "2026-06-09T05:41:56.597027+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:15.728007+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "init",
-    "message": "Initialized ledger",
+    "message": "Initialized ledger from shared notebook context",
     "why": null,
     "consequence": null,
-    "data": {}
+    "data": {
+      "stage": "gold_baseline",
+      "recipe_id": "gold_modeling__v001_baseline",
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "log_path": "/workspace/logs/gold_modeling_baseline.log"
+    }
   },
   {
-    "ts_utc": "2026-06-09T05:41:59.360475+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:15.732890+00:00",
+    "stage": "gold_baseline",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "context_loaded",
+    "message": "Loaded shared notebook context.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "gold_baseline",
+      "recipe_id": "gold_modeling__v001_baseline",
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "log_path": "/workspace/logs/gold_modeling_baseline.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-15T00:57:16.352409+00:00",
+    "stage": "gold_baseline",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "gold_paths_logged",
+    "message": "Logged project layer paths.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "gold_baseline",
+      "layer": "gold",
+      "log_path": "/workspace/logs/gold_modeling_baseline.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-15T00:57:21.440492+00:00",
+    "stage": "gold_baseline",
+    "recipe": "gold_modeling__v001_baseline",
+    "kind": "step",
+    "step": "ledger_context_ready",
+    "message": "Ledger is available from shared notebook context.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "gold_baseline",
+      "recipe_id": "gold_modeling__v001_baseline",
+      "log_path": "/workspace/logs/gold_modeling_baseline.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-15T00:57:24.793595+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "load_modeling_inputs",
@@ -21,8 +76,8 @@
     "consequence": null,
     "data": {
       "gold_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-      "gold_truth_hash": "4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202",
-      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202.json",
+      "gold_truth_hash": "1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5",
+      "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5.json",
       "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
       "stage1_features_path": "/workspace/artifacts/gold/pump/preprocessing/features/pump__gold__stage1_features.json",
       "gold_scaled_shape": [
@@ -37,8 +92,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:42:00.171932+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:25.628984+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "validate_baseline_row_tracking",
@@ -52,8 +107,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:42:05.521124+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:30.858869+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "run_baseline_isolation_forest",
@@ -78,8 +133,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:42:15.259221+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:40.954020+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "score_baseline_with_row_tracking",
@@ -99,8 +154,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:42:16.694556+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:42.386392+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "synchronize_baseline_results_after_row_tracking",
@@ -118,8 +173,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:42:17.687497+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T00:57:43.225287+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "validate_baseline_output",
@@ -143,8 +198,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:50:51.770675+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T01:00:04.628513+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "save_baseline_outputs",
@@ -159,16 +214,16 @@
       "baseline_thresholds_path": "/workspace/artifacts/gold/pump/baseline/thresholds/pump__gold__baseline_thresholds.json",
       "baseline_summary_path": "/workspace/artifacts/gold/pump/baseline/summaries/pump__gold__baseline_summary.json",
       "baseline_metadata_path": "/workspace/artifacts/gold/pump/baseline/metadata/pump__gold__baseline_metadata.json",
-      "baseline_truth_hash": "b312ad275ff8617dedb6c97ff1257579cf8be2177f9e890d509ac45279e4708b",
-      "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__b312ad275ff8617dedb6c97ff1257579cf8be2177f9e890d509ac45279e4708b.json",
+      "baseline_truth_hash": "037e9f5d72e863d7dadd18c875afe056081c5c4d51cd70bf601b686a10524680",
+      "baseline_truth_path": "/workspace/artifacts/truths/gold_baseline/pump__gold_baseline__truth__037e9f5d72e863d7dadd18c875afe056081c5c4d51cd70bf601b686a10524680.json",
       "result_row_count": 220320,
       "alert_count_all_rows": 87735,
       "alert_count_test_rows": 31200
     }
   },
   {
-    "ts_utc": "2026-06-09T05:51:25.787348+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T01:00:05.086156+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "extract_baseline_detected_rows",
@@ -185,8 +240,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:51:26.309862+00:00",
-    "stage": "gold",
+    "ts_utc": "2026-06-15T01:00:06.117277+00:00",
+    "stage": "gold_baseline",
     "recipe": "gold_modeling__v001_baseline",
     "kind": "step",
     "step": "finalize_baseline_modeling",

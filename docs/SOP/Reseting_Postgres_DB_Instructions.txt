@@ -1,0 +1,39 @@
+
+Manually Reseting Postgres Databases:
+    In WSL/Terminal:
+
+        Navigate to Project Root Folder:
+            cd /mnt/d/wgu/capstone 
+
+        Check to make sure that postgres service is running
+            docker compose up -d
+
+        Confirm the database environment values inside the Postgres Container
+            docker compose exec postgres printenv POSTGRES_USER
+            docker compose exec postgres printenv POSTGRES_DB
+
+        Run the SQL Reset File:
+            cat path/to/your_reset_file.sql | docker compose exec -T postgres psql -U <POSTGRES_USER> -d <POSTGRES_DB>
+            cat ./sql/999_manual_database_reset.sql | docker compose exec -T postgres psql -U dcook_admin -d dcook_capstone_postgres_db        
+
+
+Once manual reset has completed, it's time to rebuild and relaunch the postgres configuration: 
+    In WSL/Terminal:
+
+        Navigate to Project Root Folder:
+            cd /mnt/d/wgu/capstone
+
+        Make sure Postgres and Kafka services are up:
+            docker compose up -d postgres kafka
+
+        Re-run bootstrap one-shot services:
+
+            docker compose up --force-recreate --no-deps db_bootstrap
+            docker compose up --force-recreate --no-deps kafka_topic_init
+
+        Check Logs:
+            docker compose logs db_bootstrap --tail 100
+            docker compose logs kafka_topic_init --tail 10
+
+        Bring Normal Stack Back up:
+            docker compose up -d

@@ -1,18 +1,91 @@
 [
   {
-    "ts_utc": "2026-06-09T05:13:35.043674+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:29.959934+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "init",
-    "message": "Initialized ledger",
+    "message": "Initialized ledger from shared notebook context",
     "why": null,
     "consequence": null,
-    "data": {}
+    "data": {
+      "stage": "silver_preeda",
+      "recipe_id": "silver__clean__dataset__agnostic__v001",
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "log_path": "/workspace/logs/silver.log"
+    }
   },
   {
-    "ts_utc": "2026-06-09T05:13:36.410426+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:29.966050+00:00",
+    "stage": "silver_preeda",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "context_loaded",
+    "message": "Loaded shared notebook context.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "silver_preeda",
+      "recipe_id": "silver__clean__dataset__agnostic__v001",
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "log_path": "/workspace/logs/silver.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-14T22:03:30.101636+00:00",
+    "stage": "silver_preeda",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "check",
+    "step": "context_sanity_check",
+    "message": "Verified shared notebook context variables are available.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "silver_preeda",
+      "recipe_id": "silver__clean__dataset__agnostic__v001",
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "log_path": "/workspace/logs/silver.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-14T22:03:30.317739+00:00",
+    "stage": "silver_preeda",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "silver_paths_logged",
+    "message": "Logged project layer paths.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "silver_preeda",
+      "layer": "silver",
+      "log_path": "/workspace/logs/silver.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-14T22:03:32.099588+00:00",
+    "stage": "silver_preeda",
+    "recipe": "silver__clean__dataset__agnostic__v001",
+    "kind": "step",
+    "step": "ledger_context_ready",
+    "message": "Ledger is available from shared notebook context.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "silver_preeda",
+      "recipe_id": "silver__clean__dataset__agnostic__v001",
+      "log_path": "/workspace/logs/silver.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-14T22:03:33.641682+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "load_bronze",
@@ -29,8 +102,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:40.520837+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:37.447423+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "remove_junk_import_columns",
@@ -45,8 +118,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:41.425802+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:38.387924+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "deduplicate_columns",
@@ -59,8 +132,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:42.128955+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:39.381661+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "validate_dataset_name",
@@ -74,8 +147,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:42.537858+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:39.902811+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "silver_meta_contract",
@@ -93,7 +166,7 @@
         "meta__ingested_at_utc",
         "meta__record_id"
       ],
-      "processed_at_utc": "2026-06-09T05:13:42.537221+00:00",
+      "processed_at_utc": "2026-06-14T22:03:39.902351+00:00",
       "shape": {
         "rows": 220320,
         "cols": 65
@@ -101,8 +174,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:43.512449+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:40.984686+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "resolve_label_or_status_source",
@@ -132,8 +205,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:45.053465+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:42.731209+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "canonical_name_collision_protection",
@@ -155,8 +228,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:46.446737+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:44.483801+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "build_canonical_identity_and_order_master",
@@ -209,8 +282,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:13:48.309209+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:03:46.385335+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "build_anomaly_flag",
@@ -238,8 +311,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:14:04.529157+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:04:07.019551+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "silver_build_episode_ids",
@@ -252,8 +325,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:14:14.037559+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:04:17.361052+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "missingness_quarantine",
@@ -574,8 +647,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:14:15.703671+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:04:19.258763+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "decision",
     "step": "finalize_feature_set",
@@ -715,8 +788,8 @@
     }
   },
   {
-    "ts_utc": "2026-06-09T05:14:21.480510+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:04:25.283129+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "build_silver_truth_record",
@@ -724,16 +797,16 @@
     "why": null,
     "consequence": null,
     "data": {
-      "silver_truth_hash": "c84839d132e08fef545ea2cd0eac695ed9a9f4f86d8572da30262065bfce7787",
-      "silver_parent_truth_hash": "1961ea823c80654f4551f1051fe48f3fa0c9bc839645ed208772ef64e8422a7a",
-      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__c84839d132e08fef545ea2cd0eac695ed9a9f4f86d8572da30262065bfce7787.json",
+      "silver_truth_hash": "6d78344b915d1f5c31dac560d155433f966c3cfca60380e4ba597c2f918860a3",
+      "silver_parent_truth_hash": "b90b025534b790481484fe4870e5bff95c50143212898e9ff02b88401303da69",
+      "silver_truth_path": "/workspace/artifacts/truths/silver/pump__silver__truth__6d78344b915d1f5c31dac560d155433f966c3cfca60380e4ba597c2f918860a3.json",
       "pipeline_mode": "batch",
-      "process_run_id": "silver_process__20260609T051329Z"
+      "process_run_id": "silver_process__20260614T220330Z"
     }
   },
   {
-    "ts_utc": "2026-06-09T05:14:23.761095+00:00",
-    "stage": "silver",
+    "ts_utc": "2026-06-14T22:04:28.631417+00:00",
+    "stage": "silver_preeda",
     "recipe": "silver__clean__dataset__agnostic__v001",
     "kind": "step",
     "step": "silver_finalize_export",
@@ -785,10 +858,10 @@
       },
       "feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
       "feature_count": 50,
-      "silver_truth_hash": "c84839d132e08fef545ea2cd0eac695ed9a9f4f86d8572da30262065bfce7787",
-      "silver_parent_truth_hash": "1961ea823c80654f4551f1051fe48f3fa0c9bc839645ed208772ef64e8422a7a",
+      "silver_truth_hash": "6d78344b915d1f5c31dac560d155433f966c3cfca60380e4ba597c2f918860a3",
+      "silver_parent_truth_hash": "b90b025534b790481484fe4870e5bff95c50143212898e9ff02b88401303da69",
       "pipeline_mode": "batch",
-      "process_run_id": "silver_process__20260609T051329Z",
+      "process_run_id": "silver_process__20260614T220330Z",
       "shape": {
         "rows": 220320,
         "cols": 73

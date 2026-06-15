@@ -4,7 +4,7 @@ meta__split,220320,1,unsplit,220320
 meta__run_id,220320,1,run__001,220320
 meta__asset_id,220320,1,asset__001,220320
 meta__source_file,220320,1,sensor.csv,220320
-meta__truth_hash,220320,1,1961ea823c80654f4551f1051fe48f3fa0c9bc839645ed208772ef64e8422a7a,220320
+meta__truth_hash,220320,1,b90b025534b790481484fe4870e5bff95c50143212898e9ff02b88401303da69,220320
 meta__parent_truth_hash,0,0,,
 meta__pipeline_mode,220320,1,batch,220320
 timestamp,220320,220320,2018-08-31 23:43:00,1

@@ -1,27 +1,19 @@
 {
   "artifact_paths": {
-    "cascade_stage3_improved_metadata_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/metadata/pump__gold__cascade_stage3_improved_metadata.json",
-    "cascade_stage3_improved_reference_profile_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/profiles/pump__gold__cascade_stage3_improved_reference_profile.csv",
-    "cascade_stage3_improved_results_path_csv": "/workspace/artifacts/gold/pump/cascade_stage3_improved/scores/pump__gold__cascade_stage3_improved_results.csv",
-    "cascade_stage3_improved_results_path_pickle": "/workspace/artifacts/gold/pump/cascade_stage3_improved/scores/pump__gold__cascade_stage3_improved_results.pkl",
-    "cascade_stage3_improved_stage1_model_artifact_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/models/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
-    "cascade_stage3_improved_stage1_models_path": "/workspace/models/pump/pump__gold__cascade_stage3_improved_stage1_isolation_forest.joblib",
-    "cascade_stage3_improved_stage2_model_artifact_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/models/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib",
-    "cascade_stage3_improved_stage2_models_path": "/workspace/models/pump/pump__gold__cascade_stage3_improved_stage2_isolation_forest.joblib",
-    "cascade_stage3_improved_summary_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/summaries/pump__gold__cascade_stage3_improved_summary.json",
-    "cascade_stage3_improved_thresholds_path": "/workspace/artifacts/gold/pump/cascade_stage3_improved/thresholds/pump__gold__cascade_stage3_improved_thresholds.json",
-    "cascade_variant": "stage3_improved",
+    "baseline_metadata_path": "/workspace/artifacts/gold/pump/baseline/metadata/pump__gold__baseline_metadata.json",
+    "baseline_model_artifact_path": "/workspace/artifacts/gold/pump/baseline/models/pump__gold__baseline_isolation_forest.joblib",
+    "baseline_models_path": "/workspace/models/pump/pump__gold__baseline_isolation_forest.joblib",
+    "baseline_results_path_csv": "/workspace/artifacts/gold/pump/baseline/scores/pump__gold__baseline_results.csv",
+    "baseline_results_path_pickle": "/workspace/artifacts/gold/pump/baseline/scores/pump__gold__baseline_results.pkl",
+    "baseline_summary_path": "/workspace/artifacts/gold/pump/baseline/summaries/pump__gold__baseline_summary.json",
+    "baseline_thresholds_path": "/workspace/artifacts/gold/pump/baseline/thresholds/pump__gold__baseline_thresholds.json",
     "gold_fit_path": "/workspace/data/gold/pump__gold__fit_normal_only.parquet",
-    "gold_scored_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
-    "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202.json",
-    "stage1_features_path": "/workspace/artifacts/gold/pump/preprocessing/features/pump__gold__stage1_features.json",
-    "stage2_features_path": "/workspace/artifacts/gold/pump/preprocessing/features/pump__gold__stage2_features.json",
-    "stage3_primary_path": "/workspace/artifacts/gold/pump/preprocessing/features/pump__gold__stage3_primary_rule_sensors.json",
-    "stage3_secondary_path": "/workspace/artifacts/gold/pump/preprocessing/features/pump__gold__stage3_secondary_rule_sensors.json"
+    "gold_preprocessed_scaled_path": "/workspace/data/gold/pump__gold__preprocessed_scaled.parquet",
+    "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5.json"
   },
-  "column_count": 377,
+  "column_count": 352,
   "config_snapshot": {
-    "config_hash": "a8b330817ea745367ecf52d6b4b12f9a836b370e1c1ab19878e8953cd0d45b24",
+    "config_hash": "c6a6d6f825e58a932d2ec1d7d3bedcfd992fa35f0959b2a44f085989d8fb68f6",
     "execution": {
       "fit_models": true,
       "persist_ledgers": true,
@@ -44,141 +36,44 @@
       "dataset": "pump",
       "mode": "train",
       "profile": "default",
-      "stage": "gold_cascade"
+      "stage": "gold_baseline"
     },
     "source_files": [
       "/workspace/configs/base.yaml",
       "/workspace/configs/datasets/pump.yaml",
       "/workspace/configs/modes/train.yaml",
-      "/workspace/configs/stages/gold_cascade.yaml"
+      "/workspace/configs/stages/gold_baseline.yaml"
     ],
     "stage_params": {
       "artifact_layout": {
+        "family": "baseline",
         "stage": "gold",
         "subdirs": [
           "models",
           "scores",
           "thresholds",
-          "profiles",
-          "evidence",
-          "row_tracking",
-          "tuning",
-          "plots",
           "summaries",
           "metadata",
           "config",
           "lineage"
-        ],
-        "variants": {
-          "default": {
-            "family": "cascade_defaults"
-          },
-          "stage3_improved": {
-            "family": "cascade_stage3_improved"
-          },
-          "tuned": {
-            "family": "cascade_tuned"
-          }
-        }
+        ]
       },
+      "baseline_estimator_count": 200,
+      "baseline_threshold_percentile": 97.0,
       "default_fallbacks": {
         "asset_id": "asset__001",
         "run_id": "run__001"
       },
       "layer_name": "gold",
-      "process_run_id_prefix": "gold_cascade_process",
+      "process_run_id_prefix": "gold_baseline_process",
       "random_seed": 42,
-      "recipe_id": "gold_modeling__v001_cascade",
-      "stage1": {
-        "estimator_count": 200,
-        "threshold_percentile": 95.0
-      },
-      "stage2": {
-        "fixed": {
-          "confirmed_threshold_percentile": 99.0,
-          "params": {
-            "bootstrap": false,
-            "contamination": "auto",
-            "max_features": 1.0,
-            "max_samples": "auto",
-            "n_estimators": 300
-          },
-          "threshold_percentile": 99.0,
-          "warning_threshold_percentile": 98.0
-        },
-        "min_recall": 0.5,
-        "random_state": 42,
-        "search": {
-          "param_grid": {
-            "bootstrap": [
-              false
-            ],
-            "contamination": [
-              "auto",
-              0.005,
-              0.01
-            ],
-            "max_features": [
-              1.0
-            ],
-            "max_samples": [
-              "auto",
-              0.8,
-              1.0
-            ],
-            "n_estimators": [
-              100,
-              200,
-              300
-            ]
-          },
-          "threshold_grid": [
-            98.5,
-            99.0,
-            99.25,
-            99.5,
-            99.75,
-            99.9,
-            99.95
-          ]
-        },
-        "selection_mode": "parameter_search",
-        "selection_source": "auto"
-      },
-      "stage3": {
-        "min_primary_sensor_hits": 2,
-        "min_secondary_sensor_hits": 1,
-        "minimum_flags_in_window": 2,
-        "rolling_window_size": 3,
-        "stage3_tuning_grid": {
-          "drift_threshold_multiplier": [
-            1.0,
-            1.25,
-            1.5
-          ],
-          "min_weighted_score": [
-            3.25,
-            3.5,
-            3.75,
-            4.0,
-            4.25
-          ],
-          "minimum_flags_in_window": [
-            2,
-            3
-          ],
-          "rolling_window_size": [
-            3,
-            5
-          ],
-          "strong_primary_hits": [
-            2,
-            3
-          ]
-        }
-      },
+      "recipe_id": "gold_modeling__v001_baseline",
+      "stage1_threshold_percentile": 95.0,
+      "stage2_threshold_percentile": 97.0,
+      "train_fraction": 0.7,
+      "use_robust_scaler": false,
       "versions": {
-        "gold": "gold__modeling__cascade__v001",
+        "gold": "gold__modeling__baseline__v001",
         "truth": "truth_v001"
       }
     },
@@ -196,7 +91,7 @@
       "run_name_template": "gold__001_train"
     }
   },
-  "created_at_utc": "2026-06-09T06:46:25+00:00",
+  "created_at_utc": "2026-06-15T00:09:59+00:00",
   "dataset_name": "pump",
   "feature_columns": [
     "__is_normal_candidate",
@@ -204,13 +99,15 @@
     "__normal_episode_id",
     "__status_group",
     "__window_id",
-    "alert_priority",
     "anomaly_flag",
-    "cascade_final_flag",
-    "cascade_stage3_improved_flag",
-    "cascade_stage3_medium_flag",
-    "cascade_stage3_relaxed_flag",
-    "cascade_stage3_strict_flag",
+    "baseline_decision",
+    "baseline_flag",
+    "baseline_pred",
+    "baseline_predict_flag",
+    "baseline_score",
+    "baseline_score_samples_raw",
+    "baseline_threshold",
+    "baseline_threshold_percentile",
     "event_date",
     "event_step",
     "event_time",
@@ -225,7 +122,6 @@
     "normal_total_abnormal_sensor_count",
     "normal_training_quality_class",
     "normal_value_abnormal_sensor_count",
-    "plot_order_index",
     "row_is_clean_normal",
     "row_is_exclude_from_normal_training",
     "row_is_suspect_normal",
@@ -529,37 +425,11 @@
     "sensor_51__delta_deviation",
     "sensor_51__value_abnormal_flag",
     "sensor_51__value_deviation",
-    "stage1_decision",
-    "stage1_flag",
-    "stage1_pred",
-    "stage1_score",
-    "stage1_threshold",
-    "stage1_threshold_percentile",
-    "stage2_flag",
-    "stage2_model_decision",
-    "stage2_model_flag",
-    "stage2_model_pred",
-    "stage2_model_score",
-    "stage2_raw_flag",
-    "stage2_score",
-    "stage3_confirmed_flag",
-    "stage3_corroboration_flag",
-    "stage3_drift_flag",
-    "stage3_flag",
-    "stage3_persistence_flag",
-    "stage3_priority_class",
-    "stage3_profile_breach_count",
-    "stage3_profile_breach_flag",
-    "stage3_rule_evidence_count",
-    "stage3_secondary_breach_count",
-    "stage3_strong_primary_flag",
-    "stage3_weighted_evidence_score",
-    "stage3_weighted_score",
     "status_normal_value",
     "time_index",
     "timestamp"
   ],
-  "layer_name": "gold_cascade",
+  "layer_name": "gold_baseline",
   "meta_columns": [
     "meta__asset_id",
     "meta__dataset",
@@ -578,46 +448,24 @@
     "meta__truth_hash"
   ],
   "notes": {},
-  "parent_truth_hash": "4ea4d29ab8aae5106e59b8b3c4b3067eb14c94a07d4c0610a1eac43840de7202",
+  "parent_truth_hash": "1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5",
   "pipeline_mode": "batch",
-  "process_run_id": "gold_cascade_process__20260609T064015Z",
+  "process_run_id": "gold_baseline_process__20260615T000935Z",
   "row_count": 220320,
   "runtime_facts": {
-    "cascade_variant": "stage3_improved",
-    "final_cascade_alert_count_all_rows": 37024,
-    "final_cascade_alert_count_test_rows": 6594,
+    "alert_count_all_rows": 87735,
+    "alert_count_test_rows": 31200,
+    "baseline_estimator_count": 200,
+    "baseline_threshold": 0.5040984526829705,
+    "baseline_threshold_percentile": 97.0,
+    "gold_feature_set_id": "feature_set__bea5fdd737ae53fcd80ca84cafcd0c40",
+    "gold_process_run_id": "gold_process__20260614T233251Z",
+    "parent_truth_hash": "1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5",
+    "random_seed": 42,
     "result_row_count": 220320,
-    "stage1_alert_count_all_rows": 103054,
-    "stage1_alert_count_test_rows": 43236,
-    "stage1_feature_count": 50,
-    "stage2_alert_count_all_rows": 55684,
-    "stage2_alert_count_test_rows": 16108,
-    "stage2_best_params": {
-      "bootstrap": false,
-      "contamination": "auto",
-      "max_features": 1.0,
-      "max_samples": "auto",
-      "n_estimators": 100
-    },
-    "stage2_feature_count": 12,
-    "stage2_search_candidate_count": 1,
-    "stage2_selection_mode": "parameter_search",
-    "stage3_medium_alert_count_test_rows": 7286,
-    "stage3_primary_rule_count": 5,
-    "stage3_relaxed_alert_count_test_rows": 13713,
-    "stage3_search_candidate_count": 120,
-    "stage3_secondary_rule_count": 8,
-    "stage3_selected_params": {
-      "drift_threshold_multiplier": 1.5,
-      "min_weighted_score": 3.25,
-      "minimum_flags_in_window": 3,
-      "rolling_window_size": 3,
-      "strong_primary_hits": 3
-    },
-    "stage3_strict_alert_count_test_rows": 61,
-    "stage3_variant": "tuned_confirmation_layer"
+    "train_fraction": 0.7
   },
   "source_fingerprint": {},
-  "truth_hash": "0ef1bb5afef08a7a98ea4402d44b55f6e7e6575ff7508415d9503de5b68f0bb4",
+  "truth_hash": "c3fd6950b08cd234e0c1f9052dc481a37696eb1561f1d71f4d5041bfaa9d4806",
   "truth_version": "truth__001"
 }
