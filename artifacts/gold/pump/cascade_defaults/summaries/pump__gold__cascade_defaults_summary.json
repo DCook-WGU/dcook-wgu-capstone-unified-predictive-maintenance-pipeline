@@ -32,9 +32,9 @@
     "max_features": 1.0,
     "bootstrap": false
   },
-  "cascade_truth_hash": "12b1b672ddcc24b120176eed5f06f90b6ae8281b02a982bbdecb05a9d8e0894d",
-  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__12b1b672ddcc24b120176eed5f06f90b6ae8281b02a982bbdecb05a9d8e0894d.json",
-  "cascade_process_run_id": "gold_cascade_process__20260615T011225Z",
+  "cascade_truth_hash": "a752a2cbcf4609cf8c9ce6654a8c82b1574c0490a8ddbc2c2a69c90b3780f7a9",
+  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__a752a2cbcf4609cf8c9ce6654a8c82b1574c0490a8ddbc2c2a69c90b3780f7a9.json",
+  "cascade_process_run_id": "gold_cascade_process__20260616T065815Z",
   "gold_truth_hash": "1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5",
   "gold_truth_path": "/workspace/artifacts/truths/gold/pump__gold__truth__1b39755619d21614721b74a063b90aceddebaa1f4b857393db937f146eccbec5.json",
   "gold_process_run_id": "gold_process__20260614T233251Z",

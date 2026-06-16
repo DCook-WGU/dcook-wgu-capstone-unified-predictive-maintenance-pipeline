@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-06-15T04:13:26.515864+00:00",
+    "ts_utc": "2026-06-16T07:46:44.656940+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -18,7 +18,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:13:26.520068+00:00",
+    "ts_utc": "2026-06-16T07:46:44.659629+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -36,7 +36,25 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:13:26.886264+00:00",
+    "ts_utc": "2026-06-16T07:46:44.751219+00:00",
+    "stage": "gold_anomaly_detection",
+    "recipe": "gold_modeling__v001_anomaly_detection",
+    "kind": "check",
+    "step": "context_sanity_check",
+    "message": "Verified shared notebook context variables are available.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "stage": "gold_anomaly_detection",
+      "recipe_id": "gold_modeling__v001_anomaly_detection",
+      "dataset": "pump",
+      "mode": "train",
+      "profile": "default",
+      "log_path": "/workspace/logs/gold_anomaly_detection.log"
+    }
+  },
+  {
+    "ts_utc": "2026-06-16T07:46:44.994155+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -51,7 +69,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:13:26.928139+00:00",
+    "ts_utc": "2026-06-16T07:46:45.132607+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -66,7 +84,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:13:27.488311+00:00",
+    "ts_utc": "2026-06-16T07:46:45.732684+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "decision",
@@ -80,7 +98,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:13:31.105485+00:00",
+    "ts_utc": "2026-06-16T07:46:50.416701+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -95,7 +113,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:14:20.879761+00:00",
+    "ts_utc": "2026-06-16T07:47:43.417629+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -118,7 +136,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:14:21.270816+00:00",
+    "ts_utc": "2026-06-16T07:47:43.775164+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -131,7 +149,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:14:27.665371+00:00",
+    "ts_utc": "2026-06-16T07:47:49.768952+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -146,7 +164,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:15:31.385482+00:00",
+    "ts_utc": "2026-06-16T07:48:59.699585+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -161,7 +179,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:18:31.179774+00:00",
+    "ts_utc": "2026-06-16T07:52:05.558465+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -183,7 +201,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:18:38.466558+00:00",
+    "ts_utc": "2026-06-16T07:52:13.053318+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -196,7 +214,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:18:52.506241+00:00",
+    "ts_utc": "2026-06-16T07:52:26.447609+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -214,7 +232,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:18:57.493388+00:00",
+    "ts_utc": "2026-06-16T07:52:31.337131+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -233,7 +251,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-15T04:18:58.180301+00:00",
+    "ts_utc": "2026-06-16T07:52:32.021111+00:00",
     "stage": "gold_anomaly_detection",
     "recipe": "gold_modeling__v001_anomaly_detection",
     "kind": "step",
@@ -242,9 +260,9 @@
     "why": "Gold 05 outputs are derived artifacts and should preserve lineage.",
     "consequence": "Timeline export now participates in truth-based lineage tracking.",
     "data": {
-      "truth_hash": "32832d4d7be3b53c41d6db9b4a622a5ea29efeeb742eb022dc4e26f0e138b6ae",
-      "truth_path": "/workspace/artifacts/truths/gold_anomaly_detection/pump__gold_anomaly_detection__truth__32832d4d7be3b53c41d6db9b4a622a5ea29efeeb742eb022dc4e26f0e138b6ae.json",
-      "parent_truth_hash": "e20116344f9d2c9b22049b508942fd08f4d4e40992b7b2b43ccfc613db2e5217"
+      "truth_hash": "231460f045e6468c355e4ab41ed5e2a455bd5feed4a67cc6910e29de6b276946",
+      "truth_path": "/workspace/artifacts/truths/gold_anomaly_detection/pump__gold_anomaly_detection__truth__231460f045e6468c355e4ab41ed5e2a455bd5feed4a67cc6910e29de6b276946.json",
+      "parent_truth_hash": "9968386be8c319e857cfda959cd5f94b03feec84c93aa2255a2d6c29e2f6415e"
     }
   }
 ]
