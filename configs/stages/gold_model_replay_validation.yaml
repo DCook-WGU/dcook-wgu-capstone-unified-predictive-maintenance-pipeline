@@ -1,0 +1,92 @@
+gold_model_replay_validation:
+  layer_name: gold
+  recipe_id: gold_modeling__v001_test_replay_validation
+
+  versions:
+    gold: gold__model_replay_validation__v001
+    truth: truth_v001
+
+  process_run_id_prefix: gold_model_replay_validation
+
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
+  artifact_layout:
+    stage: gold
+    family: model_replay_validation
+    subdirs:
+      - results
+      - scores
+      - plots
+      - summaries
+      - metadata
+      - config
+      - lineage
+
+  inputs:
+    preferred_full_scaled_file_key: gold_preprocessed_scaled_file_name
+    fallback_test_file_key: gold_test_file_name
+    split_flag_column: meta__is_train_flag
+    label_column_candidates:
+      - anomaly_flag
+      - is_anomaly
+      - target_flag
+      - label
+
+  source_artifacts:
+    baseline:
+      family: baseline
+      model_id: baseline
+      model_file: pump__gold__baseline_model.joblib
+      feature_file: pump__gold__baseline_features.json
+      threshold_file: pump__gold__baseline_thresholds.json
+      summary_file: pump__gold__baseline_summary.json
+    cascade_default:
+      family: cascade_defaults
+      model_id: cascade_default
+      stage1_model_file: pump__gold__cascade_defaults_stage1_model.joblib
+      stage2_model_file: pump__gold__cascade_defaults_stage2_model.joblib
+      stage1_feature_file: pump__gold__stage1_features.json
+      stage2_feature_file: pump__gold__stage2_features.json
+      threshold_file: pump__gold__cascade_defaults_thresholds.json
+      summary_file: pump__gold__cascade_defaults_summary.json
+      reference_profile_file: pump__gold__cascade_defaults_reference_profile.json
+    cascade_tuned:
+      family: cascade_tuned
+      model_id: cascade_tuned
+      stage1_model_file: pump__gold__cascade_tuned_stage1_model.joblib
+      stage2_model_file: pump__gold__cascade_tuned_stage2_model.joblib
+      stage1_feature_file: pump__gold__stage1_features.json
+      stage2_feature_file: pump__gold__stage2_features.json
+      threshold_file: pump__gold__cascade_tuned_thresholds.json
+      summary_file: pump__gold__cascade_tuned_summary.json
+      reference_profile_file: pump__gold__cascade_tuned_reference_profile.json
+    stage3_improved:
+      family: cascade_stage3_improved
+      model_id: stage3_improved
+      stage1_model_file: pump__gold__cascade_stage3_improved_stage1_model.joblib
+      stage2_model_file: pump__gold__cascade_stage3_improved_stage2_model.joblib
+      stage1_feature_file: pump__gold__stage1_features.json
+      stage2_feature_file: pump__gold__stage2_features.json
+      threshold_file: pump__gold__cascade_stage3_improved_thresholds.json
+      summary_file: pump__gold__cascade_stage3_improved_summary.json
+      reference_profile_file: pump__gold__cascade_stage3_improved_reference_profile.json
+
+  replay:
+    evaluate_only_test_rows: true
+    use_full_scaled_dataframe_when_available: true
+    baseline_output_flag_column: baseline_flag
+    cascade_final_flag_column: cascade_final_flag
+    stage3_weighted_score_column: stage3_weighted_score
+    operating_modes:
+      - stage3_improved
+      - stage3_relaxed
+      - stage3_medium
+      - stage3_strict
+
+  outputs:
+    metrics_file: pump__gold06a__test_replay_metrics.csv
+    scores_file: pump__gold06a__test_replay_scores.csv
+    comparison_file: pump__gold06a__test_replay_vs_training_artifacts.csv
+    summary_file: pump__gold06a__test_replay_summary.json

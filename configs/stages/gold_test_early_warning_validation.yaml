@@ -1,0 +1,61 @@
+gold_test_early_warning_validation:
+  layer_name: gold
+  recipe_id: gold_modeling__v001_test_early_warning_validation
+
+  versions:
+    gold: gold__test_early_warning_validation__v001
+    truth: truth_v001
+
+  process_run_id_prefix: gold_test_early_warning_validation
+
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
+
+  artifact_layout:
+    stage: gold
+    family: model_replay_validation
+    subdirs:
+      - results
+      - scores
+      - plots
+      - summaries
+      - metadata
+      - config
+      - lineage
+
+  inputs:
+    replay_scores_file: pump__gold06a__test_replay_scores.csv
+    train_lead_time_comparison_file: multi_run_lead_time_comparison.csv
+    label_column_candidates:
+      - anomaly_flag
+      - is_anomaly
+      - target_flag
+      - label
+    failure_status_patterns:
+      - broken
+      - failure
+      - failed
+
+  early_warning:
+    plot_order_column: plot_order_index
+    timestamp_column_candidates:
+      - event_time
+      - timestamp
+      - time_index
+    selected_model_key: stage3_improved
+    replay_flag_columns:
+      baseline: baseline__baseline_flag
+      cascade_default: cascade_default__cascade_final_flag
+      cascade_tuned: cascade_tuned__cascade_final_flag
+      stage3_improved: stage3_improved__cascade_stage3_improved_flag
+      stage3_relaxed: stage3_relaxed__cascade_stage3_relaxed_flag
+      stage3_medium: stage3_medium__cascade_stage3_medium_flag
+      stage3_strict: stage3_strict__cascade_stage3_strict_flag
+
+  outputs:
+    early_warning_summary_file: pump__gold06b__test_early_warning_summary.csv
+    train_test_lead_time_comparison_file: pump__gold06b__train_test_lead_time_comparison.csv
+    summary_file: pump__gold06b__test_early_warning_summary.json
+    lead_time_plot_file: pump__gold06b__test_lead_time_comparison.png
+    selected_timeline_plot_file: pump__gold06b__stage3_improved_test_timeline.png

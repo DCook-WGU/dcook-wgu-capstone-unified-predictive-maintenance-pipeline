@@ -1,6 +1,6 @@
 [
   {
-    "ts_utc": "2026-06-16T07:09:49.750130+00:00",
+    "ts_utc": "2026-06-16T20:23:52.593922+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -18,7 +18,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:09:49.754964+00:00",
+    "ts_utc": "2026-06-16T20:23:52.598914+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -36,7 +36,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:09:50.021755+00:00",
+    "ts_utc": "2026-06-16T20:23:52.892374+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "check",
@@ -54,7 +54,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:09:50.370267+00:00",
+    "ts_utc": "2026-06-16T20:23:53.502875+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -69,7 +69,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:09:55.193696+00:00",
+    "ts_utc": "2026-06-16T20:24:00.070773+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -84,7 +84,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:10:02.736290+00:00",
+    "ts_utc": "2026-06-16T20:24:11.175349+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -131,7 +131,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:10:03.716746+00:00",
+    "ts_utc": "2026-06-16T20:24:12.439670+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -146,7 +146,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:10:05.029806+00:00",
+    "ts_utc": "2026-06-16T20:24:14.190552+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -160,7 +160,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:10:09.772406+00:00",
+    "ts_utc": "2026-06-16T20:24:21.231631+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -178,7 +178,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:10:17.170281+00:00",
+    "ts_utc": "2026-06-16T20:24:30.844619+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -192,7 +192,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:10:17.505966+00:00",
+    "ts_utc": "2026-06-16T20:24:31.482394+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -208,7 +208,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:12:13.056737+00:00",
+    "ts_utc": "2026-06-16T20:28:04.777805+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -239,7 +239,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:12:16.455512+00:00",
+    "ts_utc": "2026-06-16T20:28:09.200904+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -255,7 +255,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:12:21.757819+00:00",
+    "ts_utc": "2026-06-16T20:28:15.572306+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -279,7 +279,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:12:23.833622+00:00",
+    "ts_utc": "2026-06-16T20:28:18.046273+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -295,7 +295,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:12:25.429443+00:00",
+    "ts_utc": "2026-06-16T20:28:19.520869+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -325,7 +325,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:14:54.958051+00:00",
+    "ts_utc": "2026-06-16T20:31:52.016020+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -344,15 +344,30 @@
       "cascade_tuned_thresholds_path": "/workspace/artifacts/gold/pump/cascade_tuned/thresholds/pump__gold__cascade_tuned_thresholds.json",
       "cascade_tuned_summary_path": "/workspace/artifacts/gold/pump/cascade_tuned/summaries/pump__gold__cascade_tuned_summary.json",
       "cascade_tuned_metadata_path": "/workspace/artifacts/gold/pump/cascade_tuned/metadata/pump__gold__cascade_tuned_metadata.json",
-      "cascade_truth_hash": "bdfa0ae6657043f92ec881ce3aca466db053e5b0efeeae5737f27928dbc8d632",
-      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__bdfa0ae6657043f92ec881ce3aca466db053e5b0efeeae5737f27928dbc8d632.json",
+      "cascade_truth_hash": "9d982ccbd31959bdd8cc36cbddad537d04114fee39f27afc263aa94e1ad4dcb8",
+      "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__9d982ccbd31959bdd8cc36cbddad537d04114fee39f27afc263aa94e1ad4dcb8.json",
       "result_row_count": 220320,
       "final_alert_count_all_rows": 54598,
       "final_alert_count_test_rows": 15153
     }
   },
   {
-    "ts_utc": "2026-06-16T07:14:55.443989+00:00",
+    "ts_utc": "2026-06-16T20:31:53.435707+00:00",
+    "stage": "gold_cascade",
+    "recipe": "gold_modeling__v001_cascade",
+    "kind": "artifact",
+    "step": "gold03b_cascade_tuned_validation_contract_written",
+    "message": "Wrote Gold 03b cascade-tuned validation contract for Gold 06.",
+    "why": null,
+    "consequence": null,
+    "data": {
+      "path": "/workspace/artifacts/gold/pump/model_validation/contracts/pump__gold__cascade_tuned_validation_contract.json",
+      "model_id": "cascade_tuned",
+      "alert_count_test_rows": 15153
+    }
+  },
+  {
+    "ts_utc": "2026-06-16T20:31:54.601723+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -370,7 +385,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:14:56.112092+00:00",
+    "ts_utc": "2026-06-16T20:31:56.307538+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -388,7 +403,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:14:56.777551+00:00",
+    "ts_utc": "2026-06-16T20:31:58.238359+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -403,7 +418,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:14:57.367177+00:00",
+    "ts_utc": "2026-06-16T20:31:59.826690+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",
@@ -421,7 +436,7 @@
     }
   },
   {
-    "ts_utc": "2026-06-16T07:14:57.878041+00:00",
+    "ts_utc": "2026-06-16T20:32:00.978995+00:00",
     "stage": "gold_cascade",
     "recipe": "gold_modeling__v001_cascade",
     "kind": "step",

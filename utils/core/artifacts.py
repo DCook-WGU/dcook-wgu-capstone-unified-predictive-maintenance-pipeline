@@ -362,3 +362,86 @@ def artifact_file_path(
         )
 
     return Path(artifact_dirs[subdir_key]) / file_name
+
+def build_gold_model_validation_artifact_dirs(
+    *,
+    artifacts_root: str | Path,
+    dataset_id: str,
+    create: bool = True,
+) -> dict[str, Path]:
+    """Build canonical Gold model-validation artifact directories."""
+    return build_artifact_dirs(
+        artifacts_root=artifacts_root,
+        stage="gold",
+        dataset_name=dataset_id,
+        family="model_validation",
+        subdirs=["contracts", "results", "scores", "summaries", "plots", "metadata", "config", "lineage"],
+        create=create,
+    )
+
+
+def gold_model_validation_contracts_dir(
+    *,
+    artifacts_root: str | Path,
+    dataset_id: str,
+    create: bool = True,
+) -> Path:
+    """Return the canonical Gold model-validation contracts directory."""
+    return build_gold_model_validation_artifact_dirs(
+        artifacts_root=artifacts_root,
+        dataset_id=dataset_id,
+        create=create,
+    )["contracts"]
+
+
+def gold_model_validation_results_dir(
+    *,
+    artifacts_root: str | Path,
+    dataset_id: str,
+    create: bool = True,
+) -> Path:
+    """Return the canonical Gold model-validation results directory."""
+    return build_gold_model_validation_artifact_dirs(
+        artifacts_root=artifacts_root,
+        dataset_id=dataset_id,
+        create=create,
+    )["results"]
+
+
+def gold_model_validation_contract_filename(
+    *,
+    dataset_id: str,
+    model_id: str,
+) -> str:
+    """Return the canonical filename for one Gold output-validation contract."""
+    clean_dataset_id = str(dataset_id).strip()
+    clean_model_id = str(model_id).strip()
+
+    if not clean_dataset_id:
+        raise ValueError("dataset_id must be non-empty.")
+
+    if not clean_model_id:
+        raise ValueError("model_id must be non-empty.")
+
+    return f"{clean_dataset_id}__gold__{clean_model_id}_validation_contract.json"
+
+
+def gold_model_validation_contract_path(
+    *,
+    artifacts_root: str | Path,
+    dataset_id: str,
+    model_id: str,
+    create: bool = True,
+) -> Path:
+    """Return the canonical path for one Gold output-validation contract."""
+    return (
+        gold_model_validation_contracts_dir(
+            artifacts_root=artifacts_root,
+            dataset_id=dataset_id,
+            create=create,
+        )
+        / gold_model_validation_contract_filename(
+            dataset_id=dataset_id,
+            model_id=model_id,
+        )
+    )

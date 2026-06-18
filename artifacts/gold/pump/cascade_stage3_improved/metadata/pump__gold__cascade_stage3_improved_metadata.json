@@ -40,8 +40,8 @@
     "drift_threshold_multiplier": 1.5
   },
   "stage3_search_candidate_count": 120,
-  "cascade_truth_hash": "9968386be8c319e857cfda959cd5f94b03feec84c93aa2255a2d6c29e2f6415e",
-  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__9968386be8c319e857cfda959cd5f94b03feec84c93aa2255a2d6c29e2f6415e.json",
-  "cascade_process_run_id": "gold_cascade_process__20260616T072540Z",
+  "cascade_truth_hash": "6d55eabd515eda2c18cfe9218b59ded3e7f6c52ab277ef0629ab072097d6805f",
+  "cascade_truth_path": "/workspace/artifacts/truths/gold_cascade/pump__gold_cascade__truth__6d55eabd515eda2c18cfe9218b59ded3e7f6c52ab277ef0629ab072097d6805f.json",
+  "cascade_process_run_id": "gold_cascade_process__20260616T204338Z",
   "stage3_variant": "tuned_confirmation_layer"
 }
