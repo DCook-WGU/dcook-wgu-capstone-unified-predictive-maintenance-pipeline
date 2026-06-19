@@ -17,6 +17,7 @@ def cfg_require_mapping(
         value: object, 
         name: str
     ) -> Mapping[str, Any]:
+    """Validate that a config value is a mapping and return it with mapping type hints."""
     
     if not isinstance(value, Mapping):
         raise TypeError(
@@ -35,6 +36,7 @@ def cfg_optional_mapping(
         value: object | None, 
         name: str
     ) -> Mapping[str, Any]:
+    """Return an optional config mapping, using an empty mapping when omitted."""
 
     if value is None:
         return {}
@@ -50,6 +52,7 @@ def require_dict(
         value: Any | None, 
         name: str
     ) -> Dict[str, Any]:
+    """Return a dictionary value, using an empty dict for None."""
 
     if value is None:
         return {}
@@ -69,6 +72,7 @@ def require_list(
         value: Any | None, 
         name: str
     ) -> List[Any]:
+    """Return a list value, using an empty list for None."""
 
     if value is None:
         return []
@@ -89,6 +93,7 @@ def scalar_to_float(
         value: object, 
         name: str = "value"
     ) -> float:
+    """Convert a present scalar value to float, rejecting None, pandas NA, and NaN."""
 
     if value is None:
         raise ValueError(f"{name} cannot be None.")

@@ -12,6 +12,13 @@ def profile_dataframe(
         artifacts_dir: Path | None = None, 
         head: int = 15
     ) -> tuple[dict, dict]:
+    """
+    Log dataframe shape, memory, dtypes, and head sample.
+
+    When artifacts_dir is provided, writes describe CSVs for numeric,
+    object/category/string, and boolean columns when those column types are
+    present. Returns metric values and a mapping of saved artifact paths.
+    """
 
 
     metrics = {

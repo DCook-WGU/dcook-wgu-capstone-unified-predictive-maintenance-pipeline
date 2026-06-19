@@ -22,6 +22,12 @@ logger = logging.getLogger("capstone.file_io")
 # Helper Function to check file_path and resolve
 
 def _resolve_path(file_path, file_name=None):
+    """
+    Resolve flexible file path inputs into a Path.
+
+    Accepts a full path, a directory plus file_name, or a two-item
+    (directory, file name) tuple. Raises ValueError for malformed tuples.
+    """
 
     if isinstance(file_path, tuple):
         if len(file_path) != 2:
@@ -78,6 +84,7 @@ def _copy_write_options(write_options: Mapping[str, Any] | None = None) -> dict[
 
 
 def _clean_values(series: pd.Series) -> pd.Series:
+    """Return non-null, stripped string values from a series."""
     values = (
         series.dropna()
         .astype("string")
@@ -91,6 +98,7 @@ def _clean_values(series: pd.Series) -> pd.Series:
 
 
 def _normalize_dataset_name(dataset_name: str) -> str:
+    """Normalize a dataset identifier for stable filenames and metadata."""
     normalized_value = str(dataset_name).strip().lower()
     normalized_value = normalized_value.replace(" ", "_")
     normalized_value = normalized_value.replace("-", "_")
@@ -454,6 +462,21 @@ def load_data(
     engine: Literal["pyarrow"] = "pyarrow",
     **read_kwargs: Any,
 ) -> pd.DataFrame:
+    """
+    Load a CSV or Parquet dataset from disk.
+
+    Args:
+        file_path: Full file path, directory path, or tuple accepted by _resolve_path.
+        file_name: Optional filename joined to file_path.
+        engine: Parquet engine used for parquet inputs.
+        **read_kwargs: Extra options forwarded to pandas.
+
+    Returns:
+        Loaded dataframe.
+
+    Raises:
+        ValueError: If the file suffix is not CSV or Parquet.
+    """
     path = _resolve_path(file_path, file_name)
     suffix = path.suffix.lower()
 
@@ -485,6 +508,12 @@ def save_data(
     index: bool = False,
     **write_kwargs: Any,
 ) -> Path:
+    """
+    Save a dataframe as CSV or Parquet and return the written path.
+
+    Creates parent directories when requested, defaults paths without a suffix
+    to Parquet, and logs the output shape after a successful write.
+    """
     path = _resolve_path(file_path, file_name)
 
     if not path.suffix:
@@ -533,6 +562,7 @@ def save_data(
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
 def _json_default(value):
+    """Convert pandas, NumPy, and datetime values into JSON-serializable values."""
 
     if isinstance(value, (pd.Timestamp, datetime)):
         return value.isoformat()
@@ -555,6 +585,12 @@ def save_json(
         create_dirs=True, 
         indent=2
     ):
+    """
+    Save a JSON-serializable object and return the written path.
+
+    Paths without a suffix are written with .json. Parent directories are
+    created when requested.
+    """
 
     path = _resolve_path(file_path, file_name)
 
@@ -763,5 +799,4 @@ def resolve_dataset_name_for_bronze(
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
-
 

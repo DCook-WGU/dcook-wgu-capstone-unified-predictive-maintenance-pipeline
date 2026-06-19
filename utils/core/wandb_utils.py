@@ -32,6 +32,7 @@ def _require_wandb():
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
 def _sanitize_dataframe_for_wandb_table(frame: pd.DataFrame) -> pd.DataFrame:
+    """Return a W&B table-safe dataframe copy with datetimes and missing values normalized."""
     sanitized = frame.copy()
 
     # Convert datetime/tz-aware datetime columns to strings 
