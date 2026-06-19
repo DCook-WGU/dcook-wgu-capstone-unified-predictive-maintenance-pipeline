@@ -45,6 +45,15 @@ def build_episode_based_split_mask(
     --------
     - If episode IDs are present and populated, split by episode order within each asset/run.
     - Otherwise split by row order within each asset/run using fallback_order_column.
+
+    Returns a boolean mask aligned to the copied working dataframe and split
+    metadata describing the strategy used.
+
+    Raises
+    ------
+    ValueError
+        If train_fraction is outside (0, 1) or the fallback order column is
+        unavailable when row-order splitting is needed.
     """
     working_dataframe = dataframe.copy()
 
@@ -137,7 +146,10 @@ def stamp_training_metadata(
     train_mask_column: str = "meta__train_mask",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Stamp train/test metadata into the dataframe.
+    Stamp train/test metadata into a copied dataframe.
+
+    Adds boolean, integer, and text train/test columns derived from train_mask.
+    Returns the stamped dataframe and row-count metadata.
     """
     working_dataframe = dataframe.copy()
     train_mask = train_mask.astype(bool).reindex(working_dataframe.index)
@@ -166,6 +178,9 @@ def select_numeric_feature_columns(
 ) -> Tuple[List[str], Dict[str, Any]]:
     """
     Select numeric feature columns from the registered feature set.
+
+    Candidate features that are missing, explicitly excluded, or non-numeric are
+    omitted and listed in the returned rejection metadata.
     """
     exclude_columns_set: set[str] = set(exclude_columns or [])
     numeric_feature_columns: List[str] = []
@@ -212,6 +227,10 @@ def apply_one_hot_encoding_from_truths(
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Apply one-hot encoding to selected categorical columns.
+
+    Existing categorical columns are removed from a copied dataframe and the
+    generated indicator columns are appended. If no requested columns are
+    present, returns the copied dataframe with applied=False metadata.
     """
     working_dataframe = dataframe.copy()
     one_hot_columns = [column_name for column_name in one_hot_columns if column_name in working_dataframe.columns]
@@ -251,6 +270,15 @@ def apply_imputation(
 ) -> Tuple[pd.DataFrame, Any, Dict[str, Any]]:
     """
     Impute missing values for selected feature columns.
+
+    Fits a SimpleImputer on the requested feature columns and writes imputed
+    values into a copied dataframe. Returns the dataframe, fitted imputer, and
+    imputation metadata; returns None for the imputer when no features exist.
+
+    Raises
+    ------
+    ValueError
+        If method is not one of mean, median, or most_frequent.
     """
     working_dataframe = dataframe.copy()
     feature_columns = [column_name for column_name in feature_columns if column_name in working_dataframe.columns]
@@ -282,7 +310,10 @@ def make_scaler(
     scaler_kind: str,
 ):
     """
-    Create scaler instance by kind.
+    Create a scikit-learn scaler instance by kind.
+
+    Supported values are standard, robust, and minmax. Raises ValueError for
+    unsupported scaler names.
     """
     scaler_kind = str(scaler_kind).strip().lower()
 
@@ -304,7 +335,10 @@ def fit_and_apply_scaler(
     scaler_kind: str = "robust",
 ) -> Tuple[pd.DataFrame, Any, Dict[str, Any]]:
     """
-    Fit scaler on training rows and apply to all rows for selected features.
+    Fit a scaler on training rows and apply it to all selected rows.
+
+    Returns a copied dataframe with scaled feature values, the fitted scaler, and
+    scaling metadata. Returns None for the scaler when no usable features exist.
     """
     working_dataframe = dataframe.copy()
     feature_columns = [column_name for column_name in feature_columns if column_name in working_dataframe.columns]
@@ -342,6 +376,9 @@ def get_training_rows_for_unsupervised_model(
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Return normal-only training rows for unsupervised model fitting.
+
+    Selects rows where train_mask_column is true and anomaly_flag_column is 0.
+    Raises ValueError when either required column is missing.
     """
     working_dataframe = dataframe.copy()
 
@@ -368,7 +405,11 @@ def build_reference_profile(
     subset_mask: Optional[pd.Series] = None,
 ) -> Dict[str, Any]:
     """
-    Build a simple reference profile from a selected feature subset.
+    Build a reference profile from a selected feature subset.
+
+    Computes mean, median, standard deviation, min, and max for usable feature
+    columns, optionally limited by subset_mask. Returns a JSON-friendly profile
+    dictionary used by Stage 3 rules.
     """
     feature_columns = [column_name for column_name in feature_columns if column_name in dataframe.columns]
 
@@ -412,7 +453,10 @@ def choose_stage2_features_from_training_stability(
     min_variance: float = 1e-12,
 ) -> Tuple[List[str], Dict[str, Any]]:
     """
-    Choose Stage 2 features using simple training stability heuristics.
+    Choose Stage 2 features using training-stability heuristics.
+
+    Keeps features that meet non-null ratio and variance thresholds on training
+    rows. Returns selected columns plus rejection details for excluded features.
     """
     feature_columns = [column_name for column_name in feature_columns if column_name in dataframe.columns]
     train_mask = train_mask.astype(bool).reindex(dataframe.index)
@@ -466,7 +510,10 @@ def build_stage3_sensor_groups(
     separators: Sequence[str] = ("__", "_"),
 ) -> Dict[str, List[str]]:
     """
-    Build simple Stage 3 sensor groups based on feature name prefixes.
+    Build Stage 3 sensor groups from feature-name prefixes.
+
+    Splits each feature name on the first configured separator and groups
+    columns by the resulting prefix. Returns deterministically sorted groups.
     """
     sensor_groups: Dict[str, List[str]] = {}
 
@@ -501,7 +548,12 @@ def prepare_gold_model_inputs(
     exclude_feature_columns: Optional[Sequence[str]] = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Any], Dict[str, Any]]:
     """
-    Main orchestration helper for Gold preprocessing.
+    Prepare model-ready Gold dataframes and learned preprocessing objects.
+
+    Builds train/test masks, stamps metadata, selects features, optionally
+    one-hot encodes, imputes, scales, and creates fit/train/test frame splits.
+    Returns frame outputs, runtime metadata, and learned objects such as the
+    fitted imputer and scaler.
     """
     working_dataframe = dataframe.copy()
 
@@ -616,7 +668,10 @@ def build_gold_support_artifacts(
     baseline_feature_columns: Optional[Sequence[str]] = None,
 ) -> Dict[str, Any]:
     """
-    Build downstream support artifacts for baseline and cascade.
+    Build downstream support artifacts for baseline and cascade modeling.
+
+    Creates a training reference profile, chooses stable Stage 2 features, and
+    derives Stage 3 sensor groups. Returns these artifacts without writing files.
     """
     train_mask = train_mask.astype(bool).reindex(scaled_dataframe.index)
 

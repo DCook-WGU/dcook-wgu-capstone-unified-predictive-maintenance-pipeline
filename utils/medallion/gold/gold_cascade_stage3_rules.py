@@ -21,7 +21,12 @@ def compute_primary_breach_count(
     output_column: str = "stage3_primary_breach_count",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Count strong breaches relative to reference profile using z-style deviation.
+    Count strong feature breaches against the reference profile.
+
+    For each usable feature, computes absolute z-style deviation from the
+    profile mean/std and increments the output count when the deviation reaches
+    z_threshold. Returns a copied dataframe with output_column plus rule
+    metadata.
     """
     working_dataframe = dataframe.copy()
     profile_summary = reference_profile.get("summary", {})
@@ -69,7 +74,11 @@ def compute_secondary_breach_count(
     output_column: str = "stage3_secondary_breach_count",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Count weaker corroborating breaches grouped by sensor family.
+    Count corroborating breaches across sensor groups.
+
+    Each group contributes at most one breach per row when any usable group
+    feature reaches z_threshold. Returns a copied dataframe with output_column
+    plus group-level metadata.
     """
     working_dataframe = dataframe.copy()
     profile_summary = reference_profile.get("summary", {})
@@ -130,7 +139,16 @@ def compute_persistence_flag(
     output_column: str = "stage3_persistence_flag",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Flag rows that are part of a persistent run of candidate anomalies.
+    Flag rows that belong to persistent candidate-anomaly runs.
+
+    Candidate rows are evaluated within group_columns order as provided by the
+    dataframe. A copied dataframe is returned with output_column set to 1 for
+    rows in runs meeting min_consecutive_rows.
+
+    Raises
+    ------
+    ValueError
+        If candidate_column is missing.
     """
     working_dataframe = dataframe.copy()
 
@@ -178,7 +196,16 @@ def compute_drift_flag(
     output_column: str = "stage3_drift_flag",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Flag local score drift using rolling mean shift against prior score history.
+    Flag local score drift from rolling mean shifts.
+
+    Computes rolling means within group_columns and compares the current rolling
+    mean against the prior rolling window. Returns a copied dataframe with
+    output_column plus drift metadata.
+
+    Raises
+    ------
+    ValueError
+        If score_column is missing.
     """
     working_dataframe = dataframe.copy()
 
@@ -226,7 +253,11 @@ def compose_stage3_decision(
     output_column: str = "stage3_confirmed_flag",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Compose final Stage 3 confirmation flag from rule evidence.
+    Compose the final Stage 3 confirmation flag from rule evidence.
+
+    Combines primary breaches, secondary breaches, and optional persistence or
+    drift evidence into output_column. Returns a copied dataframe plus the
+    decision parameters and positive-row count.
     """
     working_dataframe = dataframe.copy()
 

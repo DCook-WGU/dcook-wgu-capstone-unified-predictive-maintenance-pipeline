@@ -21,7 +21,9 @@ def plot_correlation_heatmap(
     output_path: Path | None = None,
 ):
     """
-    Plot normal-only correlation heatmap.
+    Plot a correlation heatmap and optionally save it to disk.
+
+    Returns the matplotlib figure, or ``None`` for an empty correlation matrix.
     """
     if correlation_matrix.empty:
         return None
@@ -51,7 +53,10 @@ def plot_state_distribution_histograms(
     output_dir: Path | None = None,
 ):
     """
-    Plot feature distributions by state.
+    Plot feature distribution histograms grouped by state.
+
+    Returns the created figures and writes PNG files to ``output_dir`` when an
+    output directory is supplied.
     """
     figures = []
 
@@ -94,7 +99,9 @@ def build_flag_spans(
     x_column: str = "time_index",
 ) -> list[tuple[float, float]]:
     """
-    Build contiguous spans for a binary flag column.
+    Build contiguous x-axis spans where a binary flag equals one.
+
+    Returns an empty list when either required column is missing.
     """
     if flag_column not in dataframe.columns or x_column not in dataframe.columns:
         return []
@@ -128,7 +135,10 @@ def resolve_time_axis_series(
     dataframe: pd.DataFrame,
 ) -> pd.Series:
     """
-    Resolve a preferred time axis for plotting.
+    Resolve the preferred plotting time axis from available Silver columns.
+
+    Prefers ``event_time``, then ``event_step``, then ``time_index``, and falls
+    back to row position.
     """
     if "event_time" in dataframe.columns and dataframe["event_time"].notna().any():
         return pd.to_datetime(dataframe["event_time"], errors="coerce")
@@ -147,7 +157,10 @@ def plot_top_feature_overlay(
     output_path: Path | None = None,
 ):
     """
-    Plot z-scored overlay of top features across a shared time axis.
+    Plot z-scored feature overlays across a shared time axis.
+
+    Returns the matplotlib figure, optionally writes it to ``output_path``, and
+    overlays anomaly spans when available.
     """
     use_features = [feature for feature in features if feature in dataframe.columns]
     if len(use_features) == 0:
@@ -183,6 +196,9 @@ def plot_feature_timeseries_with_flag_spans(
 ):
     """
     Plot one feature at a time with anomaly spans overlaid.
+
+    Returns the created figures and writes PNG files to ``output_dir`` when an
+    output directory is supplied.
     """
     figures = []
     use_features = [feature for feature in features if feature in dataframe.columns]
@@ -219,7 +235,10 @@ def plot_aligned_onset_series(
     output_path: Path | None = None,
 ):
     """
-    Plot aligned onset mean series for one feature.
+    Plot the aligned onset mean series for one feature.
+
+    Returns the matplotlib figure, or ``None`` when the summary table is empty
+    or missing the expected mean column.
     """
     mean_column = f"{feature_name}__mean"
     if onset_summary_df.empty or mean_column not in onset_summary_df.columns:

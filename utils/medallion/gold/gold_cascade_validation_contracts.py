@@ -71,12 +71,14 @@ def load_json_contract(path: Path) -> dict[str, Any]:
 
 
 def _path_exists(path_value: Any) -> bool:
+    """Return whether a non-empty path-like value exists on disk."""
     if not path_value:
         return False
     return Path(str(path_value)).exists()
 
 
 def _first_existing_path(paths: Iterable[Path]) -> Path | None:
+    """Return the first existing path from an iterable, or None."""
     for path in paths:
         path = Path(path)
         if path.exists():
@@ -85,6 +87,7 @@ def _first_existing_path(paths: Iterable[Path]) -> Path | None:
 
 
 def _metric_value(metrics: Mapping[str, Any], *keys: str) -> Any:
+    """Return the first metric value found for the ordered candidate keys."""
     for key in keys:
         if key in metrics:
             return metrics[key]
@@ -423,7 +426,13 @@ def _as_int_or_none(value: Any) -> int | None:
 
 
 def normalize_gold_metric_payload(metrics: Mapping[str, Any] | None) -> dict[str, Any]:
-    """Normalize model metrics into the same fields used by Gold 04."""
+    """
+    Normalize model metrics into the same fields used by Gold 04.
+
+    Accepts partially populated metric dictionaries from baseline or cascade
+    outputs and returns a JSON-safe payload with canonical alert and metric
+    fields.
+    """
     metrics_map = dict(metrics or {})
 
     return {
@@ -464,7 +473,13 @@ def summarize_validation_output_dataframe(
     flag_column: str | None = None,
     test_mask: pd.Series | None = None,
 ) -> dict[str, Any]:
-    """Summarize the dataframe that supports one validation contract."""
+    """
+    Summarize the dataframe that supports one validation contract.
+
+    Captures row/column counts, available columns, and optional flag counts for
+    all rows and test rows. Raises ValueError when test_mask length does not
+    match the dataframe.
+    """
     if dataframe is None:
         return {
             "dataframe_available": False,
@@ -527,7 +542,13 @@ def build_gold_model_output_validation_contract(
     lineage_payload: Mapping[str, Any] | None = None,
     notes: str | None = None,
 ) -> dict[str, Any]:
-    """Build one explicit validation contract for a final Gold model-comparison row."""
+    """
+    Build one explicit validation contract for a final Gold comparison row.
+
+    Combines canonical metric payloads, output dataframe summaries, model paths,
+    rule metadata, lineage, and notes into a JSON-safe contract with a stable
+    hash.
+    """
     contract = {
         "contract_type": "gold_model_output_validation_contract",
         "contract_version": "v1",
@@ -576,7 +597,12 @@ def build_gold06_contract_validation_targets(
     dataset_id: str,
     include_baseline: bool = False,
 ) -> pd.DataFrame:
-    """Build the Gold 06 contract-validation target table."""
+    """
+    Build the Gold 06 contract-validation target table.
+
+    Returns the expected model ids, source notebooks, validation types, stages,
+    operating modes, and dataset-specific contract filenames.
+    """
     rows: list[dict[str, Any]] = []
 
     if include_baseline:
@@ -649,7 +675,11 @@ def load_gold_model_output_validation_contracts(
     contract_dir: Path,
     validation_targets: pd.DataFrame,
 ) -> dict[str, dict[str, Any]]:
-    """Load one contract per Gold 06 validation target."""
+    """
+    Load one contract per Gold 06 validation target.
+
+    Missing contract files are skipped. Returns a dictionary keyed by model_id.
+    """
     contract_dir = Path(contract_dir)
     contracts_by_model_id: dict[str, dict[str, Any]] = {}
 
@@ -697,7 +727,13 @@ def validate_gold04_against_output_contracts(
     contracts_by_model_id: Mapping[str, Mapping[str, Any]],
     metric_tolerance: float = 1e-9,
 ) -> pd.DataFrame:
-    """Validate Gold 04 final comparison rows against model-output contracts."""
+    """
+    Validate Gold 04 final comparison rows against model-output contracts.
+
+    Compares required metric fields within metric_tolerance and returns one
+    validation-status row per target. Raises KeyError if the Gold 04 dataframe
+    has no model_id column.
+    """
     if "model_id" not in gold04_dataframe.columns:
         raise KeyError("Gold 04 dataframe must include a model_id column.")
 

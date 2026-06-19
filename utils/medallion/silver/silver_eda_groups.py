@@ -13,7 +13,10 @@ import pandas as pd
 
 def find(parent: dict, x: str) -> str:
     """
-    Disjoint-set find with path compression.
+    Return the representative element for ``x`` using path compression.
+
+    Mutates ``parent`` by initializing unseen values and compressing the
+    lookup path for future disjoint-set operations.
     """
     parent.setdefault(x, x)
     if parent[x] != x:
@@ -23,7 +26,9 @@ def find(parent: dict, x: str) -> str:
 
 def union(parent: dict, a: str, b: str) -> None:
     """
-    Disjoint-set union.
+    Merge the disjoint-set components containing ``a`` and ``b``.
+
+    Mutates ``parent`` in place and returns ``None``.
     """
     root_a = find(parent, a)
     root_b = find(parent, b)
@@ -39,7 +44,10 @@ def build_normal_only_correlation_pairs(
     target_state: str = "normal",
 ) -> dict:
     """
-    Build normal-only correlation outputs.
+    Build correlation matrix and pair table for rows in the target state.
+
+    Returns empty dataframes when no usable numeric features or target-state
+    rows are available. Raises ``KeyError`` if ``state_column`` is absent.
     """
     if state_column not in dataframe.columns:
         raise KeyError(f"Missing state column: {state_column}")
@@ -91,7 +99,10 @@ def build_sensor_group_map_from_correlation(
     min_abs_corr_for_group: float = 0.60,
 ) -> pd.DataFrame:
     """
-    Build connected-component sensor groups from correlation matrix.
+    Build connected-component sensor groups from absolute correlations.
+
+    Sensors with absolute correlation at or above ``min_abs_corr_for_group``
+    are unioned into groups and returned as a sensor-to-group dataframe.
     """
     if correlation_matrix.empty:
         return pd.DataFrame()
@@ -145,7 +156,10 @@ def build_fault_propagation_pairings_from_strong_relationships(
     min_abs_corr: float = 0.70,
 ) -> pd.DataFrame:
     """
-    Build a simple strong-relationship pairing table.
+    Filter correlation pairs into a strong-relationship pairing table.
+
+    Returns rows whose ``abs_correlation`` meets ``min_abs_corr`` and annotates
+    the selection method; returns an empty dataframe when no rows qualify.
     """
     if correlation_pairs_df.empty:
         return pd.DataFrame()

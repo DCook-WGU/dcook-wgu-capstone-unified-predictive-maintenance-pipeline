@@ -21,7 +21,10 @@ def save_eda_table_artifact(
     file_name: str,
 ) -> str:
     """
-    Save table artifact and return full path.
+    Save a dataframe artifact and return its full path as text.
+
+    Creates ``output_dir`` when needed and delegates serialization to the
+    project ``save_data`` helper.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     save_data(dataframe, output_dir, file_name)
@@ -34,7 +37,9 @@ def save_eda_json_artifact(
     output_path: Path,
 ) -> str:
     """
-    Save JSON artifact and return full path.
+    Save a JSON artifact payload and return its full path as text.
+
+    Creates the parent directory for ``output_path`` when needed.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     save_json(payload, output_path)
@@ -47,7 +52,9 @@ def save_episode_status_counts_json(
     output_path: Path,
 ) -> str:
     """
-    Save episode status counts as JSON records.
+    Save episode status counts as JSON records and return the output path.
+
+    Converts the dataframe to ``records`` orientation before writing.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     save_json(episode_status_counts_df.to_dict(orient="records"), output_path)
@@ -60,7 +67,10 @@ def build_silver_eda_artifact_index(
     summary_payload: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    Build a compact artifact index payload.
+    Build a compact artifact index payload for Silver EDA outputs.
+
+    Returns artifact count, artifact path mapping, and summary payload without
+    writing files.
     """
     return {
         "artifact_count": int(len(artifact_paths)),

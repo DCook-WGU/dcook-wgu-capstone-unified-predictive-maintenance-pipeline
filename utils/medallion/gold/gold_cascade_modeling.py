@@ -69,7 +69,10 @@ def _evaluate_scored_frame(
     score_column: str,
 ) -> dict[str, Any]:
     """
-    Pylance-safe wrapper around evaluate_against_labels.
+    Evaluate a scored cascade frame with Pylance-safe sequence conversions.
+
+    Reads the provided label, prediction, and score columns and returns the
+    shared binary/ranking metric payload from evaluate_against_labels.
     """
     return evaluate_against_labels(
         _series_to_object_list(scored_frame[label_column]),
@@ -85,7 +88,10 @@ def fit_stage1_model(
     model_params: dict[str, Any],
 ) -> Tuple[IsolationForest, dict[str, Any]]:
     """
-    Fit broad Stage 1 Isolation Forest.
+    Fit the broad Stage 1 Isolation Forest.
+
+    Missing feature columns are ignored. Returns the fitted estimator and fit
+    metadata, and raises ValueError when no usable Stage 1 features remain.
     """
     stage1_features = [column_name for column_name in feature_columns if column_name in fit_dataframe.columns]
     if len(stage1_features) == 0:
@@ -112,7 +118,10 @@ def fit_stage2_model(
     model_params: dict[str, Any],
 ) -> Tuple[IsolationForest, dict[str, Any]]:
     """
-    Fit narrower Stage 2 Isolation Forest.
+    Fit the narrower Stage 2 Isolation Forest.
+
+    Missing feature columns are ignored. Returns the fitted estimator and fit
+    metadata, and raises ValueError when no usable Stage 2 features remain.
     """
     stage2_features = [column_name for column_name in feature_columns if column_name in fit_dataframe.columns]
     if len(stage2_features) == 0:
@@ -142,7 +151,11 @@ def _score_stage_dataframe(
     prediction_column: str | None = None,
 ) -> Tuple[pd.DataFrame, dict[str, Any]]:
     """
-    Score dataframe with fitted IF model and optionally add predictions.
+    Score a dataframe with a fitted Isolation Forest stage model.
+
+    Adds score_column to a copy of the input dataframe. When threshold and
+    prediction_column are both provided, also adds binary predictions and
+    records the predicted-positive count in the returned metadata.
     """
     working_dataframe = dataframe.copy()
     use_features = [column_name for column_name in feature_columns if column_name in working_dataframe.columns]
@@ -185,7 +198,10 @@ def evaluate_stage2_model_with_thresholds(
     prediction_column: str = "stage2_predicted_anomaly",
 ) -> pd.DataFrame:
     """
-    Evaluate multiple Stage 2 thresholds against labels.
+    Evaluate multiple Stage 2 threshold percentiles against labels.
+
+    Scores the dataframe once, then computes predictions and metrics for each
+    threshold percentile. Returns one row per candidate threshold.
     """
     scored_frame, _ = _score_stage_dataframe(
         fitted_model,
@@ -239,7 +255,11 @@ def run_stage2_selection(
     optimization_metric: str = "f1",
 ) -> Tuple[float, dict[str, Any], pd.DataFrame]:
     """
-    Select Stage 2 threshold from a threshold grid.
+    Select the Stage 2 threshold from a threshold grid.
+
+    Filters candidates by min_recall when possible, then sorts by the requested
+    optimization metric and tie-breakers. Returns the selected threshold,
+    selection metadata, and the full threshold table.
     """
     threshold_table = evaluate_stage2_model_with_thresholds(
         fitted_model,
@@ -283,7 +303,9 @@ def run_stage2_selection(
 
 def _variant_defaults(variant: str) -> dict[str, Any]:
     """
-    Variant-specific defaults for cascade behavior.
+    Return variant-specific defaults for cascade behavior.
+
+    Raises ValueError when the variant name is unsupported.
     """
     variant = str(variant).strip().lower()
 
@@ -360,7 +382,12 @@ def run_cascade_pipeline(
     variant: str = "default",
 ) -> dict[str, Any]:
     """
-    End-to-end 3-stage cascade modeling pipeline.
+    Run the end-to-end three-stage cascade modeling workflow.
+
+    Fits Stage 1 and Stage 2 models, selects thresholds, scores fit/train/test/all
+    frames, applies Stage 3 rule confirmation, and returns fitted models,
+    scored dataframes, and comparison-ready metrics. Input frames are copied by
+    scoring helpers before columns are added.
     """
     variant_config = _variant_defaults(variant)
 
@@ -591,7 +618,10 @@ def build_cascade_summary(
     stage2_feature_columns: Sequence[str],
 ) -> dict[str, Any]:
     """
-    Add compact comparison-friendly summary fields.
+    Add compact comparison-friendly fields to a cascade summary.
+
+    Returns a shallow copy of summary with variant and feature-count metadata;
+    the input summary dictionary is not modified.
     """
     compact_summary = dict(summary)
     compact_summary["variant"] = variant

@@ -14,7 +14,10 @@ import pandas as pd
 
 def find_anomaly_onsets(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
-    Find start rows of anomaly periods.
+    Find start rows for contiguous anomaly periods.
+
+    Returns onset identity and ordering columns, or an empty onset dataframe
+    when ``anomaly_flag`` is unavailable.
     """
     if "anomaly_flag" not in dataframe.columns:
         return pd.DataFrame(columns=["meta__asset_id", "meta__run_id", "time_index", "event_step"])
@@ -47,7 +50,9 @@ def find_anomaly_onsets(dataframe: pd.DataFrame) -> pd.DataFrame:
 
 def sample_onsets_evenly(onsets: pd.DataFrame, max_count: int) -> pd.DataFrame:
     """
-    Evenly subsample onset rows for aligned plots/tables.
+    Evenly subsample onset rows for aligned plots and tables.
+
+    Preserves all rows when ``len(onsets)`` is at or below ``max_count``.
     """
     if len(onsets) <= max_count:
         return onsets.reset_index(drop=True)
@@ -68,7 +73,10 @@ def build_aligned_onset_windows(
     join_columns: Sequence[str] = ("meta__asset_id", "meta__run_id"),
 ) -> pd.DataFrame:
     """
-    Build aligned windows around each anomaly onset.
+    Build feature windows aligned around each anomaly onset.
+
+    Returns concatenated window rows with ``relative_step`` and ``onset_id``.
+    Raises ``KeyError`` when required alignment columns are missing.
     """
     if len(onsets) == 0:
         return pd.DataFrame()
@@ -125,6 +133,9 @@ def summarize_onset_windows(
 ) -> pd.DataFrame:
     """
     Summarize aligned onset windows by relative step.
+
+    Returns per-step window counts plus mean and median values for each
+    available feature column.
     """
     if aligned_windows.empty:
         return pd.DataFrame()

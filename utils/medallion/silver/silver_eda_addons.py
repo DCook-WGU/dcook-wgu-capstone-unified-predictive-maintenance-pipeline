@@ -10,10 +10,18 @@ import matplotlib.pyplot as plt
 
 
 def _safe_numeric_series(series: pd.Series) -> pd.Series:
+    """
+    Coerce a series to numeric values with invalid entries set to NaN.
+    """
     return pd.to_numeric(series, errors="coerce")
 
 
 def _choose_order_column(dataframe: pd.DataFrame) -> str:
+    """
+    Select the first available ordering column for sequence-based summaries.
+
+    Raises ``KeyError`` when no supported order column is present.
+    """
     for column_name in ["event_step", "time_index", "event_time"]:
         if column_name in dataframe.columns:
             return column_name
@@ -21,6 +29,11 @@ def _choose_order_column(dataframe: pd.DataFrame) -> str:
 
 
 def _iqr_bounds(series: pd.Series, iqr_multiplier: float = 1.5) -> tuple[float | None, float | None, float | None]:
+    """
+    Compute lower bound, upper bound, and IQR for numeric outlier checks.
+
+    Returns ``None`` values when the series has no usable numeric values.
+    """
     clean = _safe_numeric_series(series).dropna()
     if clean.empty:
         return None, None, None
@@ -38,6 +51,11 @@ def _iqr_bounds(series: pd.Series, iqr_multiplier: float = 1.5) -> tuple[float |
 
 
 def _mad(series: pd.Series) -> float | None:
+    """
+    Compute median absolute deviation for a numeric series.
+
+    Returns ``None`` when no valid numeric values are available.
+    """
     clean = _safe_numeric_series(series).dropna()
     if clean.empty:
         return None
@@ -48,6 +66,11 @@ def _mad(series: pd.Series) -> float | None:
     return mad_value
 
 def scalar_to_int(value: object, name: str = "value") -> int:
+    """
+    Convert a non-missing scalar value to ``int``.
+
+    Raises ``ValueError`` for ``None``, ``pd.NA``, or NaN inputs.
+    """
     if value is None:
         raise ValueError(f"{name} cannot be missing.")
 
@@ -68,7 +91,12 @@ def _plot_heatmap_from_pivot(
     y_label: str,
     figsize: tuple[int, int] = (12, 6),
 ) -> Optional[str]:
-    
+    """
+    Save a heatmap image from a pivoted dataframe and return the image path.
+
+    Returns ``None`` when the pivot matrix is empty. Writes a PNG to
+    ``out_path`` and closes the matplotlib figure.
+    """
     
     if plot_matrix.empty:
         return None
@@ -101,6 +129,10 @@ def build_missingness_by_group_table(
 ) -> pd.DataFrame:
     """
     Build a long missingness table by group and feature.
+
+    Returns one row per group-feature pair with row count, missing count, and
+    missing fraction. Missing group or feature columns produce an empty table
+    with the expected schema.
     """
     if group_column not in dataframe.columns:
         return pd.DataFrame(
@@ -167,7 +199,10 @@ def build_missingness_group_artifacts(
     top_episode_count_for_heatmap: int = 25,
 ) -> dict:
     """
-    Build missingness-by-state and missingness-by-episode tables and heatmaps.
+    Build missingness-by-state and missingness-by-episode artifacts.
+
+    Writes CSV and PNG artifacts under ``artifacts_dir`` when source columns
+    are available, and returns dataframes plus written artifact paths.
     """
     artifacts = {
         "missingness_by_state_df": pd.DataFrame(),
@@ -284,7 +319,11 @@ def build_state_transition_artifacts(
     state_order: Optional[Sequence[str]] = None,
 ) -> dict:
     """
-    Build row-collapsed state transitions and dwell summaries.
+    Build row-collapsed state transition and dwell artifacts.
+
+    Writes transition, probability, dwell CSVs, and optional PNG plots under
+    ``artifacts_dir``. Returns empty dataframes and ``None`` paths when the
+    state column is missing or no usable state rows exist.
     """
     if state_column not in dataframe.columns:
         return {
@@ -550,7 +589,10 @@ def build_robust_feature_comparison_artifacts(
     max_plot_features: int = 12,
 ) -> dict:
     """
-    Build a more robust state-comparison table and a few state comparison plots.
+    Build robust state-comparison statistics and plots for numeric features.
+
+    Computes median/IQR shifts and KS statistics, writes the comparison CSV and
+    optional boxplot/ECDF PNGs, and returns the table plus artifact paths.
     """
     from scipy.stats import ks_2samp
 
@@ -784,7 +826,10 @@ def build_pca_diagnostics_artifacts(
     top_loading_count: int = 15,
 ) -> dict:
     """
-    Build PCA explained variance and loading diagnostics.
+    Build PCA explained-variance and loading diagnostics.
+
+    Samples rows when needed, imputes feature medians, writes CSV diagnostics
+    and PNG plots under ``artifacts_dir``, and returns dataframes plus paths.
     """
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import RobustScaler, StandardScaler
@@ -924,6 +969,9 @@ def build_outlier_audit_artifacts(
 ) -> dict:
     """
     Build overall and optional state-level outlier summary artifacts.
+
+    Writes outlier summary CSVs and a top-feature PNG under ``artifacts_dir``,
+    returning the dataframes and paths for downstream indexing.
     """
     available_features = [
         feature_name

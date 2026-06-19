@@ -18,6 +18,9 @@ def load_model_result_artifacts(
 ) -> Dict[str, Any]:
     """
     Normalize baseline and cascade summaries into one comparison payload.
+
+    Returns shallow dictionary copies so downstream comparison builders can read
+    a consistent baseline_summary and cascade_summaries structure.
     """
     return {
         "baseline_summary": dict(baseline_summary),
@@ -30,6 +33,10 @@ def validate_comparison_inputs(
 ) -> Dict[str, Any]:
     """
     Validate that baseline and cascade summaries can be compared together.
+
+    Checks duplicate cascade variants, missing cascade metric blocks, and
+    dataset-name mismatches when dataset names are present. Returns a validation
+    summary and does not raise for comparison issues.
     """
     baseline_summary = comparison_payload["baseline_summary"]
     cascade_summaries = comparison_payload["cascade_summaries"]
@@ -77,6 +84,9 @@ def build_model_comparison_dataframe(
 ) -> pd.DataFrame:
     """
     Build one comparison dataframe containing baseline plus cascade variants.
+
+    Returns one row per model with alert counts, threshold, feature count, and
+    common classification/ranking metrics where available.
     """
     baseline_summary = comparison_payload["baseline_summary"]
     cascade_summaries = comparison_payload["cascade_summaries"]
@@ -128,7 +138,10 @@ def build_alert_count_comparison(
     comparison_payload: Dict[str, Any],
 ) -> pd.DataFrame:
     """
-    Build focused alert-count comparison table.
+    Build a focused alert-count comparison table.
+
+    Returns baseline and cascade alert counts using the stage-level count fields
+    available in the summary payloads.
     """
     baseline_summary = comparison_payload["baseline_summary"]
     cascade_summaries = comparison_payload["cascade_summaries"]
@@ -167,7 +180,10 @@ def build_metric_comparison(
     comparison_payload: Dict[str, Any],
 ) -> pd.DataFrame:
     """
-    Build focused metric comparison table.
+    Build a focused metric comparison table.
+
+    Returns the metric subset from the full comparison dataframe, preserving only
+    columns that are available.
     """
     comparison_df = build_model_comparison_dataframe(comparison_payload)
 
@@ -189,7 +205,10 @@ def build_comparison_summary(
     comparison_df: pd.DataFrame,
 ) -> Dict[str, Any]:
     """
-    Build compact summary useful for reporting and downstream display.
+    Build a compact summary for reporting and downstream display.
+
+    Identifies the best F1 row and the lowest-alert row, and includes all
+    comparison rows as records. Returns empty summary fields for an empty input.
     """
     if comparison_df.empty:
         return {
@@ -228,7 +247,10 @@ def build_baseline_vs_best_cascade_delta(
     comparison_df: pd.DataFrame,
 ) -> Dict[str, Any]:
     """
-    Compare baseline against the best cascade row by F1.
+    Compare the baseline row against the best cascade row by F1.
+
+    Returns alert-count and metric deltas where both sides have values. Returns
+    an empty dictionary when either baseline or cascade rows are unavailable.
     """
     if comparison_df.empty:
         return {}

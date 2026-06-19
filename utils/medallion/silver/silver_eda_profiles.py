@@ -43,6 +43,9 @@ def z_score(series: pd.Series) -> pd.Series:
 def build_silver_overview_summary(dataframe: pd.DataFrame) -> dict:
     """
     Build a quick structural overview of the Silver dataframe.
+
+    Returns row, column, meta, numeric, categorical, and column-uniqueness
+    counts without modifying the dataframe.
     """
     return {
         "row_count": int(len(dataframe)),
@@ -66,7 +69,10 @@ def build_missingness_audit_table(
     include_only_nonzero: bool = False,
 ) -> pd.DataFrame:
     """
-    Build missingness summary by column.
+    Build a column-level missingness summary table.
+
+    When ``include_only_nonzero`` is true, columns with zero null values are
+    omitted from the returned dataframe.
     """
     rows = []
     total_rows = len(dataframe)
@@ -99,6 +105,9 @@ def build_missingness_audit_table(
 def build_duplicate_summary(dataframe: pd.DataFrame) -> dict:
     """
     Summarize duplicate rows and duplicate key identifiers.
+
+    Includes duplicate counts for ``meta__record_id`` and ``event_id`` only
+    when those columns exist.
     """
     duplicate_row_count = int(dataframe.duplicated().sum())
 
@@ -127,7 +136,10 @@ def build_numeric_describe_table(
     include_columns: Optional[Sequence[str]] = None,
 ) -> pd.DataFrame:
     """
-    Build numeric describe table.
+    Build a transposed ``describe`` table for numeric columns.
+
+    Optionally restricts profiling to numeric columns present in
+    ``include_columns`` and returns an empty dataframe when none are usable.
     """
     if include_columns is None:
         numeric_columns = dataframe.select_dtypes(include=[np.number]).columns.tolist()
@@ -151,7 +163,10 @@ def build_categorical_cardinality_table(
     exclude_columns: Optional[Sequence[str]] = None,
 ) -> pd.DataFrame:
     """
-    Build categorical cardinality table.
+    Build non-numeric, non-datetime column cardinality statistics.
+
+    Excludes columns listed in ``exclude_columns`` and returns counts of
+    non-null, null, and unique values by column.
     """
     exclude_columns_set = set(exclude_columns or [])
 
@@ -188,7 +203,10 @@ def profile_sensor_state_table(
     state_column: str = "state_col_synth",
 ) -> pd.DataFrame:
     """
-    Build per-sensor descriptive stats by state.
+    Build per-sensor descriptive statistics by state value.
+
+    Raises ``KeyError`` if ``state_column`` is missing and skips sensors absent
+    from the dataframe.
     """
     rows = []
 
@@ -227,7 +245,9 @@ def build_state_sensor_profile_table(
     state_values: Sequence[str],
 ) -> pd.DataFrame:
     """
-    Wrapper around profile_sensor_state_table.
+    Build state-by-sensor profile rows using sequence-friendly inputs.
+
+    Returns the same table shape as ``profile_sensor_state_table``.
     """
     return profile_sensor_state_table(
         dataframe,
@@ -298,7 +318,10 @@ def build_plot_feature_list(
     max_features: int = 6,
 ) -> list[str]:
     """
-    Build top feature list from effect-size table.
+    Build an ordered list of top features from an effect-size table.
+
+    Features are ranked by absolute standardized mean shift and capped at
+    ``max_features``.
     """
     if effect_size_df.empty:
         return []

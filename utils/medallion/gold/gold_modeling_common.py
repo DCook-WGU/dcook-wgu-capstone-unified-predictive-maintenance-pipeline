@@ -40,7 +40,24 @@ def choose_threshold_by_percentile(
     percentile: float = 95.0,
 ) -> Tuple[float, Dict[str, Any]]:
     """
-    Choose anomaly threshold using a score percentile.
+    Choose an anomaly threshold from a score percentile.
+
+    Parameters
+    ----------
+    scores:
+        Numeric anomaly scores where larger values mean more anomalous rows.
+    percentile:
+        Percentile used to select the cutoff.
+
+    Returns
+    -------
+    tuple[float, dict[str, Any]]
+        Threshold value and a compact summary of the score distribution.
+
+    Raises
+    ------
+    ValueError
+        If scores is empty.
     """
     scores_array = np.asarray(scores, dtype=float)
 
@@ -67,7 +84,11 @@ def build_prediction_flags_from_scores(
     threshold: float,
 ) -> np.ndarray:
     """
-    Convert anomaly scores to binary predictions using threshold.
+    Convert anomaly scores to binary prediction flags.
+
+    Scores greater than or equal to threshold are flagged as 1; all other rows
+    are flagged as 0. Returns a NumPy integer array aligned to the input score
+    order.
     """
     scores_array = np.asarray(scores, dtype=float)
     return (scores_array >= float(threshold)).astype(int)
@@ -81,6 +102,21 @@ def evaluate_against_labels(
 ) -> Dict[str, Any]:
     """
     Evaluate binary predictions against labels.
+
+    Parameters
+    ----------
+    true_labels:
+        Ground-truth labels coercible to binary integers.
+    predicted_labels:
+        Predicted labels coercible to binary integers.
+    scores:
+        Optional anomaly scores used for ROC AUC and average precision.
+
+    Returns
+    -------
+    dict[str, Any]
+        Row counts, positive counts, precision, recall, F1, and optional
+        ranking metrics. Ranking metrics are None when unavailable.
     """
     y_true = pd.to_numeric(pd.Series(true_labels), errors="coerce").fillna(0).astype(int).to_numpy()
     y_pred = pd.to_numeric(pd.Series(predicted_labels), errors="coerce").fillna(0).astype(int).to_numpy()
@@ -121,7 +157,10 @@ def build_model_metric_summary(
     feature_columns: Sequence[str],
 ) -> Dict[str, Any]:
     """
-    Build compact model summary payload.
+    Build a compact model metric summary payload.
+
+    Combines threshold details, evaluation metrics, and feature metadata into a
+    JSON-friendly dictionary for reports and downstream comparison tables.
     """
     return {
         "model_name": model_name,

@@ -16,6 +16,17 @@ import pandas as pd
 def _normalize_dataset_name(dataset_name: str) -> str:
     """
     Normalize a dataset name into a stable pipeline-safe identifier.
+
+    Args:
+        dataset_name: Raw dataset label from configuration, handoff metadata,
+            source details, or fallback input.
+
+    Returns:
+        Lowercase identifier containing only alphanumeric characters and
+        underscores.
+
+    Raises:
+        ValueError: If normalization removes all usable characters.
     """
     normalized_value = str(dataset_name).strip().lower()
     normalized_value = normalized_value.replace(" ", "_")
@@ -44,6 +55,16 @@ def _generate_deterministic_dataset_name_from_file_details(
 ) -> Optional[str]:
     """
     Build a deterministic fallback dataset name from source file details.
+
+    Args:
+        path_value: Optional filesystem path used to derive the file stem,
+            size, modified timestamp, and content sample fingerprint.
+
+    Returns:
+        Normalized dataset identifier, or None when no path value is supplied.
+
+    Side Effects:
+        Reads small samples from an existing source file when available.
     """
     if path_value is None or str(path_value).strip() == "":
         return None
@@ -113,6 +134,25 @@ def resolve_dataset_name_for_bronze_pre_ingest(
     4. Source table -> dataset mapping
     5. Deterministic file-details-based generated name
     6. Fallback
+
+    Args:
+        argument_value: Dataset value supplied by a CLI argument or caller.
+        config_value: Dataset value supplied by resolved configuration.
+        handoff_dataset_name: Dataset name carried from an upstream handoff.
+        source_table_name: Source table name used for lookup in
+            source_table_dataset_map.
+        source_table_dataset_map: Optional mapping from source table names to
+            dataset names.
+        fallback_value: Last-resort dataset value before using
+            "unknown_dataset".
+        source_path: Optional source file path for deterministic name
+            generation.
+
+    Returns:
+        Tuple of resolved dataset name, source label, and resolution method.
+
+    Raises:
+        ValueError: If the selected dataset value cannot be normalized.
     """
     source_table_dataset_map = source_table_dataset_map or {}
 
@@ -177,6 +217,23 @@ def write_dataset_resolution_attrs(
 ) -> pd.DataFrame:
     """
     Write Bronze dataset resolution metadata into dataframe.attrs.
+
+    Args:
+        dataframe: Dataframe whose dataset metadata should be inspected.
+        dataset_column: Column containing Bronze dataset labels.
+        fallback_dataset_name: Dataset name used when dataset_column is absent
+            or empty.
+        fallback_method: Method label recorded when the fallback is used.
+
+    Returns:
+        The same dataframe object with dataset_resolution stored in attrs.
+
+    Raises:
+        ValueError: If multiple dataset values are present or no dataset name
+            can be resolved.
+
+    Side Effects:
+        Mutates dataframe.attrs by adding or replacing dataset_resolution.
     """
     resolved_dataset_name: Optional[str] = None
     dataset_source_column: Optional[str] = None
@@ -217,7 +274,13 @@ def write_dataset_resolution_attrs(
 
 def collect_meta_columns(existing_columns: List[str]) -> List[str]:
     """
-    Return meta__ columns in current order.
+    Return meta__ columns in their existing order.
+
+    Args:
+        existing_columns: Column names to inspect.
+
+    Returns:
+        Columns whose names start with "meta__".
     """
     meta_columns: List[str] = []
     for column in existing_columns:
@@ -229,6 +292,13 @@ def collect_meta_columns(existing_columns: List[str]) -> List[str]:
 def reorder_bronze_columns(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     Move meta__ columns to the front while preserving existing order.
+
+    Args:
+        dataframe: Bronze dataframe to reorder.
+
+    Returns:
+        Copy of the dataframe with meta columns first, followed by all other
+        columns in their original order.
     """
     existing_columns = list(dataframe.columns)
     meta_columns = collect_meta_columns(existing_columns)
@@ -260,6 +330,30 @@ def prepare_bronze_dataframe(
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Prepare a Bronze dataframe for downstream saving and truth stamping.
+
+    Args:
+        dataframe: Source dataframe to copy and enrich with Bronze metadata.
+        argument_dataset_name: Dataset value supplied by a caller argument.
+        config_dataset_name: Dataset value supplied by configuration.
+        handoff_dataset_name: Dataset name from an upstream handoff.
+        source_table_name: Source table used to resolve a mapped dataset name.
+        source_table_dataset_map: Optional source-table-to-dataset mapping.
+        fallback_dataset_name: Fallback dataset name when higher-priority
+            sources are unavailable.
+        source_path: Optional source path for deterministic name generation.
+        dataset_column: Metadata column that stores the resolved dataset name.
+        reorder_columns: Whether to place meta__ columns before data columns.
+
+    Returns:
+        Prepared dataframe copy and a resolution payload describing dataset
+        resolution, column order, and dataframe dimensions.
+
+    Raises:
+        ValueError: If dataset resolution cannot produce a valid dataset name.
+
+    Side Effects:
+        Reads source file details when source_path is used for dataset
+        resolution.
     """
     working_dataframe = dataframe.copy()
 

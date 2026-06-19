@@ -23,7 +23,22 @@ def load_dropped_sensor_dataframe(
     dropped_path: Path,
 ) -> pd.DataFrame:
     """
-    Load dropped-feature dataframe/parquet.
+    Load the dropped-feature dataframe artifact from disk.
+
+    Parameters
+    ----------
+    dropped_path
+        Full path to the dropped-feature artifact.
+
+    Returns
+    -------
+    pd.DataFrame
+        Loaded dropped-feature dataframe.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the configured dropped-feature path does not exist.
     """
     if not dropped_path.exists():
         raise FileNotFoundError(f"Dropped sensor dataframe not found: {dropped_path}")
@@ -40,7 +55,11 @@ def attach_state_column_to_dropped_dataframe(
     join_key: str = "meta__record_id",
 ) -> pd.DataFrame:
     """
-    Join state columns from Silver dataframe onto dropped-feature dataframe.
+    Join state columns from the Silver dataframe onto dropped-feature rows.
+
+    Returns a new merged dataframe keyed by ``join_key``; the input dataframes
+    are not modified. Raises ``KeyError`` when required join or state columns
+    are missing.
     """
     if join_key not in dropped_dataframe.columns:
         raise KeyError(f"Dropped dataframe missing join key: {join_key}")
@@ -72,7 +91,10 @@ def build_dropped_sensor_profiles_from_silver_preeda_truth(
     comparison_states: Sequence[str] = ("abnormal", "recovery"),
 ) -> dict:
     """
-    Build dropped-feature profile and effect-size tables.
+    Build profile and effect-size tables for quarantined Silver features.
+
+    Returns a dictionary containing ``profile_df`` and ``effect_size_df`` for
+    the supplied dropped feature columns.
     """
     profile_df = build_state_sensor_profile_table(
         dropped_dataframe,

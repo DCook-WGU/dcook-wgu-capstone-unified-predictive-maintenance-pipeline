@@ -19,7 +19,10 @@ def resolve_state_column_from_truth(
     fallback_status_column: str = "machine_status",
 ) -> str:
     """
-    Resolve the label/status source column from parent Silver truth.
+    Resolve the label/status source column from parent Silver truth metadata.
+
+    Falls back to ``fallback_status_column`` when the truth record does not
+    contain a usable label resolution entry.
     """
     runtime_facts = (truth_record or {}).get("runtime_facts", {}) or {}
     label_resolution = runtime_facts.get("label_resolution", {}) or {}
@@ -39,7 +42,10 @@ def build_state_col_synth(
     output_column: Optional[str] = None,
 ) -> tuple[pd.DataFrame, str]:
     """
-    Build standardized synthetic state column from the status column.
+    Build a normalized synthetic state column from the status column.
+
+    Returns a copied dataframe and output column name. Raises ``KeyError`` when
+    ``status_column`` is not present.
     """
     if status_column not in dataframe.columns:
         raise KeyError(f"Missing status column: {status_column}")
@@ -75,7 +81,11 @@ def get_episode_status_state_stats(
     percent_suffix: str = "_percent",
 ) -> dict:
     """
-    Build episode-aware status/state summaries.
+    Build episode-aware status and state summary payloads.
+
+    Returns global status counts, episode-level status counts, per-episode
+    means, lookup dictionaries, and episode totals. Raises ``KeyError`` when
+    the required status or episode columns are missing.
     """
     required_columns = [status_column, episode_column]
     missing = [column for column in required_columns if column not in dataframe.columns]
@@ -212,7 +222,10 @@ def build_episode_status_payload_and_tables(
     state_map: Optional[dict] = None,
 ) -> dict:
     """
-    Build the exact payload and tables used by Silver EDA.
+    Build the episode status payload and dataframe tables used by Silver EDA.
+
+    Separates the JSON-ready payload from dataframe tables so callers can save
+    each artifact format explicitly.
     """
     payload = get_episode_status_state_stats(
         dataframe,
@@ -249,7 +262,10 @@ def build_status_distribution_tables(
     status_column: str,
 ) -> dict[str, pd.DataFrame]:
     """
-    Build row-level status distribution table.
+    Build a row-level status distribution table.
+
+    Returns a dictionary containing ``status_counts`` and raises ``KeyError``
+    if ``status_column`` is missing.
     """
     if status_column not in dataframe.columns:
         raise KeyError(f"Missing status column: {status_column}")
@@ -274,7 +290,10 @@ def build_status_distribution_tables(
 
 def pull_episode_status_state_stats_from_truth(truth_record: dict) -> dict:
     """
-    Pull saved episode-state summary payload back out of Silver EDA truth.
+    Load saved episode-state summary fields from a Silver EDA truth record.
+
+    Reads episode status count records from the artifact path when it exists;
+    missing paths yield an empty record list.
     """
     runtime_facts = (truth_record or {}).get("runtime_facts", {}) or {}
     artifact_paths = (truth_record or {}).get("artifact_paths", {}) or {}

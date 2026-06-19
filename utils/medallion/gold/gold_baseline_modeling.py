@@ -72,7 +72,25 @@ def fit_baseline_isolation_forest(
     n_jobs: int = -1,
 ) -> Tuple[IsolationForest, Dict[str, Any]]:
     """
-    Fit baseline Isolation Forest on normal-only fit rows.
+    Fit the baseline Isolation Forest on normal-only Gold fit rows.
+
+    Parameters
+    ----------
+    fit_dataframe:
+        Training subset used for model fitting.
+    feature_columns:
+        Candidate feature columns; missing columns are ignored.
+
+    Returns
+    -------
+    tuple[IsolationForest, dict[str, Any]]
+        Fitted model plus fit metadata including feature names, row count, and
+        model parameters.
+
+    Raises
+    ------
+    ValueError
+        If no usable features or no fit rows are available.
     """
     feature_columns = [
         column_name
@@ -129,7 +147,16 @@ def score_baseline_model(
     prediction_column_name: str = "baseline_predicted_anomaly",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Score dataframe with fitted baseline model and optionally create predictions.
+    Score a dataframe with the fitted baseline model.
+
+    Adds an anomaly-score column to a copy of the input dataframe. When a
+    threshold is provided, also adds a binary prediction column.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, dict[str, Any]]
+        Scored dataframe and scoring metadata such as row count, feature count,
+        score distribution, and optional predicted-positive count.
     """
     working_dataframe = dataframe.copy()
     feature_columns = [
@@ -177,7 +204,10 @@ def evaluate_baseline_model(
     prediction_column: str = "baseline_predicted_anomaly",
 ) -> Dict[str, Any]:
     """
-    Evaluate scored baseline dataframe against anomaly labels.
+    Evaluate a scored baseline dataframe against anomaly labels.
+
+    Parameters identify the label, score, and prediction columns to compare.
+    Raises ValueError when any required column is missing.
     """
     if label_column not in scored_dataframe.columns:
         raise ValueError(f"Missing label column: {label_column}")
@@ -207,7 +237,11 @@ def run_baseline_pipeline(
     label_column: str = "anomaly_flag",
 ) -> Dict[str, Any]:
     """
-    End-to-end baseline modeling pipeline.
+    Run the end-to-end baseline Isolation Forest workflow.
+
+    Fits the model, selects the threshold from training scores, scores fit,
+    train, test, and all rows, and returns the model, scored frames, threshold,
+    and summary metrics. Input dataframes are copied by downstream helpers.
     """
     model_params = dict(model_params or {})
 

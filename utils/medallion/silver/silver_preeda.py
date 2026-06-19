@@ -43,7 +43,10 @@ def remove_junk_import_columns(
     unnamed_column_regex: Optional[RegexLike] = None,
 ) -> Tuple[pd.DataFrame, List[str], Optional[str]]:
     """
-    Remove common import-artifact columns like Unnamed: 0, level_0, blank columns.
+    Remove common import-artifact columns from a Bronze dataframe copy.
+
+    Returns the cleaned dataframe, dropped column names, and regex pattern used
+    for unnamed-column matching.
     """
     working_dataframe = dataframe.copy()
 
@@ -149,7 +152,10 @@ def validate_dataset_name_for_silver(
     dataset_name_parent_truth: Optional[str] = None,
 ) -> Tuple[str, Optional[str], str]:
     """
-    Validate or resolve dataset name for Silver using Bronze column and upstream truth.
+    Validate or resolve the Silver dataset name from dataframe, truth, or config.
+
+    Returns normalized dataset name, source column, and resolution method.
+    Raises ``ValueError`` for conflicting or unresolvable dataset names.
     """
     dataset_name_from_column: Optional[str] = None
     dataset_source_column: Optional[str] = None
@@ -259,10 +265,12 @@ def protect_canonical_output_names(
     raw_prefix: str = "raw__",
 ) -> Tuple[pd.DataFrame, Dict[str, str]]:
     """
-    If raw input already contains canonical output names, rename them out of the way.
+    Rename raw columns that would collide with canonical Silver output names.
 
     Example:
     event_time -> raw__event_time
+
+    Returns a copied dataframe and the applied rename map.
     """
     working_dataframe = dataframe.copy()
     rename_map: Dict[str, str] = {}
@@ -340,6 +348,9 @@ def evaluate_time_candidates(
 ) -> Dict[str, Any]:
     """
     Evaluate candidate time columns and choose the best parseable option.
+
+    Returns the selected column, parse success percentage, and per-candidate
+    parsing diagnostics.
     """
     best_column: Optional[str] = None
     best_success_percent: float = 0.0
@@ -380,6 +391,9 @@ def evaluate_step_candidates(
 ) -> Dict[str, Any]:
     """
     Evaluate candidate step/order columns and choose the best numeric option.
+
+    Returns the selected column, numeric parse success percentage, and
+    per-candidate parsing diagnostics.
     """
     best_column: Optional[str] = None
     best_success_percent: float = 0.0
@@ -594,7 +608,10 @@ def build_anomaly_flag_from_status(
     anomaly_flag_column: str = "anomaly_flag",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Build anomaly_flag using either a label column or a status column.
+    Build ``anomaly_flag`` using either a label column or a status column.
+
+    Returns a copied dataframe plus build metadata. Raises ``ValueError`` for
+    unsupported label source types.
     """
     working_dataframe = dataframe.copy()
     normal_status_set = {str(value).strip().lower() for value in normal_status_values}
@@ -648,7 +665,10 @@ def build_episode_ids_from_anomaly_flag(
     episode_column: str = "meta__episode_id",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Build episode IDs from transitions in anomaly_flag within asset/run groups.
+    Build episode IDs from anomaly-flag transitions within asset/run groups.
+
+    Returns a copied dataframe and episode metadata. Raises ``ValueError`` when
+    the anomaly flag column is missing.
     """
     working_dataframe = dataframe.copy()
 
@@ -1053,7 +1073,11 @@ def prepare_silver_preeda_dataframe(
     min_step_parse_success_percent: float,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
-    Main orchestration helper for Silver Pre-EDA dataframe preparation.
+    Run the Silver Pre-EDA dataframe preparation sequence.
+
+    Performs import cleanup, dataset resolution, canonical identity/order
+    construction, anomaly-flag creation, and episode assignment. Returns the
+    prepared dataframe and JSON-ready preparation metadata.
     """
     working_dataframe = dataframe.copy()
 
@@ -1156,7 +1180,10 @@ def build_silver_feature_registry(
     label_source_type: Optional[str],
 ) -> Tuple[pd.DataFrame, Dict[str, Any], Dict[str, Any]]:
     """
-    Build Silver feature registry and quarantine excessive-missingness features.
+    Build the Silver feature registry and quarantine high-missingness features.
+
+    Returns the filtered dataframe, registry payload, and artifact payload
+    containing the dropped-feature dataframe and missingness summaries.
     """
     working_dataframe = dataframe.copy()
 

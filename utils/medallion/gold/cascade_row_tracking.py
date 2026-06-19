@@ -15,6 +15,9 @@ def ensure_stable_row_id(
     """
     Ensure the dataframe has a stable unique row id for downstream stage scoring
     and merge-back operations.
+
+    Adds row_id_column to a copy of the dataframe when it is missing. Raises
+    ValueError if row ids are null or non-unique.
     """
     out = dataframe.copy()
 
@@ -37,6 +40,9 @@ def get_identity_columns(
     """
     Return stable identity and ordering columns that should be carried through
     all stage scoring outputs.
+
+    Only columns present in the dataframe are returned, preserving the preferred
+    identity-column order.
     """
     preferred_columns = [
         row_id_column,
@@ -62,6 +68,9 @@ def build_stage_scoring_frame(
     """
     Build the exact dataframe that will be scored by a cascade stage while
     preserving row identity and ordering columns.
+
+    Applies an optional candidate mask, keeps requested feature columns, and
+    validates that the resulting row ids remain non-null and unique.
     """
     working = ensure_stable_row_id(dataframe, row_id_column=row_id_column)
     identity_columns = get_identity_columns(working, row_id_column=row_id_column)
@@ -93,7 +102,10 @@ def score_isolation_forest_stage(
     row_id_column: str = DEFAULT_ROW_ID_COLUMN,
 ) -> pd.DataFrame:
     """
-    Score one Isolation Forest stage and return a row-level stage result dataframe.
+    Score one Isolation Forest stage and return row-level stage results.
+
+    Adds standard score, decision, prediction, and flag columns for stage_name.
+    Raises ValueError when the feature matrix is empty or loses index alignment.
     """
     out = stage_dataframe.copy().set_index(row_id_column, drop=False)
 
@@ -126,6 +138,9 @@ def merge_stage_results_back(
 ) -> pd.DataFrame:
     """
     Merge row-level stage results back onto the full master dataframe.
+
+    Uses row_id_column as the stable key and preserves all master rows with a
+    left merge. Raises ValueError when row ids are missing or non-unique.
     """
     out = ensure_stable_row_id(master_dataframe, row_id_column=row_id_column)
 
@@ -164,6 +179,9 @@ def finalize_stage_flag_columns(
     """
     Fill missing stage flag columns after merge-back so non-candidate rows are
     represented as 0 rather than NaN.
+
+    Returns a copied dataframe with available stage flag columns converted to
+    integer flags.
     """
     out = dataframe.copy()
 
@@ -295,13 +313,15 @@ def get_stage_detected_rows_dataframe(
     ascending: bool = True,
 ) -> pd.DataFrame:
     """
-    Convenience wrapper for standard stage naming patterns.
+    Return detected rows for standard baseline/cascade stage naming patterns.
 
     Examples
     --------
     stage_name='baseline' -> baseline_flag / baseline_score / baseline_decision / baseline_pred
     stage_name='stage1'   -> stage1_flag / stage1_score / stage1_decision / stage1_pred
     stage_name='stage2'   -> stage2_flag / stage2_score / stage2_model_decision / stage2_model_pred
+
+    Returns the filtered dataframe produced by get_detected_rows_dataframe.
     """
     if stage_name == "stage2":
         score_column = "stage2_score"
