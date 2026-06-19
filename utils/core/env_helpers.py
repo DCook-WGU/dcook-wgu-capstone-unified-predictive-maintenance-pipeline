@@ -11,10 +11,17 @@ NONE_VALUES = {"", "none", "null", "nil", "na", "n/a", "all"}
 
 def env_raw(name: str, aliases: Sequence[str] = ()) -> str | None:
     """
-    Return the first non-empty environment value for a variable name or aliases.
+    Return the first non-empty environment value for a name or alias.
 
-    This lets newer standardized names work while still supporting older names
-    during the transition period.
+    Args:
+        name: Primary environment variable name to read.
+        aliases: Fallback environment variable names checked in order.
+
+    Returns:
+        The stripped environment value, or None when no name is set.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     for candidate_name in (name, *aliases):
         value = os.getenv(candidate_name)
@@ -32,10 +39,20 @@ def env_raw(name: str, aliases: Sequence[str] = ()) -> str | None:
 
 def env_required_str(name: str, *, aliases: Sequence[str] = ()) -> str:
     """
-    Return a required environment string.
+    Return a required environment string from a name or alias.
+
+    Args:
+        name: Primary environment variable name to read.
+        aliases: Fallback environment variable names checked in order.
+
+    Returns:
+        The stripped environment value.
 
     Raises:
         RuntimeError: If the variable and all aliases are missing or empty.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     value = env_raw(name, aliases=aliases)
 
@@ -49,6 +66,17 @@ def env_required_str(name: str, *, aliases: Sequence[str] = ()) -> str:
 def env_str(name: str, default: str, *, aliases: Sequence[str] = ()) -> str:
     """
     Return an environment string, falling back to a default value.
+
+    Args:
+        name: Primary environment variable name to read.
+        default: Value returned when no name or alias is set.
+        aliases: Fallback environment variable names checked in order.
+
+    Returns:
+        The stripped environment value, or default converted to str.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     value = env_raw(name, aliases=aliases)
 
@@ -61,6 +89,17 @@ def env_str(name: str, default: str, *, aliases: Sequence[str] = ()) -> str:
 def env_int(name: str, default: int, *, aliases: Sequence[str] = ()) -> int:
     """
     Return an environment integer, falling back to a default value.
+
+    Args:
+        name: Primary environment variable name to read.
+        default: Value returned when no name or alias is set.
+        aliases: Fallback environment variable names checked in order.
+
+    Returns:
+        The environment value parsed as int, or default converted to int.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     value = env_raw(name, aliases=aliases)
 
@@ -77,9 +116,19 @@ def env_optional_int(
     aliases: Sequence[str] = (),
 ) -> int | None:
     """
-    Return an optional integer.
+    Return an optional environment integer.
 
-    Strings like None, null, all, n/a, or an empty value are treated as None.
+    Args:
+        name: Primary environment variable name to read.
+        default: Value returned when no name or alias is set.
+        aliases: Fallback environment variable names checked in order.
+
+    Returns:
+        The environment value parsed as int, None for configured none-like
+        strings, or the default when the variable is unset.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     value = env_raw(name, aliases=aliases)
 
@@ -97,6 +146,17 @@ def env_optional_int(
 def env_float(name: str, default: float, *, aliases: Sequence[str] = ()) -> float:
     """
     Return an environment float, falling back to a default value.
+
+    Args:
+        name: Primary environment variable name to read.
+        default: Value returned when no name or alias is set.
+        aliases: Fallback environment variable names checked in order.
+
+    Returns:
+        The environment value parsed as float, or default converted to float.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     value = env_raw(name, aliases=aliases)
 
@@ -110,11 +170,19 @@ def env_bool(name: str, default: bool, *, aliases: Sequence[str] = ()) -> bool:
     """
     Return an environment boolean, falling back to a default value.
 
-    Accepted true values:
-        1, true, t, yes, y, on
+    Args:
+        name: Primary environment variable name to read.
+        default: Value returned when no name or alias is set.
+        aliases: Fallback environment variable names checked in order.
 
-    Accepted false values:
-        0, false, f, no, n, off
+    Returns:
+        The parsed boolean value, or default converted to bool.
+
+    Raises:
+        ValueError: If the environment value is not a recognized boolean.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
     """
     value = env_raw(name, aliases=aliases)
 
@@ -134,7 +202,20 @@ def env_bool(name: str, default: bool, *, aliases: Sequence[str] = ()) -> bool:
         f"Use one of {sorted(TRUE_VALUES | FALSE_VALUES)}."
     )
 
+
 def get_first_env_value(names: Sequence[str]) -> Optional[str]:
+    """
+    Return the first non-empty value from a sequence of environment names.
+
+    Args:
+        names: Environment variable names checked in order.
+
+    Returns:
+        The stripped first matching value, or None when all names are unset.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
+    """
     for name in names:
         value = os.getenv(name)
         if value is not None and str(value).strip() != "":
@@ -149,6 +230,21 @@ def get_kafka_bootstrap_servers_from_env(
         "KAFKA_BROKERS",
     ),
 ) -> str:
+    """
+    Resolve Kafka bootstrap servers from configured environment names.
+
+    Args:
+        env_names: Environment variable names checked in order.
+
+    Returns:
+        The stripped Kafka bootstrap server string.
+
+    Raises:
+        RuntimeError: If none of the configured variables are set.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
+    """
     value = get_first_env_value(env_names)
     if value is None:
         raise RuntimeError(
@@ -165,6 +261,19 @@ def get_kafka_consumer_group_from_env(
     ),
     default: str = "synthetic-telemetry-consumer-group",
 ) -> str:
+    """
+    Resolve the Kafka consumer group from the environment or default.
+
+    Args:
+        env_names: Environment variable names checked in order.
+        default: Consumer group returned when no configured variable is set.
+
+    Returns:
+        The stripped environment value, or default converted to str and stripped.
+
+    Side Effects:
+        Reads from the process environment without mutating it.
+    """
     return get_first_env_value(env_names) or str(default).strip()
 
 __all__ = [

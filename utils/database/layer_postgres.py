@@ -26,7 +26,9 @@ def build_layer_table_name(
     include_layer_prefix: bool = False,
 ) -> str:
     """
-    Build a standard layer table name.
+    Build a sanitized layer table name from dataset, layer, and artifact parts.
+
+    Raises when a layer prefix is requested without a layer value.
     """
     dataset_part = sanitize_sql_identifier(dataset_name)
     parts = []
@@ -49,6 +51,9 @@ def build_layer_table_name(
 # -----------------------------------------------------------------------------
 
 def _series_looks_like_json(series: pd.Series) -> bool:
+    """
+    Return whether the first non-null series value is a JSON-like object.
+    """
     non_null = series.dropna()
     if non_null.empty:
         return False
@@ -59,7 +64,7 @@ def _series_looks_like_json(series: pd.Series) -> bool:
 
 def _infer_sqlalchemy_dtype_for_series(series: pd.Series):
     """
-    Conservative dtype inference for Postgres writes.
+    Infer a conservative SQLAlchemy dtype for a pandas Series.
     """
     if pd.api.types.is_bool_dtype(series):
         return BOOLEAN()
@@ -96,7 +101,7 @@ def infer_sqlalchemy_dtypes(
     dtype_overrides: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
-    Build a dtype mapping for pandas.to_sql().
+    Build a pandas.to_sql dtype mapping, honoring explicit column overrides.
     """
     dtype_map: Dict[str, Any] = {}
     overrides = dtype_overrides or {}
@@ -180,7 +185,8 @@ def write_layer_dataframe(
     """
     Generic dataframe writer for Bronze / Silver / Gold / synthetic layers.
 
-    Returns the final table name used.
+    Creates the target schema when needed, sanitizes output column names, writes
+    via pandas.to_sql, and returns the final table name used.
     """
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
@@ -252,7 +258,7 @@ def read_layer_dataframe(
     require_exists: bool = False,
 ) -> pd.DataFrame:
     """
-    Read a layer table back into pandas.
+    Read a layer table into pandas with optional projection, filtering, ordering, and limit.
     """
     safe_schema = sanitize_sql_identifier(schema)
 

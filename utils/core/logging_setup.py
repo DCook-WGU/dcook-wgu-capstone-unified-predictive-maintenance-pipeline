@@ -11,7 +11,20 @@ def configure_logging(
         overwrite_handlers: bool = False,
     ) -> logging.Logger:
     """
-    Configure a named logger with both console + file handlers.
+    Configure a named logger with console and file handlers.
+
+    Parameters:
+        name: Logger name to configure.
+        log_file: File path where log records should be written.
+        level: Logging threshold applied to the named logger.
+        overwrite_handlers: When True, clear existing handlers before setup.
+
+    Returns:
+        Configured logger instance.
+
+    Side effects:
+        Creates the log file parent directory and attaches stream/file handlers
+        when the logger does not already have handlers.
 
     Typical usage:
         logger = configure_logging("capstone", paths.logs / "silver.log")
@@ -66,6 +79,22 @@ def log_layer_paths(
     """
     Log common project paths, the current layer paths, and the previous layer paths
     when applicable.
+
+    Parameters:
+        paths: Object containing project path attributes such as ``root`` and
+            ``data_silver``.
+        current_layer: Active medallion layer name. Must be one of bronze,
+            silver, gold, or synthetic.
+        logger: Logger used to emit discovered path values.
+
+    Returns:
+        None.
+
+    Raises:
+        ValueError: If ``current_layer`` is not a supported layer.
+
+    Side effects:
+        Emits info-level log messages for available path attributes.
 
     Example:
         log_layer_paths(paths, current_layer="silver", logger=logger)

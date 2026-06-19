@@ -9,11 +9,14 @@ import json
 
 
 def _now_utc_iso() -> str:
+    """Return the current UTC timestamp as an ISO-8601 string."""
     return datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
 class Ledger:
+    """Collect stage-level lineage entries and export them as JSON."""
+
     stage: str
     recipe_id: str
     entries: List[Dict[str, Any]] = field(default_factory=list)
@@ -28,6 +31,13 @@ class Ledger:
         data: Optional[Dict[str, Any]] = None,
         logger=None,
     ) -> Dict[str, Any]:
+        """Append a structured ledger entry and optionally log it.
+
+        Parameters describe the entry type, pipeline step, human-readable
+        message, rationale, downstream consequence, and structured payload.
+        When a logger is provided, the entry is emitted immediately with a
+        ``LEDGER`` prefix. Returns the entry that was appended.
+        """
         entry = {
             "ts_utc": _now_utc_iso(),
             "stage": self.stage,
@@ -48,6 +58,10 @@ class Ledger:
         return entry
 
     def write_json(self, out_path: Path) -> Path:
+        """Write accumulated ledger entries to ``out_path`` as indented JSON.
+
+        Creates the parent directory when needed and returns the output path.
+        """
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(self.entries, indent=2, default=str))
         return out_path

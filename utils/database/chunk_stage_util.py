@@ -20,10 +20,16 @@ from utils.database.postgres import sanitize_sql_identifier
 
 
 def memory_gb() -> float:
+    """
+    Return the current process resident memory usage in gigabytes.
+    """
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / (1024 ** 3)
 
 def log_memory(label: str) -> None:
+    """
+    Print a labeled memory snapshot for long-running chunked notebook steps.
+    """
     print(f"[memory] {label}: {memory_gb():.2f} GB")
 
 
@@ -55,6 +61,9 @@ def get_table_columns(
     schema_name: str,
     table_name: str,
 ) -> list[str]:
+    """
+    Return column names for a Postgres table without reading data rows.
+    """
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -83,6 +92,12 @@ def resolve_dataset_run_from_table(
     where_sql: str = "",
     params: Optional[Mapping[str, Any]] = None,
 ) -> tuple[str, str]:
+    """
+    Resolve a single dataset_id/run_id pair from parameters or table contents.
+
+    Raises when only one identifier is provided, no matching rows exist, or the
+    filtered table contains multiple dataset/run pairs.
+    """
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
     query_params: dict[str, Any] = copy_sql_params(params)
@@ -131,6 +146,9 @@ def get_table_row_count(
     where_sql: str = "",
     params: Optional[Mapping[str, Any]] = None,
 ) -> int:
+    """
+    Count rows in a Postgres table, optionally using a caller-supplied WHERE clause.
+    """
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
     query_params: dict[str, Any] = copy_sql_params(params)
@@ -171,6 +189,12 @@ def read_table_chunk_by_row_number(
     where_sql: str = "",
     params: Optional[Mapping[str, Any]] = None,
 ) -> pd.DataFrame:
+    """
+    Read one deterministic row-number window from a Postgres table.
+
+    The caller supplies the selected columns and ORDER BY expression used to
+    create the row numbers for chunked processing.
+    """
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
     query_params: dict[str, Any] = copy_sql_params(params)
@@ -219,6 +243,12 @@ def process_postgres_table_in_chunks(
     params: Optional[Mapping[str, Any]] = None,
     enable_memory_logging: bool = False,
 ) -> None:
+    """
+    Stream a Postgres table through transform and write callbacks in row chunks.
+
+    Prints chunk progress and optionally memory snapshots; the callbacks perform
+    the caller-specific transformation and persistence.
+    """
     total_rows = get_table_row_count(
         engine,
         schema_name=schema_name,
@@ -306,6 +336,9 @@ def get_observation_index_bounds(
     extra_where_sql: str = "",
     params: Optional[Mapping[str, Any]] = None,
 ) -> tuple[Optional[int], Optional[int]]:
+    """
+    Return the min/max observation_index for one dataset/run filter.
+    """
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
     params = dict(params or {})
@@ -364,6 +397,9 @@ def read_table_for_observation_window(
     params: Optional[Mapping[str, Any]] = None,
     order_by_sql: str = "observation_index",
 ) -> pd.DataFrame:
+    """
+    Read rows for one inclusive observation_index window and dataset/run pair.
+    """
     safe_schema = sanitize_sql_identifier(schema_name)
     safe_table = sanitize_sql_identifier(table_name)
     params = dict(params or {})
@@ -410,6 +446,12 @@ def process_observation_index_windows(
     params: Optional[Mapping[str, Any]] = None,
     order_by_sql: str = "observation_index",
 ) -> None:
+    """
+    Process a dataset/run table in observation_index windows.
+
+    Prints window progress, reads each non-empty window, and delegates transform
+    and write behavior to caller-supplied callbacks.
+    """
     min_index, max_index = get_observation_index_bounds(
         engine,
         schema_name=schema_name,

@@ -15,6 +15,25 @@ def find_project_root(start_path: str | Path | None = None) -> Path:
     """
     Resolve the capstone project root from a notebook, script, or container path.
 
+    Parameters
+    ----------
+    start_path:
+        Optional file or directory used as the starting point for upward project
+        marker discovery. When omitted, discovery starts from the current
+        working directory.
+
+    Returns
+    -------
+    Path
+        Resolved project root path.
+
+    Raises
+    ------
+    ValueError
+        If an explicit environment-configured root does not exist.
+
+    Notes
+    -----
     This prevents notebooks from accidentally treating their own folder as the
     project root. For example, a notebook launched from:
 
@@ -70,6 +89,10 @@ class ProjectPaths:
     """
     Centralized project path map used by notebooks, scripts, and utilities.
 
+    Attributes map the resolved project root to commonly used project
+    directories, including data layers, notebooks, artifacts, models, logs,
+    configuration files, truth records, and pipeline scripts.
+
     Keeping these paths in one dataclass helps avoid hardcoded notebook-specific
     paths and keeps the medallion pipeline easier to run after a Docker or WSL
     reset.
@@ -99,7 +122,7 @@ class ProjectPaths:
 @lru_cache(maxsize=8)
 def get_paths(project_root: str | Path | None = None) -> ProjectPaths:
     """
-    Resolve the project root and return standardized project directories.
+    Resolve the project root and return standardized project directory paths.
 
     Parameters
     ----------
@@ -112,6 +135,11 @@ def get_paths(project_root: str | Path | None = None) -> ProjectPaths:
     -------
     ProjectPaths
         Dataclass containing common project directories.
+
+    Notes
+    -----
+    The result is cached by project root argument. Debug log messages record the
+    resolved root, data directory, and configuration directory.
     """
     root = find_project_root(project_root)
     data_dir = root / "data"

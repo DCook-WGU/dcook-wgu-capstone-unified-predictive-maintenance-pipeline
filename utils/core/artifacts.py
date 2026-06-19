@@ -1,6 +1,4 @@
-# =========================================================
-# Artifact directory utilities
-# =========================================================
+"""Helpers for building deterministic project artifact paths."""
 
 from __future__ import annotations
 
@@ -9,7 +7,7 @@ from typing import Any, Iterable, Mapping
 
 
 def _clean_path_part(value: str | None) -> str | None:
-    """Return a safe, trimmed directory-name component."""
+    """Return a trimmed path component, or None when the value is blank."""
     if value is None:
         return None
 
@@ -26,7 +24,8 @@ def _copy_artifact_mapping(value: Mapping[Any, Any] | None = None) -> dict[str, 
     Copy an artifact configuration mapping into a plain string-keyed dictionary.
 
     This avoids Pylance incorrectly inferring config dictionaries as byte-keyed
-    mappings after calls such as dict(config or {}).
+    mappings after calls such as dict(config or {}). None returns an empty
+    dictionary.
     """
     if value is None:
         return {}
@@ -40,6 +39,13 @@ def _copy_artifact_mapping(value: Mapping[Any, Any] | None = None) -> dict[str, 
 def _require_mapping(value: Any, label: str) -> dict[str, Any]:
     """
     Validate that a value is a mapping and return it as a string-keyed dictionary.
+
+    Args:
+        value: Candidate mapping from resolved configuration.
+        label: Human-readable config location used in validation errors.
+
+    Returns:
+        A plain dictionary with string keys.
     """
     if not isinstance(value, Mapping):
         raise TypeError(
@@ -56,6 +62,8 @@ def _get_artifact_mapping(
 ) -> dict[str, Any]:
     """
     Return a nested artifact mapping as a plain string-keyed dictionary.
+
+    Missing or null keys are treated as an empty mapping.
     """
     raw_value = mapping.get(key)
 
@@ -71,7 +79,15 @@ def _get_optional_artifact_str(
     default: str | None = None,
 ) -> str | None:
     """
-    Return an optional artifact config value as str | None.
+    Return an optional artifact config value as a string.
+
+    Args:
+        mapping: Configuration mapping to read.
+        key: Configuration key to resolve.
+        default: Fallback value when the key is absent.
+
+    Returns:
+        The resolved value converted to str, or None when the value is null.
     """
     raw_value = mapping.get(key, default)
 
@@ -88,6 +104,11 @@ def _get_required_artifact_str(
 ) -> str:
     """
     Return a required artifact config value as a non-empty string.
+
+    Args:
+        mapping: Configuration mapping to read.
+        key: Required configuration key.
+        label: Human-readable config location used in validation errors.
     """
     raw_value = mapping.get(key)
 
@@ -108,7 +129,10 @@ def _get_artifact_subdirs(
     default: list[str] | None = None,
 ) -> list[str]:
     """
-    Return artifact subdirectories as a list of strings.
+    Return artifact subdirectory names from config as a list of strings.
+
+    Accepts string, bytes, list, or tuple values so YAML and programmatic config
+    overlays can use either a single subdirectory or a sequence.
     """
     if default is None:
         default = []
@@ -158,6 +182,8 @@ def build_artifact_dirs(
         stage_dataset_root -> artifacts_root / stage / dataset_name
         root               -> family root or stage-dataset root
         <subdir>           -> root / <subdir>
+
+    When create is True, all returned directories are created.
     """
     stage_clean = _clean_path_part(stage)
     dataset_clean = _clean_path_part(dataset_name)
@@ -232,6 +258,17 @@ def build_artifact_dirs_from_config(
                 family: cascade_defaults
               tuned:
                 family: cascade_tuned
+
+    Args:
+        config: Resolved pipeline configuration mapping.
+        stage_key: Top-level stage config key to read.
+        family_override: Optional family name that supersedes config layout.
+        variant: Optional artifact layout variant key.
+        subdirs_override: Optional subdirectory list that supersedes config layout.
+        create: Whether to create all returned directories.
+
+    Returns:
+        Standard artifact directory mapping from build_artifact_dirs().
     """
     config_map: dict[str, Any] = _copy_artifact_mapping(config)
 
@@ -354,7 +391,14 @@ def artifact_file_path(
     subdir_key: str,
     file_name: str,
 ) -> Path:
-    """Build a file path inside one standardized artifact subdirectory."""
+    """
+    Build a file path inside one standardized artifact subdirectory.
+
+    Args:
+        artifact_dirs: Directory mapping returned by an artifact directory helper.
+        subdir_key: Key identifying the target subdirectory.
+        file_name: File name to append inside the selected directory.
+    """
     if subdir_key not in artifact_dirs:
         raise KeyError(
             f"Artifact directory key not found: {subdir_key}. "
@@ -369,7 +413,12 @@ def build_gold_model_validation_artifact_dirs(
     dataset_id: str,
     create: bool = True,
 ) -> dict[str, Path]:
-    """Build canonical Gold model-validation artifact directories."""
+    """
+    Build canonical Gold model-validation artifact directories.
+
+    Returns a mapping containing the model-validation root plus contracts,
+    results, scores, summaries, plots, metadata, config, and lineage paths.
+    """
     return build_artifact_dirs(
         artifacts_root=artifacts_root,
         stage="gold",
@@ -386,7 +435,11 @@ def gold_model_validation_contracts_dir(
     dataset_id: str,
     create: bool = True,
 ) -> Path:
-    """Return the canonical Gold model-validation contracts directory."""
+    """
+    Return the canonical Gold model-validation contracts directory.
+
+    When create is True, the full model-validation directory set is created.
+    """
     return build_gold_model_validation_artifact_dirs(
         artifacts_root=artifacts_root,
         dataset_id=dataset_id,
@@ -400,7 +453,11 @@ def gold_model_validation_results_dir(
     dataset_id: str,
     create: bool = True,
 ) -> Path:
-    """Return the canonical Gold model-validation results directory."""
+    """
+    Return the canonical Gold model-validation results directory.
+
+    When create is True, the full model-validation directory set is created.
+    """
     return build_gold_model_validation_artifact_dirs(
         artifacts_root=artifacts_root,
         dataset_id=dataset_id,
@@ -413,7 +470,12 @@ def gold_model_validation_contract_filename(
     dataset_id: str,
     model_id: str,
 ) -> str:
-    """Return the canonical filename for one Gold output-validation contract."""
+    """
+    Return the canonical filename for one Gold output-validation contract.
+
+    The filename combines dataset and model identifiers after checking both are
+    non-empty strings.
+    """
     clean_dataset_id = str(dataset_id).strip()
     clean_model_id = str(model_id).strip()
 
@@ -433,7 +495,12 @@ def gold_model_validation_contract_path(
     model_id: str,
     create: bool = True,
 ) -> Path:
-    """Return the canonical path for one Gold output-validation contract."""
+    """
+    Return the canonical path for one Gold output-validation contract.
+
+    When create is True, the contracts directory and sibling validation
+    directories are created before the path is returned.
+    """
     return (
         gold_model_validation_contracts_dir(
             artifacts_root=artifacts_root,

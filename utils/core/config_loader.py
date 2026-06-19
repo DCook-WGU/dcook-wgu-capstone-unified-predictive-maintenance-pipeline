@@ -13,6 +13,8 @@ import yaml
 
 
 class ConfigError(Exception):
+    """Raised when a configuration file is missing or structurally invalid."""
+
     pass
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -32,6 +34,8 @@ class LoadedConfig:
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
+    """Read a YAML mapping from disk and raise ConfigError for invalid input."""
+
     if not path.exists():
         raise ConfigError(f"Config file not found: {path}")
     with path.open("r", encoding="utf-8") as f:
@@ -45,6 +49,8 @@ def _read_yaml(path: Path) -> dict[str, Any]:
 
 
 def _deep_merge(base: dict[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:
+    """Recursively merge override values into a deep copy of base."""
+
     merged = deepcopy(base)
     for key, value in override.items():
         if (
@@ -62,11 +68,15 @@ def _deep_merge(base: dict[str, Any], override: Mapping[str, Any]) -> dict[str, 
 
 
 class _SafeFormatDict(dict):
+    """Dictionary that preserves unknown format placeholders."""
+
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
 
 
 def _flatten_for_templates(data: Mapping[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Flatten nested config values into dotted and short template keys."""
+
     flat: dict[str, Any] = {}
     for key, value in data.items():
         compound = f"{prefix}.{key}" if prefix else key
@@ -107,6 +117,8 @@ def _render_template_string(template: str, context: Mapping[str, Any]) -> str:
 
 
 def _render_templates(obj: Any, context: Mapping[str, Any]) -> Any:
+    """Recursively render template strings within dictionaries and lists."""
+
     if isinstance(obj, str):
         return _render_template_string(obj, context)
 
@@ -126,6 +138,8 @@ def _render_templates(obj: Any, context: Mapping[str, Any]) -> Any:
 
 
 def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
+    """Build canonical dataset, artifact, model, and ledger filenames."""
+
     dataset_name = cfg["dataset"]["name"]
 
     bronze_version = cfg["versions"]["bronze"]
@@ -233,6 +247,8 @@ def _build_filename_map(cfg: dict[str, Any]) -> dict[str, str]:
 
 
 def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str, str]) -> dict[str, str]:
+    """Build resolved project paths from roots, dataset metadata, and filenames."""
+
     roots = cfg["paths"]
     data_root = project_root / roots["data_dir"]
     artifacts_root = project_root / roots["artifacts_dir"]
@@ -759,6 +775,8 @@ def _build_path_map(project_root: Path, cfg: dict[str, Any], filenames: dict[str
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
 
 def _normalize_mode_overrides(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Apply runtime mode-specific override blocks to the merged config."""
+
     mode = cfg["runtime"]["mode"]
     overrides = deepcopy(cfg.get("mode_behavior", {}).get(mode, {}))
     if overrides:
@@ -770,6 +788,8 @@ def _normalize_mode_overrides(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def _resolve_config_file(path: Path) -> Path:
+    """Resolve a config path with optional .yaml or .yml suffix discovery."""
+
     candidates: list[Path] = []
 
     if path.suffix:
@@ -804,13 +824,16 @@ def load_pipeline_config(
     project_root: str | Path | None = None,
 ) -> LoadedConfig:
     """
+    Load, merge, render, and enrich a stage-specific pipeline config.
+
     Merge config fragments in this order:
     1. base.yaml
     2. datasets/<dataset>.yaml
     3. modes/<mode>.yaml | modes/<mode>
     4. stages/<stage>.yaml | stages/<stage>
 
-    The merged config is then template-rendered and enriched with derived filenames and paths.
+    Parameters select the config fragments, runtime metadata, and project
+    root. Returns the resolved config plus its hash and source file list.
     """
     config_root = Path(config_root).resolve()
     project_root = Path(project_root).resolve() if project_root else Path.cwd().resolve()
@@ -902,6 +925,8 @@ def export_config_snapshot(
     config: Mapping[str, Any],
     destination: Path,
 ) -> Path:
+    """Write a resolved config snapshot to YAML and return the destination path."""
+
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
@@ -922,7 +947,8 @@ def export_config_snapshot(
 
 
 def build_truth_config_block(config: Mapping[str, Any]) -> dict[str, Any]:
-    """Small config payload to embed in your truth record."""
+    """Build the compact config payload embedded in a truth record."""
+
     return {
         "config_hash": config["config_meta"]["config_hash"],
         "source_files": config["config_meta"]["source_files"],
@@ -939,6 +965,8 @@ def build_truth_config_block(config: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def set_wandb_dir_from_config(config: Mapping[str, Any]) -> Path:
+    """Create the configured W&B directory and set the WANDB_DIR environment variable."""
+
     wandb_root = Path(config["resolved_paths"]["wandb_root"]).resolve()
     wandb_root.mkdir(parents=True, exist_ok=True)
     os.environ["WANDB_DIR"] = str(wandb_root)

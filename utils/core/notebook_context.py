@@ -15,6 +15,8 @@ from utils.core.ledger import Ledger
 
 @dataclass(frozen=True)
 class NotebookContext:
+    """Container for resolved notebook configuration, logging, and ledger state."""
+
     stage: str
     recipe_id: str
     dataset: str
@@ -38,12 +40,16 @@ class NotebookContext:
 
 
 def _require_mapping(value: Any, name: str) -> Dict[str, Any]:
+    """Return a copied mapping or raise TypeError for required config sections."""
+
     if not isinstance(value, Mapping):
         raise TypeError(f"{name} must be a mapping, got {type(value).__name__}")
     return dict(value)
 
 
 def _optional_mapping(value: Any, name: str) -> Dict[str, Any]:
+    """Return a copied optional mapping, using an empty dict when omitted."""
+
     if value is None:
         return {}
     if not isinstance(value, Mapping):
@@ -72,6 +78,29 @@ def load_notebook_context(
     initialization. Individual notebooks should use this function once near the
     top of the notebook, then create small compatibility aliases such as
     `GOLD_CFG = CTX.stage_config` or `DATASET_CFG = CTX.dataset_config`.
+
+    Parameters
+    ----------
+    stage:
+        Stage configuration key to load and expose as `stage_config`.
+    recipe_id:
+        Optional recipe identifier. Falls back to stage config values or a
+        deterministic stage-based default.
+    dataset, mode, profile:
+        Configuration overlays passed to the project config loader.
+    logger_name, logger_child_name, log_filename, log_level, overwrite_handlers:
+        Logging options forwarded to the shared logging setup.
+
+    Returns
+    -------
+    NotebookContext
+        Frozen context containing paths, resolved config sections, logger,
+        ledger, and log path for notebook use.
+
+    Side Effects
+    ------------
+    Configures logging handlers and records an initialization entry in the
+    notebook ledger.
     """
     paths = get_paths()
 

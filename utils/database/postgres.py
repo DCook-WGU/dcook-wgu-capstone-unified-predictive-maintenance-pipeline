@@ -37,6 +37,9 @@ def sanitize_sql_identifier(name: str) -> str:
 # -----------------------------------------------------------------------------
 
 def _get_first_env_value(names: Sequence[str]) -> Optional[str]:
+    """
+    Return the first non-empty environment variable value from an ordered list.
+    """
     for name in names:
         value = os.getenv(name)
         if value is not None and str(value).strip() != "":
@@ -172,6 +175,9 @@ def get_engine_from_env(
 # -----------------------------------------------------------------------------
 
 def create_schema_if_not_exists(engine: Engine, schema: str) -> str:
+    """
+    Create a sanitized Postgres schema when absent and return its safe name.
+    """
     safe_schema = sanitize_sql_identifier(schema)
     with engine.begin() as connection:
         connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{safe_schema}"'))
@@ -180,6 +186,9 @@ def create_schema_if_not_exists(engine: Engine, schema: str) -> str:
 
 
 def execute_sql(engine: Engine, sql: str, params: Optional[Mapping[str, Any]] = None) -> None:
+    """
+    Execute one SQL statement inside a managed transaction.
+    """
     with engine.begin() as connection:
         connection.execute(text(sql), params or {})
 
@@ -190,12 +199,18 @@ def read_sql_dataframe(
     sql: str,
     params: Optional[Mapping[str, Any]] = None,
 ) -> pd.DataFrame:
+    """
+    Execute a SQL query and return the result as a pandas DataFrame.
+    """
     with engine.begin() as connection:
         return pd.read_sql(text(sql), connection, params=params or {})
 
 
 
 def table_exists(engine: Engine, *, schema: str, table_name: str) -> bool:
+    """
+    Return whether a sanitized schema/table exists in Postgres.
+    """
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
