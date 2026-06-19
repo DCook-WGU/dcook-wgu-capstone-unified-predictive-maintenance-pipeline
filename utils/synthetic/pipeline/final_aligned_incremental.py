@@ -28,6 +28,7 @@ from utils.synthetic.pipeline.final_aligned_observation_writer import (
 # -----------------------------------------------------------------------------
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing Postgres columns for incremental final alignment."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -45,6 +46,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres type for an added aligned-output column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -60,6 +62,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are missing from the final-aligned target."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -90,6 +93,7 @@ def _remove_existing_target_rows(
     schema: str,
     target_table: str,
 ) -> tuple[pd.DataFrame, int]:
+    """Remove rows already present in the final-aligned target table."""
     if dataframe.empty:
         return dataframe.copy(), 0
 
@@ -145,6 +149,7 @@ def ensure_rebuilt_final_align_runtime_columns(
     schema: str = "capstone",
     source_table: str = "synthetic_sensor_observations_rebuilt_stage",
 ) -> None:
+    """Add final-alignment claim/status columns to the rebuilt source table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(source_table)
 
@@ -221,6 +226,7 @@ def claim_rebuilt_rows_for_final_align(
     complete_only: bool = True,
     final_align_token: Optional[str] = None,
 ) -> pd.DataFrame:
+    """Claim a bounded batch of rebuilt observations for final alignment."""
     ensure_rebuilt_final_align_runtime_columns(
         engine,
         schema=schema,
@@ -282,6 +288,7 @@ def load_premelt_for_claimed_final_align(
     schema: str = "capstone",
     premelt_table: str = "synthetic_observations_premelt_stage",
 ) -> pd.DataFrame:
+    """Load premelt rows matching a claimed final-alignment batch."""
     if claimed_rows.empty:
         return pd.DataFrame()
 
@@ -334,6 +341,7 @@ def build_claimed_final_aligned_rows(
     n_sensors: int = 52,
     prefer_rebuilt_sensor_values: bool = True,
 ) -> pd.DataFrame:
+    """Build final-aligned rows for one claimed rebuilt batch."""
     if claimed_rows.empty:
         return pd.DataFrame()
 
@@ -371,6 +379,7 @@ def write_claimed_final_aligned_rows(
     schema: str = "capstone",
     target_table: str = "synthetic_sensor_observations_final_aligned_stage",
 ) -> dict:
+    """Append claimed final-aligned rows and report duplicate-key skips."""
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
 
@@ -439,6 +448,7 @@ def mark_claimed_final_align_completed(
     schema: str = "capstone",
     rebuilt_table: str = "synthetic_sensor_observations_rebuilt_stage",
 ) -> None:
+    """Mark rebuilt rows for a final-alignment token as completed."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(rebuilt_table)
 
@@ -466,6 +476,7 @@ def mark_claimed_final_align_failed(
     schema: str = "capstone",
     rebuilt_table: str = "synthetic_sensor_observations_rebuilt_stage",
 ) -> None:
+    """Mark rebuilt rows for a final-alignment token as failed."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(rebuilt_table)
 
@@ -493,6 +504,7 @@ def requeue_failed_final_aligns(
     schema: str = "capstone",
     rebuilt_table: str = "synthetic_sensor_observations_rebuilt_stage",
 ) -> int:
+    """Return failed final-alignment claims to pending status."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(rebuilt_table)
 
@@ -546,6 +558,7 @@ def final_align_rebuilt_observations_to_stage(
     complete_only: bool = True,
     prefer_rebuilt_sensor_values: bool = True,
 ) -> dict:
+    """Claim, build, write, and mark one final-alignment batch."""
     claimed = claim_rebuilt_rows_for_final_align(
         engine=engine,
         batch_size=batch_size,
@@ -568,6 +581,7 @@ def final_align_rebuilt_observations_to_stage(
     final_align_token = str(claimed["final_align_token"].iloc[0])
 
     try:
+        # Build and write before marking the claimed rebuilt rows completed.
         final_dataframe = build_claimed_final_aligned_rows(
             engine=engine,
             claimed_rows=claimed,
@@ -635,6 +649,7 @@ def run_final_align_loop(
     max_iterations: Optional[int] = None,
     stop_on_failure: bool = True,
 ) -> list[dict]:
+    """Run final alignment batches until empty, capped, or failed."""
     results: list[dict] = []
     iteration = 0
 

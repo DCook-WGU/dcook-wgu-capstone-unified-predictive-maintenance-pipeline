@@ -29,6 +29,7 @@ except ImportError:  # pragma: no cover
 # -----------------------------------------------------------------------------
 
 def _get_first_env_value(names: Sequence[str]) -> Optional[str]:
+    """Return the first non-empty environment value from a list of aliases."""
     for name in names:
         value = os.getenv(name)
         if value is not None and str(value).strip() != "":
@@ -43,6 +44,7 @@ def get_kafka_bootstrap_servers_from_env(
         "KAFKA_BROKERS",
     ),
 ) -> str:
+    """Read Kafka bootstrap servers from the supported environment variables."""
     value = _get_first_env_value(env_names)
     if value is None:
         raise RuntimeError(
@@ -57,6 +59,7 @@ def get_kafka_bootstrap_servers_from_env(
 # -----------------------------------------------------------------------------
 
 def _is_missing(value: Any) -> bool:
+    """Return True for pandas/numpy missing values without failing on objects."""
     try:
         return bool(pd.isna(value))
     except Exception:
@@ -64,6 +67,7 @@ def _is_missing(value: Any) -> bool:
 
 
 def _normalize_scalar(value: Any) -> Any:
+    """Convert pandas, datetime, Decimal, and numpy scalars into JSON-safe values."""
     if _is_missing(value):
         return None
 
@@ -86,6 +90,7 @@ def _normalize_scalar(value: Any) -> Any:
 
 
 def json_dumps_safe(payload: Mapping[str, Any]) -> str:
+    """Serialize a Kafka payload after normalizing dataframe scalar types."""
     def _default(value: Any) -> Any:
         normalized = _normalize_scalar(value)
         if isinstance(normalized, (str, int, float, bool)) or normalized is None:
@@ -108,6 +113,7 @@ def build_confluent_producer_config(
     compression_type: Optional[str] = None,
     extra_config: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
+    """Build the Confluent producer configuration used by the synthetic sender."""
     config: dict[str, Any] = {
         "bootstrap.servers": str(bootstrap_servers).strip(),
         "client.id": str(client_id).strip(),
@@ -133,6 +139,7 @@ def create_confluent_producer(
     compression_type: Optional[str] = None,
     extra_config: Optional[dict[str, Any]] = None,
 ):
+    """Create a Confluent Kafka producer from explicit or environment settings."""
     if Producer is None:
         raise ImportError(
             "confluent_kafka is not installed. Install 'confluent-kafka' in your environment."
@@ -156,6 +163,12 @@ def create_confluent_producer(
 # -----------------------------------------------------------------------------
 
 def build_sensor_message_payload(row: Mapping[str, Any]) -> dict[str, Any]:
+    """
+    Convert one claimed send-queue row into the nested Kafka message payload.
+
+    The payload groups observation, sensor, metadata, telemetry, and producer
+    fields so the consumer can rebuild the landed Postgres row deterministically.
+    """
     return {
         "message_key": _normalize_scalar(row.get("message_key")),
         "dataset_id": _normalize_scalar(row.get("dataset_id")),
@@ -229,6 +242,7 @@ def publish_claimed_batch_to_kafka(
     delivered_count = 0
 
     def _delivery_callback(err, msg) -> None:
+        """Track broker acknowledgement results for the current claimed batch."""
         nonlocal delivered_count
         if err is not None:
             errors.append(str(err))
@@ -242,6 +256,7 @@ def publish_claimed_batch_to_kafka(
         key = str(row.get("message_key"))
         value = json_dumps_safe(payload)
 
+        # Back off when the local producer buffer is full, then retry the same row.
         produced = False
         while not produced:
             try:
@@ -292,6 +307,7 @@ def run_send_queue_producer_once(
     Claim the next pending queue batch, publish it to Kafka, then mark it sent
     or failed as a single claim group.
     """
+    # Runtime control keeps topic and batch settings in Postgres for the run.
     control_row = read_simulation_state_control(
         engine=engine,
         dataset_id=dataset_id,
@@ -345,6 +361,7 @@ def run_send_queue_producer_once(
         }
 
     try:
+        # Only mark rows as sent after every produced message is acknowledged.
         publish_result = publish_claimed_batch_to_kafka(
             producer=producer,
             claimed_dataframe=claimed_dataframe,
@@ -474,6 +491,7 @@ def run_send_queue_producer_loop(
 
     try:
         while True:
+            # Re-read control each batch so the run can be paused externally.
             if max_batches is not None and batch_counter >= int(max_batches):
                 if enable_progress_logging:
                     print(

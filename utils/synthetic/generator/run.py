@@ -45,6 +45,7 @@ logger = logging.getLogger("capstone.synthetic")
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse CLI options for the standalone synthetic generation stage."""
     parser = argparse.ArgumentParser(description="Run synthetic data generation stage.")
     parser.add_argument("--stage", default="synthetic")
     parser.add_argument("--dataset", default="pump")
@@ -73,6 +74,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Run the generator stage from config, parent truth, and CLI overrides.
+
+    The script loads Silver EDA artifacts from a parent truth record, builds a
+    SyntheticGenerator, writes the generated episode artifact, and records the
+    synthetic truth metadata needed by downstream stages.
+    """
     args = parse_args()
 
     # ---------------------------

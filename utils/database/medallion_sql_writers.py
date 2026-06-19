@@ -1,3 +1,18 @@
+"""SQL writer helpers for Medallion notebook outputs.
+
+This module writes selected Bronze, Silver, and Gold notebook dataframes into
+the PostgreSQL tables created by the capstone bootstrap. The helpers are meant
+for notebook use: callers pass a SQLAlchemy engine plus dataset/run identifiers,
+and either pass a dataframe directly or provide notebook globals so the helper
+can find an expected dataframe name.
+
+The writers preserve the notebook artifact pipeline. They only add SQL-facing
+records for layer tables and metadata tables such as ``capstone.pipeline_runs``,
+``capstone.data_quality_events``, and ``capstone.pipeline_artifacts``. They use
+print-style status messages for notebook feedback and do not write project
+ledger entries directly.
+"""
+
 # =============================================================================
 # Medallion SQL Writers
 # File:
@@ -46,6 +61,15 @@ def _resolve_dataframe(
 
     Prefer an explicitly supplied dataframe. If none is supplied, search the
     notebook globals for the first matching dataframe name.
+
+    Raises
+    ------
+    TypeError
+        If ``dataframe`` is supplied but is not a pandas dataframe.
+    ValueError
+        If neither ``dataframe`` nor ``notebook_globals`` is supplied.
+    NameError
+        If none of the candidate names resolve to a dataframe.
     """
     if dataframe is not None:
         if not isinstance(dataframe, pd.DataFrame):
@@ -81,6 +105,22 @@ def _execute_many(
 ) -> int:
     """
     Execute a parameterized SQL statement for many rows in chunks.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to the capstone PostgreSQL database.
+    sql:
+        Parameterized SQL statement using named parameters.
+    rows:
+        Row dictionaries to bind into the SQL statement.
+    chunk_size:
+        Maximum number of rows sent per database execute call.
+
+    Returns
+    -------
+    int
+        Number of rows submitted to PostgreSQL.
     """
     if not rows:
         print("No rows to write.")
@@ -107,6 +147,9 @@ def _delete_dataset_run_rows(
 ) -> int:
     """
     Delete existing rows for one dataset/run before writing notebook outputs.
+
+    This supports idempotent notebook reruns for layer tables keyed by
+    ``dataset_id`` and ``run_id``.
     """
     table_reference = sql_table_ref(schema, table)
 
@@ -142,6 +185,9 @@ def _delete_model_score_rows(
 ) -> int:
     """
     Delete existing score rows for one dataset/run/model/stage.
+
+    This supports idempotent reruns for Gold score tables that can contain more
+    than one model or cascade stage for the same dataset/run pair.
     """
     table_reference = sql_table_ref(schema, table)
 
@@ -198,6 +244,11 @@ def _upsert_pipeline_run(
 ) -> None:
     """
     Upsert one capstone.pipeline_runs row for a notebook/stage.
+
+    The metadata row is written to the configured ``capstone_schema`` and uses a
+    stage-specific run id so multiple notebooks can record metadata for the same
+    source ``run_id`` without overwriting each other. This helper does not write
+    project ledger entries.
     """
     table_reference = sql_table_ref(capstone_schema, "pipeline_runs")
     pipeline_run_id = _stage_pipeline_run_id(run_id, pipeline_stage)
@@ -281,6 +332,10 @@ def _log_data_quality_event(
 ) -> None:
     """
     Insert one capstone.data_quality_events row.
+
+    The event records the dataset/run, layer/table, check name, row count, and
+    optional JSON details for SQL-facing audit metadata. It is separate from the
+    project ledger and only affects the configured metadata schema.
     """
     table_reference = sql_table_ref(capstone_schema, "data_quality_events")
 
@@ -347,6 +402,10 @@ def _log_pipeline_artifact(
 ) -> None:
     """
     Insert one capstone.pipeline_artifacts row.
+
+    The artifact record links a notebook artifact path or truth hash to a
+    dataset/run/layer/stage in ``capstone.pipeline_artifacts``. This records
+    metadata only; it does not create or move artifact files.
     """
     table_reference = sql_table_ref(capstone_schema, "pipeline_artifacts")
 
@@ -417,6 +476,45 @@ def write_bronze_sensor_observations_sql(
 ) -> pd.DataFrame:
     """
     Write final Bronze dataframe rows to bronze.sensor_observations.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to the capstone PostgreSQL database.
+    capstone_schema:
+        Metadata schema that contains ``pipeline_runs`` and
+        ``data_quality_events``.
+    layer_schema:
+        Target Bronze schema. Defaults to ``bronze``.
+    dataset_id, run_id:
+        Dataset and run identifiers written into every Bronze row.
+    notebook_globals:
+        Optional notebook globals dictionary used to find a dataframe by the
+        expected candidate names when ``dataframe`` is not supplied.
+    dataframe:
+        Optional dataframe to write directly.
+    dataset_name:
+        Optional display name stored in pipeline metadata.
+    candidate_names:
+        Optional override for notebook-global dataframe lookup names.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Row-count summary read back from ``bronze.sensor_observations``.
+
+    Side Effects
+    ------------
+    Deletes existing Bronze rows for the same dataset/run, inserts the new raw
+    payload rows, upserts one pipeline run metadata row, and inserts one data
+    quality event. The helper prints notebook status messages and does not write
+    ledger entries.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when the supplied dataframe or notebook
+        globals are invalid or missing.
     """
     schema = sanitize_sql_identifier(layer_schema)
     metadata_schema = sanitize_sql_identifier(capstone_schema)
@@ -572,6 +670,42 @@ def write_silver_sensor_observation_features_sql(
 ) -> pd.DataFrame:
     """
     Write final Silver dataframe rows to silver.sensor_observation_features.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to the capstone PostgreSQL database.
+    capstone_schema:
+        Metadata schema used for pipeline run and data quality records.
+    dataset_id, run_id:
+        Dataset and run identifiers written into each Silver feature row.
+    notebook_globals:
+        Optional notebook globals dictionary used for dataframe lookup.
+    dataframe:
+        Optional Silver dataframe to write directly.
+    dataset_name:
+        Optional display name stored in pipeline metadata.
+    candidate_names:
+        Optional override for notebook dataframe candidate names.
+    feature_set_id:
+        Default feature set identifier when the dataframe has no feature-set
+        metadata column.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Row-count summary grouped by ``feature_set_id``.
+
+    Side Effects
+    ------------
+    Deletes existing Silver rows for the same dataset/run, inserts feature and
+    quality JSON payloads into ``silver.sensor_observation_features``, upserts
+    pipeline metadata, and inserts a data quality event.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when input dataframe context is invalid.
     """
     schema = "silver"
     table = "sensor_observation_features"
@@ -760,6 +894,41 @@ def log_silver_eda_sql(
 ) -> pd.DataFrame:
     """
     Log Silver EDA profile metadata to capstone metadata tables.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to PostgreSQL.
+    capstone_schema:
+        Metadata schema that contains ``pipeline_runs``,
+        ``data_quality_events``, and ``pipeline_artifacts``.
+    dataset_id, run_id:
+        Dataset and run identifiers for the Silver EDA notebook.
+    notebook_globals:
+        Optional notebook globals used for dataframe lookup and artifact-path
+        discovery.
+    dataframe:
+        Optional dataframe to profile directly.
+    dataset_name:
+        Optional dataset display name stored in pipeline metadata.
+    candidate_names:
+        Optional override for dataframe lookup names.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Recent Silver data quality event rows for the dataset/run.
+
+    Side Effects
+    ------------
+    Upserts a ``silver_eda`` pipeline run, inserts one data quality event, and
+    logs known Silver EDA artifact path variables when they are present in
+    ``notebook_globals``. It does not create artifacts or write ledger entries.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when input dataframe context is invalid.
     """
     candidates = candidate_names or [
         "silver_eda_dataframe",
@@ -1106,6 +1275,43 @@ def write_gold_preprocessed_features_sql(
 ) -> pd.DataFrame:
     """
     Write Gold preprocessed features to gold.preprocessed_features.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to PostgreSQL.
+    capstone_schema:
+        Metadata schema used for pipeline run and data quality records.
+    dataset_id, run_id:
+        Dataset and run identifiers written into each Gold feature row.
+    notebook_globals:
+        Optional notebook globals dictionary used for dataframe lookup.
+    dataframe:
+        Optional Gold preprocessing dataframe to write directly.
+    dataset_name:
+        Optional dataset display name stored in metadata.
+    candidate_names:
+        Optional override for dataframe lookup names.
+    feature_set_id:
+        Default feature set identifier when the dataframe has no feature-set
+        metadata column.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Row-count summary grouped by ``split_name``.
+
+    Side Effects
+    ------------
+    Ensures ``gold.preprocessed_features`` exists, deletes existing rows for the
+    same dataset/run, inserts feature JSON rows, upserts pipeline metadata, and
+    inserts a data quality event. It prints notebook status messages and does
+    not write ledger entries.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when input dataframe context is invalid.
     """
     schema = "gold"
     table = "preprocessed_features"
@@ -1300,6 +1506,49 @@ def write_gold_anomaly_scores_sql(
 ) -> pd.DataFrame:
     """
     Generic writer for gold.anomaly_detection_scores.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to PostgreSQL.
+    capstone_schema:
+        Metadata schema used for pipeline run and data quality records.
+    dataset_id, run_id:
+        Dataset and run identifiers written into each score row.
+    model_name, model_stage:
+        Model identifiers stored in ``gold.anomaly_detection_scores``.
+    score_column_candidates, flag_column_candidates:
+        Ordered candidate column names used to find the anomaly score and flag
+        columns in the source dataframe.
+    notebook_globals:
+        Optional notebook globals dictionary used for dataframe lookup.
+    dataframe:
+        Optional scored dataframe to write directly.
+    dataset_name:
+        Optional dataset display name stored in metadata.
+    candidate_names:
+        Optional override for scored dataframe lookup names.
+    evidence_column_mode:
+        ``basic`` writes the score/flag evidence columns; ``cascade`` also
+        captures cascade rule/evidence columns.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Row-count and alert-count summary for the written model/stage.
+
+    Side Effects
+    ------------
+    Deletes existing score rows for the same dataset/run/model/stage, inserts
+    score rows into ``gold.anomaly_detection_scores``, upserts pipeline
+    metadata, and inserts a data quality event.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when input dataframe context is invalid.
+    KeyError
+        If no score or anomaly-flag column can be found.
     """
     schema = "gold"
     table = "anomaly_detection_scores"
@@ -1504,6 +1753,28 @@ def write_gold_baseline_scores_sql(
 ) -> pd.DataFrame:
     """
     Convenience wrapper for baseline Isolation Forest scores.
+
+    Parameters
+    ----------
+    engine, capstone_schema, dataset_id, run_id:
+        Database and identity values passed through to
+        ``write_gold_anomaly_scores_sql``.
+    notebook_globals:
+        Optional notebook globals dictionary used for dataframe lookup.
+    dataframe:
+        Optional baseline scored dataframe to write directly.
+    dataset_name:
+        Optional dataset display name stored in metadata.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Row-count and alert-count summary for the baseline model.
+
+    Side Effects
+    ------------
+    Writes baseline score rows and metadata through
+    ``write_gold_anomaly_scores_sql``.
     """
     return write_gold_anomaly_scores_sql(
         engine=engine,
@@ -1548,6 +1819,30 @@ def write_gold_cascade_scores_sql(
     notebooks write to the same SQL table for the same dataset/run. For example:
     cascade_default_final, cascade_tuned_final, or
     cascade_stage3_improved_final.
+
+    Parameters
+    ----------
+    engine, capstone_schema, dataset_id, run_id:
+        Database and identity values passed through to
+        ``write_gold_anomaly_scores_sql``.
+    notebook_globals:
+        Optional notebook globals dictionary used for dataframe lookup.
+    dataframe:
+        Optional cascade scored dataframe to write directly.
+    dataset_name:
+        Optional dataset display name stored in metadata.
+    model_stage:
+        Stage-specific cascade label stored with the Gold score rows.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Row-count and alert-count summary for the cascade model stage.
+
+    Side Effects
+    ------------
+    Writes cascade score rows and metadata through
+    ``write_gold_anomaly_scores_sql``.
     """
     return write_gold_anomaly_scores_sql(
         engine=engine,
@@ -1599,6 +1894,43 @@ def write_gold_model_comparison_results_sql(
 ) -> pd.DataFrame:
     """
     Write baseline-vs-cascade comparison summary to gold.model_comparison_results.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to PostgreSQL.
+    capstone_schema:
+        Metadata schema used for pipeline run and data quality records.
+    dataset_id, run_id:
+        Dataset and run identifiers for the comparison record.
+    notebook_globals:
+        Optional notebook globals dictionary used for dataframe lookup.
+    dataframe:
+        Optional comparison dataframe to write directly.
+    dataset_name:
+        Optional dataset display name stored in metadata.
+    candidate_names:
+        Optional override for comparison dataframe lookup names.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Recent comparison rows read back from ``gold.model_comparison_results``.
+
+    Side Effects
+    ------------
+    Deletes existing comparison rows for the same dataset/run, inserts one
+    baseline-vs-cascade comparison record, upserts pipeline metadata, and
+    inserts a data quality event.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when input dataframe context is invalid.
+    KeyError
+        If the comparison dataframe has no ``model`` column.
+    ValueError
+        If baseline or cascade comparison rows cannot be found.
     """
     schema = "gold"
     table = "model_comparison_results"
@@ -1655,6 +1987,9 @@ def write_gold_model_comparison_results_sql(
     cascade_row = cascade_rows.iloc[0]
 
     def comparison_value(row: pd.Series, candidates: list[str], default: Any = None) -> Any:
+        """
+        Return the first available comparison metric from a candidate list.
+        """
         for candidate in candidates:
             if candidate in row.index:
                 return to_scalar(row[candidate])
@@ -1802,6 +2137,41 @@ def log_gold_05_anomaly_detection_summary_sql(
 ) -> pd.DataFrame:
     """
     Log Gold 05 anomaly-detection summary metadata.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to PostgreSQL.
+    capstone_schema:
+        Metadata schema that contains ``pipeline_runs``,
+        ``data_quality_events``, and ``pipeline_artifacts``.
+    dataset_id, run_id:
+        Dataset and run identifiers for the Gold 05 notebook.
+    notebook_globals:
+        Optional notebook globals used for dataframe lookup, selected-run
+        metadata, and artifact-path discovery.
+    dataframe:
+        Optional summary dataframe to log directly.
+    dataset_name:
+        Optional dataset display name stored in metadata.
+    candidate_names:
+        Optional override for summary dataframe lookup names.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Recent pipeline run metadata rows for the source run.
+
+    Side Effects
+    ------------
+    Upserts a Gold 05 summary pipeline run, inserts a data quality event, and
+    logs known Gold 05 artifact path variables when present in
+    ``notebook_globals``. It does not create artifacts or write ledger entries.
+
+    Raises
+    ------
+    TypeError, ValueError, NameError
+        Raised by dataframe resolution when input dataframe context is invalid.
     """
     candidates = candidate_names or [
         "gold05_output_manifest_df",

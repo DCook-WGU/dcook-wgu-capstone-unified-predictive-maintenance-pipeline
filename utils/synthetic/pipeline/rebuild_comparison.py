@@ -25,6 +25,7 @@ from utils.database.chunk_stage_util import (
 # -----------------------------------------------------------------------------
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing Postgres columns for a comparison-stage table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -42,6 +43,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres type for an added comparison column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -57,6 +59,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are missing from the comparison target table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -81,15 +84,18 @@ def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataF
 
 
 def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
+    """Return sensor column names expected in premelt and rebuilt frames."""
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
 def _normalize_missing_scalar(value):
+    """Normalize pandas missing values before scalar comparison."""
     if pd.isna(value):
         return None
     return value
 
 def _compare_scalar(left, right, *, float_tolerance: float = 1e-9) -> bool:
+    """Compare scalar values with tolerance for numeric-looking values."""
     left = _normalize_missing_scalar(left)
     right = _normalize_missing_scalar(right)
 
@@ -118,6 +124,7 @@ def _compare_scalar(left, right, *, float_tolerance: float = 1e-9) -> bool:
 # -----------------------------------------------------------------------------
 
 def _validate_premelt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
+    """Validate original premelt columns needed for rebuild comparison."""
     required_columns = [
         "dataset_id",
         "run_id",
@@ -140,6 +147,7 @@ def _validate_premelt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
 
 
 def _validate_rebuilt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
+    """Validate rebuilt columns needed for field-by-field comparison."""
     required_columns = [
         "dataset_id",
         "run_id",
@@ -175,6 +183,7 @@ def load_premelt_for_comparison(
     dataset_id: Optional[str] = None,
     run_id: Optional[str] = None,
 ) -> pd.DataFrame:
+    """Load original premelt observations for rebuild comparison."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -210,6 +219,7 @@ def load_rebuilt_for_comparison(
     dataset_id: Optional[str] = None,
     run_id: Optional[str] = None,
 ) -> pd.DataFrame:
+    """Load rebuilt wide observations for comparison against premelt rows."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -248,6 +258,12 @@ def build_rebuild_comparison_dataframe(
     n_sensors: int = 52,
     float_tolerance: float = 1e-9,
 ) -> pd.DataFrame:
+    """
+    Compare original premelt observations against rebuilt observations.
+
+    The output flags row presence, per-field matches, total mismatch count, and
+    notes that explain whether a row is missing or which fields differ.
+    """
     if premelt_dataframe.empty and rebuilt_dataframe.empty:
         return pd.DataFrame()
 
@@ -271,6 +287,7 @@ def build_rebuild_comparison_dataframe(
         indicator=True,
     )
 
+    # Preserve row-presence checks before field-level comparisons are computed.
     comparison["exists_in_original"] = comparison["_merge"].isin(["both", "left_only"])
     comparison["exists_in_rebuilt"] = comparison["_merge"].isin(["both", "right_only"])
 
@@ -362,6 +379,7 @@ def ensure_rebuild_comparison_table_exists(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_rebuild_comparison_stage",
 ) -> str:
+    """Create the rebuild comparison table and mismatch lookup indexes."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -408,6 +426,7 @@ def _remove_existing_comparison_rows(
     schema: str,
     target_table: str,
 ) -> pd.DataFrame:
+    """Drop comparison rows whose observation keys already exist in the target."""
     if comparison_dataframe.empty:
         return comparison_dataframe.copy()
 
@@ -457,6 +476,7 @@ def write_rebuild_comparison_batch(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_rebuild_comparison_stage",
 ) -> str:
+    """Append comparison rows after adding completion time and missing columns."""
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
     if dataframe.empty:
@@ -517,6 +537,7 @@ def build_rebuild_comparison_stage(
     float_tolerance: float = 1e-9,
     observation_window_size: int = 2500,
 ) -> dict:
+    """Build comparison rows in observation windows and write them to Postgres."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_premelt_table = sanitize_sql_identifier(premelt_table)
     safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
@@ -548,6 +569,7 @@ def build_rebuild_comparison_stage(
     }
 
     def transform_chunk_func(df_premelt_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> pd.DataFrame:
+        """Load the matching rebuilt window and compare it to the premelt window."""
         rebuilt_window = read_table_for_observation_window(
             engine,
             schema_name=safe_schema,
@@ -568,6 +590,7 @@ def build_rebuild_comparison_stage(
         )
 
     def write_chunk_func(df_out: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> None:
+        """Write one non-empty comparison window and update stage stats."""
         if df_out.empty:
             return
 

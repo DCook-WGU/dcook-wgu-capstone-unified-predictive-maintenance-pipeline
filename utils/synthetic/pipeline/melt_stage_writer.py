@@ -34,6 +34,7 @@ from utils.database.chunk_stage_util import (
 # -----------------------------------------------------------------------------
 
 def log_step_timing(step_name: str, start_time: float) -> float:
+    """Print elapsed time for a melt-stage step and return a new timer."""
     elapsed_seconds = perf_counter() - start_time
     print(f"[timing] {step_name}: {elapsed_seconds:,.2f} seconds")
     return perf_counter()
@@ -44,10 +45,12 @@ def log_step_timing(step_name: str, start_time: float) -> float:
 # -----------------------------------------------------------------------------
 
 def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
+    """Build the expected wide sensor column names for a synthetic observation."""
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
 def _validate_source_columns(dataframe: pd.DataFrame, required_columns: Sequence[str]) -> None:
+    """Validate that a timestamped observation frame has melt-stage inputs."""
     missing = [column for column in required_columns if column not in dataframe.columns]
     if missing:
         raise ValueError(
@@ -57,6 +60,7 @@ def _validate_source_columns(dataframe: pd.DataFrame, required_columns: Sequence
 
 
 def _extract_sensor_index(sensor_name_series: pd.Series) -> pd.Series:
+    """Extract the numeric sensor index from names like `sensor_00`."""
     return (
         sensor_name_series.astype(str)
         .str.extract(r"(\d+)$", expand=False)
@@ -88,10 +92,12 @@ def _build_message_sequence_index_with_rng(
 # -----------------------------------------------------------------------------
 
 def quote_ident(identifier: str) -> str:
+    """Quote a SQL identifier for direct SQLAlchemy text statements."""
     return '"' + str(identifier).replace('"', '""') + '"'
 
 
 def fq_table(schema: str, table_name: str) -> str:
+    """Return a quoted fully qualified table name."""
     return f"{quote_ident(schema)}.{quote_ident(table_name)}"
 
 # -----------------------------------------------------------------------------
@@ -99,6 +105,7 @@ def fq_table(schema: str, table_name: str) -> str:
 # -----------------------------------------------------------------------------
 
 def get_table_columns(engine, *, schema: str, table_name: str) -> list[str]:
+    """Return source table columns in database ordinal order."""
     columns_df = read_sql_dataframe(
         engine,
         """
@@ -127,6 +134,7 @@ def ensure_sensor_columns_exist(
     table_name: str,
     sensor_columns: list[str],
 ) -> None:
+    """Add missing wide sensor columns before SQL-native melting."""
     existing_columns = set(
         get_table_columns(
             engine,
@@ -178,6 +186,8 @@ def build_sensor_messages_stage(
     """
     Build the long-format sensor message stage from the timestamped premelt
     observation stage in chunks instead of loading/melting the full table at once.
+    The output has one row per observation/sensor pair and is the input shape
+    used by later send-queue construction.
     """
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
@@ -266,7 +276,7 @@ def build_sensor_messages_stage(
     ) -> pd.DataFrame:
         dataframe_work = dataframe_chunk.copy()
 
-        # Optional downcast to reduce memory pressure before melt
+        # Keep chunk memory lower before converting wide observations to long rows.
         for column in sensor_columns:
             if column in dataframe_work.columns:
                 dataframe_work[column] = pd.to_numeric(dataframe_work[column], errors="coerce").astype("float32")
@@ -408,6 +418,7 @@ def build_sensor_messages_stage_sql_native(
     n_sensors: int = 52,
     enable_memory_logging: bool = False,
 ) -> str:
+    """Build the long sensor-message stage using a SQL CROSS JOIN LATERAL melt."""
     sensor_columns = [f"sensor_{sensor_index:02d}" for sensor_index in range(n_sensors)]
 
     ensure_sensor_columns_exist(
@@ -432,6 +443,7 @@ def build_sensor_messages_stage_sql_native(
     if enable_memory_logging:
         log_memory("stage 04 sql-native - after metadata read")
 
+    # Preserve non-sensor metadata while expanding sensor columns into rows.
     passthrough_columns = [
         column
         for column in source_columns
@@ -528,6 +540,7 @@ def validate_sensor_messages_stage(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_stage",
 ) -> pd.DataFrame:
+    """Return row-count and sensor coverage checks for the melt stage table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 

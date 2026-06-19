@@ -37,6 +37,7 @@ def ensure_simulation_timing_config_table(
     schema: str = "capstone",
     table_name: str = "simulation_timing_config",
 ) -> str:
+    """Create the timing configuration table used to timestamp observations."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -197,6 +198,7 @@ def load_simulation_timing_config(
     schema: str = "capstone",
     table_name: str = "simulation_timing_config",
 ) -> dict:
+    """Load the active timing configuration for one dataset/run pair."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -238,6 +240,7 @@ def load_simulation_timing_config(
 
 
 def _get_table_columns(engine, *, schema: str, table_name: str) -> list[str]:
+    """Return source table columns in database ordinal order."""
     sql = """
     SELECT column_name
     FROM information_schema.columns
@@ -258,6 +261,7 @@ def _get_table_columns(engine, *, schema: str, table_name: str) -> list[str]:
 
 
 def _validate_source_columns(columns: Sequence[str]) -> None:
+    """Validate that the premelt table has timestamp-stage inputs."""
     required_columns = [
         "dataset_id",
         "run_id",
@@ -287,6 +291,7 @@ def _validate_source_columns(columns: Sequence[str]) -> None:
 
 
 def _build_select_sql(*, safe_schema: str, safe_source_table: str, remaining_source_columns: Sequence[str]) -> str:
+    """Build SQL that derives observation timestamps from timing config."""
     remaining_sql = ",\n        ".join([f'"{column}"' for column in remaining_source_columns])
     remaining_clause = f",\n        {remaining_sql}" if remaining_sql else ""
 
@@ -329,6 +334,7 @@ def _write_stage_sql_native(
     params: dict,
     if_exists: str,
 ) -> str:
+    """Create, append to, or fail on the timestamp target table in Postgres."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_target_table = sanitize_sql_identifier(target_table)
     write_mode = str(if_exists).strip().lower()
@@ -377,6 +383,7 @@ def _write_stage_sql_native(
 # -----------------------------------------------------------------------------
 
 def scalar_to_int(value: object, name: str = "value") -> int:
+    """Convert a scalar SQL result to int and reject missing values."""
     if value is None:
         raise ValueError(f"{name} cannot be missing.")
 
@@ -394,6 +401,7 @@ def dataframe_row_count_to_int(
     *,
     column: str = "row_count",
 ) -> int:
+    """Return a count value from a one-row dataframe as a plain int."""
     if dataframe.empty:
         return 0
 
@@ -418,7 +426,9 @@ def build_observations_timestamped_stage(
     """Build the timestamped stage directly inside Postgres.
 
     `chunk_size` is kept only for backward-compatible notebook calls. It is not
-    used in the SQL-native implementation.
+    used in the SQL-native implementation. The stage keeps observation rows
+    wide and adds `observation_timestamp` from the configured start time and
+    sampling interval.
     """
     _ = chunk_size
 
@@ -456,6 +466,7 @@ def build_observations_timestamped_stage(
         run_id=run_id,
     )
 
+    # Resolve the timing row after dataset/run identity is known.
     timing_config = load_simulation_timing_config(
         engine,
         dataset_id=resolved_dataset_id,
@@ -546,6 +557,7 @@ def validate_observations_timestamped_stage(
     schema: str = "capstone",
     table_name: str = "synthetic_observations_timestamped_stage",
 ) -> pd.DataFrame:
+    """Return row-count and timestamp-range checks for the timestamped stage."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -567,11 +579,13 @@ def validate_observations_timestamped_stage(
 
 
 def build_sensor_messages_timestamped_stage(*args, **kwargs) -> str:
+    """Backward-compatible alias for `build_observations_timestamped_stage`."""
     return build_observations_timestamped_stage(*args, **kwargs)
 
 
 
 def validate_sensor_messages_timestamped_stage(*args, **kwargs) -> pd.DataFrame:
+    """Backward-compatible alias for `validate_observations_timestamped_stage`."""
     return validate_observations_timestamped_stage(*args, **kwargs)
 
 

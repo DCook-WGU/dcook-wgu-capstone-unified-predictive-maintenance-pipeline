@@ -10,6 +10,11 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class SensorRichProfile:
+    """Sensor distribution summary used by the generator for one state scope.
+
+    The values come from Silver EDA profile exports and give the synthetic
+    generator enough information to sample bounded, state-specific telemetry.
+    """
     sensor: str
     state_scope: str
 
@@ -39,6 +44,7 @@ class SensorRichProfile:
 
 
 def _require_columns(dataframe: pd.DataFrame, required: list[str], name: str) -> None:
+    """Raise a clear error when an input profile artifact is missing columns."""
     missing = [column for column in required if column not in dataframe.columns]
     if missing:
         raise ValueError(f"{name} missing required columns: {missing}")
@@ -46,6 +52,11 @@ def _require_columns(dataframe: pd.DataFrame, required: list[str], name: str) ->
 
 
 def load_rich_profile_csv(path: str, state_scope: str) -> dict[str, SensorRichProfile]:
+    """Load a Silver EDA rich-profile CSV into generator profile objects.
+
+    Each row becomes one SensorRichProfile keyed by sensor name. The function
+    validates the expected export shape before coercing numeric profile fields.
+    """
     dataframe = pd.read_csv(path)
 
     _require_columns(
@@ -90,6 +101,12 @@ def load_rich_profile_csv(path: str, state_scope: str) -> dict[str, SensorRichPr
 
 
 def load_correlation_pairs_csv(path: str) -> pd.DataFrame:
+    """Load and normalize pairwise sensor correlations for generator use.
+
+    The loader accepts both the newer pearson/spearman export shape and the
+    older signed correlation export shape so the generator can reuse either
+    Silver EDA artifact version without changing downstream code.
+    """
     dataframe = pd.read_csv(path)
 
     required_base = ["sensor_a", "sensor_b"]
@@ -136,12 +153,14 @@ def load_correlation_pairs_csv(path: str) -> pd.DataFrame:
 
 
 def load_group_map_csv(path: str) -> pd.DataFrame:
+    """Load the sensor-to-group map used for correlated group movement."""
     dataframe = pd.read_csv(path)
     _require_columns(dataframe, ["group_name", "sensor"], "group_map")
     return dataframe
 
 
 def load_fault_pairings_csv(path: str) -> pd.DataFrame:
+    """Load primary-to-secondary fault propagation settings."""
     dataframe = pd.read_csv(path)
     _require_columns(dataframe, ["sensor_primary", "sensor_secondary", "fault_coupling_strength", "lag_cycles"], "fault_pairings")
     return dataframe
@@ -150,9 +169,7 @@ def merge_profile_dicts(
     base: dict[str, SensorRichProfile],
     extra: dict[str, SensorRichProfile],
 ) -> dict[str, SensorRichProfile]:
-    """
-    Merge two profile dicts. 'extra' overwrites 'base' on collisions.
-    """
+    """Merge profile dictionaries, with extra profiles replacing base keys."""
     out = dict(base or {})
     out.update(extra or {})
     return out
@@ -164,9 +181,7 @@ def load_and_merge_rich_profiles(
     state_scope: str,
     dropped_profile_csv_path: Optional[str] = None,
 ) -> dict[str, SensorRichProfile]:
-    """
-    Load base profile CSV (normal/abnormal/recovery) and optionally merge dropped-sensor profiles
-    for the same state.
+    """Load base profiles and optional dropped-sensor profiles for one state.
 
     dropped_profile_csv_path should point to one of:
       pump__silver_eda__dropped_feature_profiles__normal.csv

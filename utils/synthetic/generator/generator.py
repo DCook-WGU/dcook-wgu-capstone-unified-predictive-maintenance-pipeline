@@ -37,18 +37,21 @@ StateCalibrationTargets = Dict[str, Dict[str, Dict[str, float]]]
 # }
 
 def _as_float(value: object, default: float = 0.0) -> float:
+    """Coerce optional tuning values to float with a default fallback."""
     if value is None:
         return float(default)
     return float(cast(Any, value))
 
 
 def _as_int(value: object, default: int = 0) -> int:
+    """Coerce optional tuning values to int with a default fallback."""
     if value is None:
         return int(default)
     return int(cast(Any, value))
 
 
 def _as_object_dict(value: object) -> Dict[str, object]:
+    """Return a string-keyed dict when a tuning value is mapping-like."""
     if value is None:
         return {}
     if not isinstance(value, MappingABC):
@@ -57,6 +60,7 @@ def _as_object_dict(value: object) -> Dict[str, object]:
 
 
 def _as_object_list(value: object) -> List[object]:
+    """Return a list for list/tuple tuning values and [] otherwise."""
     if value is None:
         return []
     if isinstance(value, list):
@@ -67,6 +71,7 @@ def _as_object_list(value: object) -> List[object]:
 
 
 def _pair_key(left: str, right: str) -> Tuple[str, str]:
+    """Build a stable unordered key for a sensor pair."""
     return (left, right) if left <= right else (right, left)
 
 
@@ -74,6 +79,7 @@ BRIDGE_PAIRS = [("sensor_25", "sensor_26")]
 
 @dataclass(frozen=True)
 class EpisodeSpec:
+    """Row-count and fault settings for one generated synthetic episode."""
     primary_sensor: str
     primary_fault_type: FaultType
     magnitude: float
@@ -86,12 +92,11 @@ class EpisodeSpec:
 
 
 class SyntheticGenerator:
-    """
-    Rich synthetic generator:
-    - distribution-aware sampling (family + percentile bounds)
-    - correlation-aware group drift
-    - pairing-aware fault propagation
-    - recovery attached to every abnormal episode
+    """Generate synthetic pump telemetry from Silver EDA profile artifacts.
+
+    The generator samples bounded sensor values, adds correlation structure,
+    injects configured fault behavior, stamps row-level truth metadata, and can
+    replay missingness patterns from a parent truth record.
     """
 
 
@@ -115,6 +120,7 @@ class SyntheticGenerator:
         mean_within_k_std: float = 1.0,
         std_ratio_bounds: Tuple[float, float] = (0.5, 1.5),
     ) -> None:
+        """Build lookup tables and random state used across generation calls."""
         #self.rng = np.random.default_rng(int(random_seed))
 
         self.normal = normal_profiles
@@ -181,6 +187,7 @@ class SyntheticGenerator:
     # Distribution-aware sampling
     # -------------------------
     def _sample_series(self, profile: SensorRichProfile, n: int, smoothing: float) -> np.ndarray:
+        """Sample one bounded sensor series using its profile distribution family."""
         family = str(profile.distribution_family).strip().lower()
         std = max(float(profile.std), 1e-6)
         rstd = max(float(profile.robust_std), 1e-6)
@@ -225,6 +232,7 @@ class SyntheticGenerator:
     # Correlation-aware group drift
     # -------------------------
     def _apply_group_driver(self, dataframe: pd.DataFrame, group_name: str, profiles: Dict[str, SensorRichProfile], strength: float) -> None:
+        """Add a shared latent movement to sensors in one group in place."""
         sensors = [sensor for sensor in self.group_to_sensors.get(group_name, []) if sensor in dataframe.columns]
         if len(sensors) < 2:
             return
@@ -255,6 +263,7 @@ class SyntheticGenerator:
         min_corr: float = 0.008,
         shrinkage: float = 0.04,
     ) -> tuple[list[str], np.ndarray]:
+        """Build a repaired correlation matrix for the sensors in one group."""
         sensors = [
             s for s in self.group_to_sensors.get(group_name, [])
             if s in profiles and s in self.sensors
@@ -298,6 +307,7 @@ class SyntheticGenerator:
         strength: float = 0.30,
         smooth_alpha: float = 0.65,
     ) -> None:
+        """Overlay multivariate residual movement using a group correlation matrix."""
         sensors, corr = self._build_group_correlation_matrix(group_name, profiles=profiles)
         if len(sensors) < 2 or len(dataframe) == 0:
             return
@@ -336,6 +346,7 @@ class SyntheticGenerator:
         strength: float = 0.24,
         smooth_alpha: float = 0.90,
     ) -> None:
+        """Reinforce the strongest configured pairwise correlations in place."""
         if len(dataframe) == 0:
             return
 
@@ -412,6 +423,7 @@ class SyntheticGenerator:
         strength: float = 0.35,
         smooth_alpha: float = 0.92,
     ) -> None:
+        """Apply a shared latent signal across configured hotspot clusters."""
         if len(dataframe) == 0:
             return
 
@@ -442,6 +454,7 @@ class SyntheticGenerator:
         self,
         clusters: Optional[List[List[str]]],
     ) -> List[List[str]]:
+        """Clean configured clusters to known, de-duplicated sensor names."""
         cleaned: List[List[str]] = []
 
         for cluster in (clusters or []):
@@ -466,6 +479,7 @@ class SyntheticGenerator:
 
 
     def _derive_hotspot_clusters_from_corr(self) -> List[List[str]]:
+        """Derive hotspot clusters from high-correlation sensor pairs."""
         cfg = _as_object_dict(self.correlation_cluster_derivation)
 
         if not bool(cfg.get("enabled", True)):
@@ -582,6 +596,7 @@ class SyntheticGenerator:
         self,
         configured_clusters: Optional[List[List[str]]],
     ) -> List[List[str]]:
+        """Prefer configured hotspot clusters, otherwise derive them from correlations."""
         cleaned = self._normalize_cluster_list(configured_clusters)
 
         if cleaned:
@@ -594,6 +609,7 @@ class SyntheticGenerator:
         self,
         section_name: str,
     ) -> Dict[str, object]:
+        """Return one named correlation tuning section as a plain dict."""
         tuning = _as_object_dict(self.correlation_tuning)
         return _as_object_dict(tuning.get(str(section_name)))
 
@@ -603,6 +619,7 @@ class SyntheticGenerator:
         block_name: str,
         defaults: Dict[str, object],
     ) -> Dict[str, object]:
+        """Merge a correlation tuning block with its default values."""
         section = self._get_corr_tuning_section(section_name)
         block = _as_object_dict(section.get(block_name))
 
@@ -678,6 +695,7 @@ class SyntheticGenerator:
         block_name: str,
         defaults: Dict[str, object],
     ) -> Dict[str, object]:
+        """Merge base correlation tuning with family-specific overrides."""
         base_block = self._get_corr_tuning_block(
             section_name,
             block_name,
@@ -751,6 +769,7 @@ class SyntheticGenerator:
         self,
         section_name: str,
     ) -> List[Dict[str, object]]:
+        """Read optional hand-tuned priority pair specifications."""
         block = self._get_corr_tuning_block(
             section_name,
             "priority_pair_generation",
@@ -867,6 +886,7 @@ class SyntheticGenerator:
         self,
         section_name: str,
     ) -> List[Dict[str, object]]:
+        """Read pair specifications used for residual correlation correction."""
         block = self._get_corr_tuning_block(
             section_name,
             "residual_pair_correction",
@@ -1005,6 +1025,7 @@ class SyntheticGenerator:
         self,
         section_name: str,
     ) -> List[Dict[str, object]]:
+        """Read optional three-sensor correction specifications."""
         block = self._get_corr_tuning_block(
             section_name,
             "triad_middle_sensor_correction",
@@ -1259,6 +1280,7 @@ class SyntheticGenerator:
                 dataframe[sensor] = member_values
 
     def _smooth_vector(self, values: np.ndarray, alpha: float = 0.90) -> np.ndarray:
+        """Apply one-pass temporal smoothing to a numeric vector."""
         values = np.asarray(values, dtype=float).copy()
         if values.size <= 1:
             return values
@@ -1272,6 +1294,7 @@ class SyntheticGenerator:
         self,
         cluster: List[str],
     ) -> Optional[str]:
+        """Select the strongest available anchor sensor for a hotspot cluster."""
         valid = [sensor for sensor in cluster if sensor in self.sensors]
         if len(valid) == 0:
             return None
@@ -1448,6 +1471,7 @@ class SyntheticGenerator:
             dataframe[member_sensor] = combined
 
     def _is_fault_excluded_sensor(self, sensor_name: str) -> bool:
+        """Return True when a sensor is excluded from generated faults."""
         return str(sensor_name).strip() in self.fault_excluded_sensors
 
     def _apply_local_normal_noise(
@@ -1513,6 +1537,7 @@ class SyntheticGenerator:
         std_floor_ratio: float = 0.92,
         max_extra_noise_ratio: float = 0.20,
     ) -> None:
+        """Add bounded noise when a generated block is too low-variance."""
         idx = np.asarray(idx, dtype=int)
         if idx.size == 0:
             return
@@ -1559,6 +1584,7 @@ class SyntheticGenerator:
         blend: float = 0.18,
         trigger_std_mult: float = 0.35,
     ) -> None:
+        """Nudge a generated block toward profile means when it drifts too far."""
         idx = np.asarray(idx, dtype=int)
         if idx.size == 0:
             return
@@ -1849,6 +1875,12 @@ class SyntheticGenerator:
         smoothing: float = 0.50,
         add_local_noise: bool = True,
     ) -> pd.DataFrame:
+        """Generate a normal-state telemetry batch with correlated sensors.
+
+        The returned frame contains one column per sensor plus stream_state.
+        Values are sampled from normal profiles, then adjusted with group,
+        pairwise, hotspot, bridge, and optional local-noise structure.
+        """
         data: Dict[str, np.ndarray] = {}
         for sensor in self.sensors:
             data[sensor] = self._sample_series(
@@ -1985,6 +2017,7 @@ class SyntheticGenerator:
     # Fault primitives
     # -------------------------
     def _inject_fault(self, values: np.ndarray, fault_type: FaultType, magnitude: float, profile: SensorRichProfile) -> np.ndarray:
+        """Apply one configured fault shape to a sensor value vector."""
         n = len(values)
         std = max(float(profile.std), 1e-6)
 
@@ -2159,6 +2192,12 @@ class SyntheticGenerator:
         observable_zscore_threshold: float = 2.5,
         observable_min_consecutive: int = 3,
     ) -> pd.DataFrame:
+        """Generate one synthetic episode with normal, fault, and recovery phases.
+
+        The episode starts from a normal batch, overlays primary and propagated
+        fault behavior, restores phase-level profile alignment, adds truth
+        metadata, and optionally applies missingness replay.
+        """
         
         if spec.primary_sensor not in self.sensors:
             raise ValueError(f"Unknown primary sensor: {spec.primary_sensor}")
@@ -2208,7 +2247,7 @@ class SyntheticGenerator:
 
         p_norm = self.normal[spec.primary_sensor]
 
-        # Add extra local noise to the explicitly normal windows
+        # Keep explicit normal windows active after the initial full-batch sample.
         if normal_before > 0:
             idx = dataframe.index[:normal_before].to_numpy()
             self._apply_local_normal_noise(
@@ -2336,8 +2375,7 @@ class SyntheticGenerator:
 
         self._calibrate_by_phase(dataframe)
 
-        # restore some variance after calibration so phase calibration
-        # does not leave normal/recovery blocks too narrow
+        # Re-apply correlation and variance structure within each generated phase.
         normal_idx = dataframe.index[dataframe["phase"].astype(str).eq("normal")].to_numpy()
         if normal_idx.size > 0:
             self._apply_sensor_variance_floor(
@@ -2730,7 +2768,7 @@ class SyntheticGenerator:
         apply_to_phases: Optional[Dict[str, Optional[str]]] = None,
     ) -> pd.DataFrame:
         """
-        Applies clustered masking to attempt to repliace the missingness.
+        Apply clustered masking to replay observed missingness patterns.
 
         apply_to_phases maps df["phase"] values -> state_scope to use ("normal"/"recovery"/"abnormal").
         If phase not present, falls back to missingness.state_col_synth if present.
@@ -2850,4 +2888,3 @@ class SyntheticGenerator:
         )
         return out
         
-

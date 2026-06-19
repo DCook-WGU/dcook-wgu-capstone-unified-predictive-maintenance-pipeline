@@ -15,14 +15,17 @@ import pandas as pd
 
 
 def utc_now_iso() -> str:
+    """Return the current UTC timestamp as a second-precision ISO string."""
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
 def make_process_run_id(prefix: str = "process") -> str:
+    """Build a UTC timestamped process run identifier with the given prefix."""
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return f"{prefix}__{timestamp}"
 
 def _normalize_for_json(value: Any) -> Any:
+    """Convert common project values into deterministic JSON-safe objects."""
     if isinstance(value, dict):
         return {str(k): _normalize_for_json(v) for k, v in sorted(value.items(), key=lambda x: str(x[0]))}
     if isinstance(value, list):
@@ -37,6 +40,7 @@ def _normalize_for_json(value: Any) -> Any:
 
 
 def compute_sha256(payload: Dict[str, Any]) -> str:
+    """Return a SHA-256 hash for a normalized JSON representation of a payload."""
     payload_str = json.dumps(_normalize_for_json(payload), sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
 
@@ -46,14 +50,17 @@ def compute_sha256(payload: Dict[str, Any]) -> str:
 
 
 def identify_meta_columns(dataframe: pd.DataFrame) -> list[str]:
+    """Return sorted dataframe columns reserved for project metadata."""
     return sorted([c for c in dataframe.columns if str(c).startswith("meta__")])
 
 
 def identify_feature_columns(dataframe: pd.DataFrame) -> list[str]:
+    """Return sorted dataframe columns that are not project metadata fields."""
     return sorted([c for c in dataframe.columns if not str(c).startswith("meta__")])
 
 
 def extract_truth_hash(dataframe: pd.DataFrame, column_name: str = "meta__truth_hash") -> Optional[str]:
+    """Extract the single non-null truth hash from a dataframe metadata column."""
     if column_name not in dataframe.columns:
         return None
 
@@ -74,6 +81,7 @@ def extract_truth_hash(dataframe: pd.DataFrame, column_name: str = "meta__truth_
 
 
 def build_file_fingerprint(file_path: str | Path) -> Dict[str, Any]:
+    """Build a small deterministic fingerprint payload for a source file."""
     file_path = Path(file_path)
     stat = file_path.stat()
 
@@ -100,6 +108,7 @@ def initialize_layer_truth(
     pipeline_mode: str,
     parent_truth_hash: Optional[str],
 ) -> Dict[str, Any]:
+    """Create the base truth payload for a Medallion layer before row facts are known."""
     return {
         "truth_version": truth_version,
         "dataset_name": dataset_name,
@@ -124,6 +133,7 @@ def update_truth_section(
     section: str,
     values: Dict[str, Any],
 ) -> Dict[str, Any]:
+    """Return a copied truth record with one section updated by the supplied values."""
     updated = deepcopy(truth)
     updated.setdefault(section, {})
     updated[section].update(values)
@@ -142,6 +152,7 @@ def build_truth_record(
     meta_columns: list[str],
     feature_columns: list[str],
 ) -> Dict[str, Any]:
+    """Build the final truth record and hash from base lineage and dataframe facts."""
     payload = {
         "truth_version": truth_base["truth_version"],
         "dataset_name": truth_base["dataset_name"],
@@ -182,6 +193,7 @@ def save_truth_record(
     dataset_name: str,
     layer_name: str,
 ) -> Path:
+    """Write a truth record JSON file under the layer truth directory."""
     truth_dir = Path(truth_dir) / layer_name
     truth_dir.mkdir(parents=True, exist_ok=True)
 
@@ -204,6 +216,7 @@ def append_truth_index(
     *,
     truth_index_path: str | Path,
 ) -> None:
+    """Append a normalized truth record to the JSONL truth index file."""
     truth_index_path = Path(truth_index_path)
     truth_index_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -222,6 +235,7 @@ def stamp_truth_columns(
     parent_truth_hash: Optional[str] = None,
     pipeline_mode: Optional[str] = None,
 ) -> pd.DataFrame:
+    """Return a copied dataframe stamped with truth lineage metadata columns."""
     df = dataframe.copy()
     df["meta__truth_hash"] = truth_hash
     df["meta__parent_truth_hash"] = parent_truth_hash
@@ -237,6 +251,7 @@ def stamp_truth_columns(
 
 
 def load_truth_record(truth_path: str | Path) -> Dict[str, Any]:
+    """Load a truth record JSON file from disk."""
     truth_path = Path(truth_path)
 
     with truth_path.open("r", encoding="utf-8") as f:
@@ -254,6 +269,7 @@ def find_truth_record_by_hash(
     dataset_name: str,
     truth_hash: str,
 ) -> Path:
+    """Resolve the expected truth record path for a dataset, layer, and hash."""
     truth_dir = Path(truth_dir) / layer_name
     expected_path = truth_dir / f"{dataset_name}__{layer_name}__truth__{truth_hash}.json"
 
@@ -277,6 +293,7 @@ def load_truth_record_by_hash(
     dataset_name: str,
     truth_hash: str,
 ) -> Dict[str, Any]:
+    """Load a truth record by dataset, layer, and truth hash."""
     truth_path = find_truth_record_by_hash(
         truth_dir=truth_dir,
         layer_name=layer_name,
@@ -298,6 +315,7 @@ def load_parent_truth_record_from_dataframe(
     dataset_name: str,
     column_name: str = "meta__truth_hash",
 ) -> Dict[str, Any]:
+    """Load the parent truth record referenced by a dataframe truth column."""
     parent_truth_hash = extract_truth_hash(dataframe, column_name=column_name)
 
     if parent_truth_hash is None:
@@ -329,6 +347,7 @@ def get_dataset_name_from_truth(truth_record: Dict[str, Any]) -> str:
 #### #### #### #### 
 
 def get_dataset_name_from_truth(truth_record: Dict[str, Any]) -> str:
+    """Return the required dataset name from a truth record."""
     return get_required_truth_value(truth_record, "dataset_name")
 
 
@@ -349,6 +368,7 @@ def get_truth_hash(truth_record: Dict[str, Any]) -> str:
 #### #### #### #### 
 
 def get_truth_hash(truth_record: Dict[str, Any]) -> str:
+    """Return the required truth hash from a truth record."""
     return get_required_truth_value(truth_record, "truth_hash")
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -367,6 +387,7 @@ def get_parent_truth_hash(truth_record: Dict[str, Any]) -> Optional[str]:
 #### #### #### #### 
 
 def get_parent_truth_hash(truth_record: Dict[str, Any]) -> Optional[str]:
+    """Return the optional parent truth hash from a truth record."""
     return get_truth_value(truth_record, "parent_truth_hash", required=False)
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -385,6 +406,7 @@ def get_pipeline_mode_from_truth(truth_record: Dict[str, Any]) -> Optional[str]:
 #### #### #### #### 
 
 def get_pipeline_mode_from_truth(truth_record: Dict[str, Any]) -> Optional[str]:
+    """Return the optional pipeline mode from a truth record."""
     return get_truth_value(truth_record, "pipeline_mode", required=False)
 
 
@@ -408,6 +430,7 @@ def get_artifact_path_from_truth(
 #### #### #### #### 
 
 def get_artifact_path_from_truth(truth_record: Dict[str, Any], key: str) -> str:
+    """Return a required artifact path value from a truth record."""
     return get_required_truth_value(truth_record, "artifact_paths", key)
 
 #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### #### 
@@ -468,6 +491,7 @@ def get_required_truth_value(
     truth_record: Dict[str, Any],
     *path: str,
 ) -> str:
+    """Return a required string value from a truth record key path."""
     value = get_truth_value(
         truth_record,
         *path,

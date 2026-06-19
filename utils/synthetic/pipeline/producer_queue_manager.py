@@ -19,6 +19,7 @@ from utils.database.postgres import (
 # -----------------------------------------------------------------------------
 
 def scalar_to_int(value: object, name: str = "value") -> int:
+    """Convert a required scalar result into an int and reject missing values."""
     if value is None:
         raise ValueError(f"{name} cannot be missing.")
 
@@ -40,6 +41,7 @@ def _grant_schema_usage_create(
     schema: str,
     role_name: str,
 ) -> None:
+    """Grant schema access needed by a queue runtime role."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_role = sanitize_sql_identifier(role_name)
 
@@ -58,6 +60,7 @@ def _apply_table_owner_and_grants(
     table_name: str,
     owner_role: str,
 ) -> None:
+    """Assign ownership and DML grants for a runtime queue table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
     safe_owner = sanitize_sql_identifier(owner_role)
@@ -236,6 +239,12 @@ def upsert_simulation_state_control(
     schema: str = "capstone",
     table_name: str = "simulation_state_control",
 ) -> None:
+    """
+    Insert or update the control row that drives producer loop behavior.
+
+    The control row stores whether a synthetic run is active, which topic to
+    publish to, the producer batch size, polling delay, and retry ceiling.
+    """
     if producer_batch_size <= 0:
         raise ValueError("producer_batch_size must be > 0")
     if producer_poll_seconds < 0:
@@ -303,6 +312,7 @@ def read_simulation_state_control(
     schema: str = "capstone",
     table_name: str = "simulation_state_control",
 ) -> dict:
+    """Read the producer control row for one dataset/run pair."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -349,6 +359,7 @@ def get_send_queue_status_counts(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
 ) -> pd.DataFrame:
+    """Return row counts by queue status for producer monitoring."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -441,6 +452,7 @@ def claim_pending_sensor_messages_batch(
 
     resolved_claim_token = str(claim_token).strip() if claim_token else str(uuid.uuid4())
 
+    # Claim rows and return the exact claimed payload in one transaction.
     sql = f"""
     WITH rows_to_claim AS (
         SELECT message_key
@@ -528,6 +540,7 @@ def mark_claimed_batch_sent(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
 ) -> pd.DataFrame:
+    """Mark all rows for a claim token as delivered to Kafka."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -558,6 +571,7 @@ def mark_claimed_batch_failed(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
 ) -> pd.DataFrame:
+    """Mark all rows for a claim token as failed and store the delivery error."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -587,6 +601,7 @@ def mark_claimed_batch_sent_count(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
 ) -> int:
+    """Mark a claim as sent and return the number of updated queue rows."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -626,6 +641,7 @@ def mark_claimed_batch_failed_count(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
 ) -> int:
+    """Mark a claim as failed and return the number of updated queue rows."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -678,6 +694,7 @@ def requeue_failed_messages(
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
+    # Reset claim fields while preserving prior delivery error text for review.
     sql = f"""
     UPDATE "{safe_schema}"."{safe_table}"
     SET
@@ -717,6 +734,7 @@ def release_stale_claims(
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
+    # Stale claims are treated like retries because the original worker may be gone.
     sql = f"""
     UPDATE "{safe_schema}"."{safe_table}"
     SET

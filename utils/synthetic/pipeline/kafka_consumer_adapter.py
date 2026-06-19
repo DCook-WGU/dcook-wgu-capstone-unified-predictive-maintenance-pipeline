@@ -41,6 +41,7 @@ except ImportError:  # pragma: no cover
 # -----------------------------------------------------------------------------
 
 def _is_missing(value: Any) -> bool:
+    """Return True for pandas/numpy missing values without failing on objects."""
     try:
         return bool(pd.isna(value))
     except Exception:
@@ -48,6 +49,7 @@ def _is_missing(value: Any) -> bool:
 
 
 def _normalize_scalar(value: Any) -> Any:
+    """Convert pandas, datetime, Decimal, and numpy scalars into Postgres-safe values."""
     if _is_missing(value):
         return None
 
@@ -70,6 +72,7 @@ def _normalize_scalar(value: Any) -> Any:
 
 
 def _parse_message_value(raw_value: Any) -> dict[str, Any]:
+    """Decode a Kafka message value into the producer payload dictionary."""
     if raw_value is None:
         return {}
 
@@ -89,6 +92,7 @@ def _parse_message_value(raw_value: Any) -> dict[str, Any]:
 
 
 def _get_nested(payload: Mapping[str, Any], *keys: str) -> Any:
+    """Read nested payload fields and return None when any level is missing."""
     current: Any = payload
     for key in keys:
         if not isinstance(current, Mapping):
@@ -108,7 +112,7 @@ def build_consumed_message_record(
     raw_value_text: Optional[str] = None,
 ) -> dict[str, Any]:
     """
-    Flatten the producer payload into a landed Postgres row.
+    Flatten the producer payload and Kafka metadata into one landed table row.
     """
     return {
         "dataset_id": _normalize_scalar(payload.get("dataset_id")),
@@ -159,6 +163,7 @@ def build_consumed_message_record(
 # -----------------------------------------------------------------------------
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing columns for a consumed-stage table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -176,6 +181,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres column type for an added dataframe column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -191,6 +197,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are missing from the consumed-stage table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -220,6 +227,7 @@ def ensure_consumed_stage_table_exists(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_consumed_stage",
 ) -> str:
+    """Create the Kafka consumed-message landing table and core indexes."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -285,6 +293,7 @@ def ensure_consumed_stage_runtime_schema(
         table_name=table_name,
     )
 
+    # Keep the landed table aligned with the producer payload fields.
     column_statements = [
         ("dataset_id", "TEXT"),
         ("run_id", "TEXT"),
@@ -354,6 +363,7 @@ def ensure_consumed_stage_runtime_schema(
     return safe_table
 
 def _yield_record_batches(records: list[dict[str, Any]], batch_size: int):
+    """Yield records in bounded batches for database insertion."""
     if batch_size <= 0:
         raise ValueError("batch_size must be > 0")
 
@@ -369,6 +379,7 @@ def _insert_records_on_conflict_do_nothing(
     records: list[dict[str, Any]],
     chunk_size: int = 1000,
 ) -> int:
+    """Insert consumed records while ignoring already-landed Kafka offsets."""
     if not records:
         return 0
 
@@ -444,6 +455,7 @@ def write_consumed_messages_batch(
             dataframe=working,
         )
 
+    # Null normalization avoids pandas NA objects leaking into SQL parameters.
     working = working.where(pd.notna(working), None)
     records = working.to_dict(orient="records")
 
@@ -478,6 +490,7 @@ def build_confluent_consumer_config(
     enable_auto_commit: bool = False,
     extra_config: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
+    """Build the Confluent consumer configuration for landed-message ingestion."""
     config: dict[str, Any] = {
         "bootstrap.servers": str(bootstrap_servers).strip(),
         "group.id": str(consumer_group_id).strip(),
@@ -499,6 +512,7 @@ def create_confluent_consumer(
     enable_auto_commit: bool = False,
     extra_config: Optional[dict[str, Any]] = None,
 ):
+    """Create a Confluent Kafka consumer from explicit or environment settings."""
     if Consumer is None:
         raise ImportError(
             "confluent_kafka is not installed. Install 'confluent-kafka' in your environment."
@@ -545,6 +559,7 @@ def consume_kafka_messages_once(
     messages: list[dict[str, Any]] = []
 
     for msg in raw_messages:
+        # Keep Kafka coordinates with the payload for idempotent Postgres landing.
         if msg is None:
             continue
 
@@ -590,6 +605,7 @@ def land_consumed_messages_to_postgres(
     records: list[dict[str, Any]] = []
 
     for item in consumed_messages:
+        # Flatten the nested producer payload before the rebuild stages read it.
         payload = item["payload"]
         record = build_consumed_message_record(
             payload=payload,
@@ -644,6 +660,7 @@ def run_kafka_consumer_to_postgres_once(
 
     created_consumer = False
     if consumer is None:
+        # A caller-provided consumer is reused by the loop; otherwise create one batch-scoped consumer.
         consumer = create_confluent_consumer(
             bootstrap_servers=bootstrap_servers,
             consumer_group_id=resolved_group_id,
@@ -688,6 +705,7 @@ def run_kafka_consumer_to_postgres_once(
 
         if commit_on_success:
             try:
+                # Manual commit keeps Kafka offsets behind Postgres durability.
                 consumer.commit(asynchronous=False)
             except KafkaException as exc:
                 return {
@@ -733,6 +751,7 @@ def run_kafka_consumer_to_postgres_loop(
     progress_log_every_batches: int = 25,
     return_result_history: bool = True,
 ) -> dict[str, Any]:
+    """Run the Kafka-to-Postgres consumer until empty, capped, or interrupted."""
     result_history: list[dict[str, Any]] = []
 
     summary: dict[str, Any] = {
@@ -779,6 +798,7 @@ def run_kafka_consumer_to_postgres_loop(
 
     try:
         while True:
+            # Reuse the subscribed consumer while each loop pass lands one finite batch.
             if max_batches is not None and batch_counter >= int(max_batches):
                 break
 

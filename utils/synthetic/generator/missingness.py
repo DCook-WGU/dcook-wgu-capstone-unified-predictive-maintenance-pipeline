@@ -10,8 +10,7 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class MissingnessSpec:
-    """
-    Holds missingness audit objects loaded from truth.runtime_facts.missingness_quarantine
+    """Missingness audit settings reconstructed from a parent truth record.
 
     missingness_pct_all: dict[sensor] -> percent missing (0..100)
     missingness_pct_by_state: dict[state] -> dict[sensor] -> percent missing (0..100)
@@ -27,6 +26,7 @@ def _payload_mapping(
     payload: Mapping[str, object],
     key: str,
 ) -> Mapping[Any, Any]:
+    """Return a mapping payload value or raise a typed shape error."""
     value = payload.get(key)
 
     if value is None:
@@ -45,6 +45,7 @@ def _payload_str_float_dict(
     payload: Mapping[str, object],
     key: str,
 ) -> Dict[str, float]:
+    """Normalize a flat payload mapping to dict[str, float]."""
     raw_mapping = _payload_mapping(payload, key)
 
     return {
@@ -57,6 +58,7 @@ def _payload_str_bool_dict(
     payload: Mapping[str, object],
     key: str,
 ) -> Dict[str, bool]:
+    """Normalize a flat payload mapping to dict[str, bool]."""
     raw_mapping = _payload_mapping(payload, key)
 
     return {
@@ -69,6 +71,7 @@ def _payload_nested_str_float_dict(
     payload: Mapping[str, object],
     key: str,
 ) -> Dict[str, Dict[str, float]]:
+    """Normalize a nested payload mapping to dict[str, dict[str, float]]."""
     raw_outer_mapping = _payload_mapping(payload, key)
 
     normalized: Dict[str, Dict[str, float]] = {}
@@ -98,6 +101,7 @@ def _payload_string_list(
     payload: Mapping[str, object],
     key: str,
 ) -> list[str]:
+    """Normalize a payload scalar or iterable to a cleaned string list."""
     value = payload.get(key)
 
     if value is None:
@@ -124,8 +128,7 @@ def _payload_string_list(
 def build_missingness_spec_from_truth_payload(
     payload: Dict[str, object],
 ) -> MissingnessSpec:
-    """
-    Build MissingnessSpec from truth.runtime_facts.missingness_quarantine.
+    """Build a MissingnessSpec from truth.runtime_facts.missingness_quarantine.
 
     Permanent behavior:
     - use missingness_pct_all / missingness_pct_by_state / dependency flags when present
@@ -271,10 +274,7 @@ def build_missingness_spec_from_truth_payload(
 
 
 def _pct_to_present_count(n: int, missing_pct: float) -> int:
-    """
-    Convert missing% to an EXACT present count for n rows.
-    Uses rounding to nearest int; clamps to [0, n].
-    """
+    """Convert a missing percentage into a clamped present-row count."""
     if not np.isfinite(missing_pct):
         return n
     missing_pct = float(missing_pct)
@@ -292,11 +292,10 @@ def apply_exact_missingness_mask(
     present_counts: Dict[str, int],
     eligible_row_idx: np.ndarray,
 ) -> pd.DataFrame:
-    """
-    Forces EXACT present counts per sensor within eligible rows.
-    - present_counts[sensor] = number of non-null values to keep inside eligible_row_idx
-    - all other eligible rows for that sensor become NaN
-    - rows outside eligible_row_idx are not touched
+    """Mask eligible rows so each sensor keeps exactly its target count.
+
+    Rows outside eligible_row_idx are not touched. This gives the generator a
+    strict missingness option when clustered gaps are not needed.
     """
     out = df.copy()
 
@@ -341,9 +340,10 @@ def apply_clustered_missingness_mask(
     mean_gap_len: int = 3,
     long_gap_probability: float = 0.15,
 ) -> pd.DataFrame:
-    """
-    Forces approximate clustered missingness within eligible rows while still
-    respecting the exact present_count target per sensor.
+    """Apply clustered NaN runs while matching each sensor's present count.
+
+    The mask creates short and occasional longer gaps inside eligible rows so
+    synthetic missingness resembles sensor dropout instead of uniform removal.
     """
     out = df.copy()
 
@@ -399,10 +399,7 @@ def build_present_counts_for_block(
     pct_by_state: Optional[Dict[str, float]] = None,
     use_by_state: bool = False,
 ) -> Dict[str, int]:
-    """
-    Returns dict[sensor] -> exact present count for a block of n_rows.
-    If use_by_state=True, pct_by_state[sensor] is used when available; else pct_all.
-    """
+    """Build per-sensor present counts for one phase or state block."""
     present_counts: Dict[str, int] = {}
     for s in sensors:
         pct = None

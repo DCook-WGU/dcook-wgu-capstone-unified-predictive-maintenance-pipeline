@@ -25,6 +25,7 @@ from utils.database.chunk_stage_util import (
 # -----------------------------------------------------------------------------
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing Postgres columns for the final-aligned table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -42,6 +43,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres type for an added final-aligned column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -57,6 +59,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are missing from the final-aligned target."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -81,14 +84,17 @@ def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataF
 
 
 def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
+    """Return expected wide sensor columns for final aligned observations."""
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
 def _coalesce_left_then_right(left: pd.Series, right: pd.Series) -> pd.Series:
+    """Prefer left values while filling missing values from the right series."""
     return left.combine_first(right)
 
 
 def _require_columns(dataframe: pd.DataFrame, required_columns: list[str], frame_name: str) -> None:
+    """Raise a clear error when a dataframe is missing required columns."""
     missing = [column for column in required_columns if column not in dataframe.columns]
     if missing:
         raise ValueError(f"{frame_name} is missing required columns: " + ", ".join(missing))
@@ -99,6 +105,7 @@ def _require_columns(dataframe: pd.DataFrame, required_columns: list[str], frame
 # -----------------------------------------------------------------------------
 
 def _validate_premelt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
+    """Validate premelt columns needed to restore original row context."""
     required_columns = [
         "dataset_id",
         "run_id",
@@ -119,6 +126,7 @@ def _validate_premelt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
 
 
 def _validate_rebuilt_columns(dataframe: pd.DataFrame, n_sensors: int) -> None:
+    """Validate rebuilt columns needed for final alignment."""
     required_columns = [
         "dataset_id",
         "run_id",
@@ -151,6 +159,7 @@ def load_premelt_for_final_alignment(
     dataset_id: Optional[str] = None,
     run_id: Optional[str] = None,
 ) -> pd.DataFrame:
+    """Load premelt observation rows that provide original ordering metadata."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -187,6 +196,7 @@ def load_rebuilt_for_final_alignment(
     run_id: Optional[str] = None,
     complete_only: bool = True,
 ) -> pd.DataFrame:
+    """Load rebuilt observations for final alignment, optionally complete rows only."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -228,6 +238,12 @@ def build_final_aligned_observations_dataframe(
     n_sensors: int = 52,
     prefer_rebuilt_sensor_values: bool = True,
 ) -> pd.DataFrame:
+    """
+    Merge premelt row context with rebuilt sensor values into final wide rows.
+
+    Premelt contributes batch/order context, while rebuilt rows contribute the
+    reconstructed sensor values and rebuild status fields used downstream.
+    """
     if premelt_dataframe.empty or rebuilt_dataframe.empty:
         return pd.DataFrame()
 
@@ -253,6 +269,7 @@ def build_final_aligned_observations_dataframe(
     if merged.empty:
         return pd.DataFrame()
 
+    # Start from stable identity keys, then add preferred metadata and sensors.
     out = merged[key_columns].copy()
 
     premelt_preferred_fields = [
@@ -334,6 +351,7 @@ def ensure_final_aligned_table_exists(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_observations_final_aligned_stage",
 ) -> str:
+    """Create the final-aligned observation table and lookup indexes."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -398,6 +416,7 @@ def write_final_aligned_observations(
     table_name: str = "synthetic_sensor_observations_final_aligned_stage",
     if_exists: str = "replace",
 ) -> str:
+    """Write final-aligned observations to Postgres with optional table replace."""
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
     if dataframe.empty:
@@ -457,6 +476,7 @@ def build_final_aligned_observations_stage(
     if_exists: str = "replace",
     observation_window_size: int = 2500,
 ) -> dict:
+    """Build the final-aligned table from premelt and rebuilt stages in windows."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_premelt_table = sanitize_sql_identifier(premelt_table)
     safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
@@ -494,6 +514,7 @@ def build_final_aligned_observations_stage(
     rebuilt_extra_where_sql = " AND rebuild_is_complete = TRUE" if complete_only else ""
 
     def transform_chunk_func(df_premelt_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> pd.DataFrame:
+        """Load rebuilt rows for the same observation window and align them."""
         rebuilt_window = read_table_for_observation_window(
             engine,
             schema_name=safe_schema,
@@ -518,6 +539,7 @@ def build_final_aligned_observations_stage(
         )
 
     def write_chunk_func(df_out: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> None:
+        """Write one final-aligned window and preserve replace/append behavior."""
         nonlocal has_written_first_chunk
 
         if df_out.empty:

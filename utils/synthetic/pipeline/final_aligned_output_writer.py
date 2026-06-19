@@ -19,10 +19,12 @@ from utils.database.layer_postgres import write_layer_dataframe
 # -----------------------------------------------------------------------------
 
 def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
+    """Return expected wide sensor columns for final synthetic output."""
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing Postgres columns for the final synthetic output table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -41,6 +43,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres type for an added final-output column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -56,6 +59,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are missing from the final-output target."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -85,6 +89,7 @@ def _resolve_dataset_run_from_table(
     dataset_id: Optional[str] = None,
     run_id: Optional[str] = None,
 ) -> tuple[str, str]:
+    """Resolve a single dataset/run pair from a rebuilt source table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -141,6 +146,7 @@ def _resolve_first_existing_column(
     columns: Iterable[str],
     priority_columns: Sequence[str],
 ) -> Optional[str]:
+    """Return the first priority column that exists in a column list."""
     column_set = set(columns)
     for column in priority_columns:
         if column in column_set:
@@ -153,6 +159,7 @@ def _normalize_machine_status_value(
     *,
     status_mapping: Optional[Mapping[str, str]] = None,
 ) -> Optional[str]:
+    """Map synthetic status labels into the final output machine-status values."""
     if pd.isna(value):
         return None
 
@@ -192,6 +199,7 @@ def _validate_rebuilt_columns(
     timestamp_source_priority: Sequence[str],
     status_source_priority: Sequence[str],
 ) -> tuple[str, str]:
+    """Validate rebuilt source columns and resolve timestamp/status sources."""
     sensor_columns = _build_sensor_columns(n_sensors)
 
     required_base_columns = [
@@ -255,6 +263,12 @@ def build_final_aligned_synthetic_output_dataframe(
     machine_status_output_column: str = "machine_status",
     sort_output: bool = True,
 ) -> pd.DataFrame:
+    """
+    Build the compact final synthetic output from rebuilt observations.
+
+    The output keeps dataset/run/asset identity, timestamp, sensor columns, and
+    normalized machine status for downstream inspection or Bronze-style use.
+    """
     if not isinstance(rebuilt_dataframe, pd.DataFrame):
         raise TypeError("rebuilt_dataframe must be a pandas DataFrame.")
 
@@ -329,6 +343,7 @@ def load_rebuilt_for_final_output(
     observation_index_min: Optional[int] = None,
     observation_index_max: Optional[int] = None,
 ) -> pd.DataFrame:
+    """Load rebuilt observations for final synthetic output generation."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -376,6 +391,7 @@ def _get_rebuilt_observation_bounds(
     run_id: str,
     complete_only: bool,
 ) -> dict:
+    """Return row count and observation-index bounds for rebuilt rows."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -429,6 +445,7 @@ def ensure_final_aligned_synthetic_output_table_exists(
     timestamp_output_column: str = "timestamp",
     machine_status_output_column: str = "machine_status",
 ) -> str:
+    """Create the compact final synthetic output table and indexes."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
     safe_timestamp_output_column = sanitize_sql_identifier(timestamp_output_column)
@@ -481,6 +498,7 @@ def write_final_aligned_synthetic_output(
     machine_status_output_column: str = "machine_status",
     if_exists: str = "replace",
 ) -> str:
+    """Write compact final synthetic output rows to Postgres."""
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
 
@@ -557,6 +575,7 @@ def build_synthetic_final_aligned_output_stage(
     timestamp_output_column: str = "timestamp",
     machine_status_output_column: str = "machine_status",
 ) -> dict:
+    """Build compact final synthetic output from rebuilt rows in windows."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_rebuilt_table = sanitize_sql_identifier(rebuilt_table)
     safe_target_table = sanitize_sql_identifier(target_table)
@@ -608,6 +627,7 @@ def build_synthetic_final_aligned_output_stage(
             max_observation_index,
         )
 
+        # Process rebuilt observations in bounded windows to keep memory use stable.
         rebuilt_window = load_rebuilt_for_final_output(
             engine,
             schema=safe_schema,

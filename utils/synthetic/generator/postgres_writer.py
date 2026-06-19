@@ -23,6 +23,7 @@ from utils.database.layer_postgres import write_layer_dataframe
 # -----------------------------------------------------------------------------
 
 def scalar_to_int(value: object, name: str = "value") -> int:
+    """Convert a SQL scalar value to int and reject missing sequence values."""
     if value is None:
         raise ValueError(f"{name} cannot be missing.")
 
@@ -35,6 +36,7 @@ def scalar_to_int(value: object, name: str = "value") -> int:
     return int(cast(Any, value))
 
 def ensure_sequence(engine, *, schema: str, sequence_name: str) -> None:
+    """Create the Postgres sequence used for synthetic batch or cycle IDs."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_sequence = sanitize_sql_identifier(sequence_name)
     sql = f'CREATE SEQUENCE IF NOT EXISTS "{safe_schema}"."{safe_sequence}"'
@@ -43,6 +45,7 @@ def ensure_sequence(engine, *, schema: str, sequence_name: str) -> None:
 
 
 def reserve_next_batch_id(engine, *, schema: str, sequence_name: str) -> int:
+    """Reserve and return the next synthetic batch identifier."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_sequence = sanitize_sql_identifier(sequence_name)
 
@@ -57,6 +60,7 @@ def reserve_next_batch_id(engine, *, schema: str, sequence_name: str) -> int:
 
 
 def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int) -> int:
+    """Reserve a contiguous global-cycle range and return its first value."""
     if n_rows <= 0:
         raise ValueError("n_rows must be > 0")
 
@@ -83,12 +87,14 @@ def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int)
 
 
 def reset_sequence(engine, *, schema: str, sequence_name: str, start_at: int = 1) -> None:
+    """Reset a Postgres sequence so the next value starts at start_at."""
     # nextval returns start_at when is_called=false
     sql = f"SELECT setval('\"{schema}\".\"{sequence_name}\"', {int(start_at)}, false)"
     execute_sql(engine, sql)
 
 
 def reset_synthetic_sequences(engine, *, schema: str, dataset_name: str) -> None:
+    """Reset the synthetic batch and cycle sequences for one dataset."""
     ds = str(dataset_name).strip().lower()
     reset_sequence(engine, schema=schema, sequence_name=f"seq_synthetic_{ds}_batch_id", start_at=1)
     reset_sequence(engine, schema=schema, sequence_name=f"seq_synthetic_{ds}_cycle_id", start_at=1)
@@ -131,6 +137,7 @@ def _ensure_stream_table_exists(engine, *, schema: str, table: str) -> None:
 
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Read the current column names for a synthetic stream table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -149,6 +156,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a Postgres column type for dynamic synthetic stream columns."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -165,6 +173,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are not yet present in the stream table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -193,6 +202,7 @@ def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataF
 # -----------------------------------------------------------------------------
 
 def _prepare_dataframe_for_copy(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Sanitize columns and serialize nested values before COPY loading."""
     out = dataframe.copy()
     out.columns = [sanitize_sql_identifier(column) for column in out.columns]
 
@@ -221,6 +231,7 @@ def _copy_dataframe_to_table(
     schema: str,
     table: str,
 ) -> None:
+    """Bulk-load a prepared dataframe into a Postgres table with COPY."""
     if dataframe.empty:
         return
 
@@ -275,8 +286,9 @@ def write_stream_batch(
     cycle_start: Optional[int] = None,
     use_copy: bool = True,
 ) -> str:
-    """
-    Write a synthetic stream batch to the table:
+    """Write a synthetic stream batch to the dataset stream table.
+
+    The helper writes to:
       synthetic_<dataset_name>_<artifact_name>
 
     Behavior:

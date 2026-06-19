@@ -1,3 +1,17 @@
+"""Notebook-facing SQL helpers for capstone PostgreSQL metadata.
+
+This module supports notebooks that need to write lightweight SQL metadata or
+preview database tables without replacing the normal artifact outputs. It builds
+one SQLAlchemy engine from the current environment at import time and resolves
+``CAPSTONE_SCHEMA``, ``DATASET_ID``, and ``RUN_ID`` from environment variables
+with notebook-global fallbacks.
+
+The helpers write records to metadata tables such as ``pipeline_runs``,
+``data_quality_events``, and ``pipeline_artifacts`` in the configured capstone
+schema. They use print-style notebook status messages and do not write project
+ledger entries directly.
+"""
+
 # =============================================================================
 # SQL Setup Cell
 # Purpose:
@@ -60,6 +74,22 @@ def safe_sql_identifier(value: str) -> str:
 
     This prevents accidental unsafe SQL when table/schema names are built from
     notebook variables or environment variables.
+
+    Parameters
+    ----------
+    value:
+        Schema or table identifier to validate.
+
+    Returns
+    -------
+    str
+        Stripped identifier that is safe to interpolate into a quoted SQL table
+        reference.
+
+    Raises
+    ------
+    ValueError
+        If the identifier contains characters outside the project-safe pattern.
     """
     value = str(value).strip()
 
@@ -72,6 +102,21 @@ def safe_sql_identifier(value: str) -> str:
 def sql_table_ref(schema: str, table: str) -> str:
     """
     Return a safely quoted schema.table reference.
+
+    Parameters
+    ----------
+    schema, table:
+        SQL schema and table names to validate and quote.
+
+    Returns
+    -------
+    str
+        Double-quoted ``"schema"."table"`` reference.
+
+    Raises
+    ------
+    ValueError
+        If either identifier fails validation.
     """
     safe_schema = safe_sql_identifier(schema)
     safe_table = safe_sql_identifier(table)
@@ -86,6 +131,17 @@ def sql_table_ref(schema: str, table: str) -> str:
 def to_builtin(value: Any) -> Any:
     """
     Convert pandas/numpy values into JSON-safe Python values.
+
+    Parameters
+    ----------
+    value:
+        Python, pandas, or numpy value to normalize.
+
+    Returns
+    -------
+    Any
+        JSON-safe Python value, with missing scalar values converted to
+        ``None`` and datetime-like values converted to ISO strings.
     """
     if value is None:
         return None
@@ -133,6 +189,18 @@ def to_builtin(value: Any) -> Any:
 def to_scalar(value: Any) -> Any:
     """
     Convert values for normal SQL scalar columns.
+
+    Parameters
+    ----------
+    value:
+        Python, pandas, or numpy value to normalize for SQL binding.
+
+    Returns
+    -------
+    Any
+        Scalar value suitable for SQLAlchemy parameter binding, with missing
+        values converted to ``None`` and pandas timestamps converted to Python
+        datetimes.
     """
     if value is None:
         return None
@@ -168,6 +236,16 @@ def to_scalar(value: Any) -> Any:
 def to_json_string(value: Any) -> str:
     """
     Convert Python/pandas/numpy objects to a JSON string for JSONB columns.
+
+    Parameters
+    ----------
+    value:
+        Object to normalize and serialize for PostgreSQL JSONB columns.
+
+    Returns
+    -------
+    str
+        JSON string using project-safe builtin conversions.
     """
     return json.dumps(to_builtin(value), ensure_ascii=False, default=str)
 
@@ -175,6 +253,18 @@ def to_json_string(value: Any) -> str:
 def row_to_payload(row: pd.Series, exclude_columns: Optional[set[str]] = None) -> dict:
     """
     Convert a dataframe row into a JSON payload dictionary.
+
+    Parameters
+    ----------
+    row:
+        Dataframe row to serialize.
+    exclude_columns:
+        Optional set of columns to leave out of the payload.
+
+    Returns
+    -------
+    dict
+        Mapping from column name to JSON-safe value.
     """
     exclude_columns = exclude_columns or set()
 
@@ -188,6 +278,20 @@ def row_to_payload(row: pd.Series, exclude_columns: Optional[set[str]] = None) -
 def get_row_value(row: pd.Series, candidate_columns: list[str], default: Any = None) -> Any:
     """
     Return the first available non-null row value from a list of candidate columns.
+
+    Parameters
+    ----------
+    row:
+        Dataframe row to inspect.
+    candidate_columns:
+        Ordered column names to check.
+    default:
+        Value returned when no candidate column contains a non-null value.
+
+    Returns
+    -------
+    Any
+        First non-null SQL scalar value found, or ``default``.
     """
     for column in candidate_columns:
         if column in row.index:
@@ -201,6 +305,22 @@ def get_row_value(row: pd.Series, candidate_columns: list[str], default: Any = N
 def get_existing_dataframe(candidate_names: list[str]) -> pd.DataFrame:
     """
     Find the first dataframe in the current notebook globals using candidate names.
+
+    Parameters
+    ----------
+    candidate_names:
+        Ordered notebook variable names to inspect.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copy of the first matching dataframe.
+
+    Raises
+    ------
+    NameError
+        If none of the candidate names exist as pandas dataframes in the current
+        notebook global scope.
     """
     for name in candidate_names:
         value = globals().get(name)
@@ -223,6 +343,25 @@ def get_existing_dataframe(candidate_names: list[str]) -> pd.DataFrame:
 def execute_many(sql: str, rows: list[dict], *, chunk_size: int = 5_000) -> int:
     """
     Execute a parameterized SQL statement for many rows in chunks.
+
+    Parameters
+    ----------
+    sql:
+        Parameterized SQL statement using named parameters.
+    rows:
+        Row dictionaries to bind into the SQL statement.
+    chunk_size:
+        Maximum number of rows sent per database execute call.
+
+    Returns
+    -------
+    int
+        Number of rows submitted to PostgreSQL.
+
+    Side Effects
+    ------------
+    Executes SQL against the module-level engine. Prints notebook status
+    messages and does not write ledger entries.
     """
     if not rows:
         print("No rows to write.")
@@ -244,6 +383,27 @@ def delete_dataset_run_rows(schema: str, table: str, *, dataset_id: str, run_id:
     Delete existing rows for one dataset/run before writing notebook outputs.
 
     This keeps notebook SQL writes idempotent when rerunning a notebook.
+
+    Parameters
+    ----------
+    schema, table:
+        Target table location to delete from.
+    dataset_id, run_id:
+        Dataset/run key used to identify rows from the current notebook run.
+
+    Returns
+    -------
+    int
+        Number of rows reported deleted by PostgreSQL.
+
+    Side Effects
+    ------------
+    Deletes rows from the target SQL table through the module-level engine.
+
+    Raises
+    ------
+    ValueError
+        If schema or table identifiers are unsafe.
     """
     table_reference = sql_table_ref(schema, table)
 
@@ -279,6 +439,30 @@ def upsert_pipeline_run(
 ) -> None:
     """
     Upsert a capstone.pipeline_runs record for the current notebook/run.
+
+    Parameters
+    ----------
+    pipeline_stage:
+        Notebook or pipeline stage name to store in metadata.
+    run_status:
+        Status value stored for the run. Defaults to ``completed``.
+    pipeline_mode:
+        Execution mode stored in metadata. Defaults to ``notebook``.
+    dataset_name:
+        Optional human-readable dataset name.
+    source_system:
+        Source system label stored in metadata.
+    notes:
+        Optional free-text notes for the run.
+    runtime_facts:
+        Optional structured metadata serialized to JSONB.
+
+    Side Effects
+    ------------
+    Inserts or updates one row in ``CAPSTONE_SCHEMA.pipeline_runs`` using the
+    module-level ``DATASET_ID`` and ``RUN_ID`` resolved from environment or
+    notebook context. Prints notebook status messages and does not write ledger
+    entries.
     """
     table_reference = sql_table_ref(CAPSTONE_SCHEMA, "pipeline_runs")
 
@@ -353,6 +537,25 @@ def log_data_quality_event(
 ) -> None:
     """
     Insert a data quality event into capstone.data_quality_events.
+
+    Parameters
+    ----------
+    layer_name, table_name:
+        Layer/table context for the data quality event.
+    check_name, check_status:
+        Name and status of the check being recorded.
+    severity:
+        Event severity label. Defaults to ``info``.
+    row_count:
+        Optional row count connected to the event.
+    details_json:
+        Optional structured details serialized to JSONB.
+
+    Side Effects
+    ------------
+    Inserts one row into ``CAPSTONE_SCHEMA.data_quality_events`` using the
+    module-level ``DATASET_ID`` and ``RUN_ID``. Prints notebook status messages
+    and does not write ledger entries.
     """
     table_reference = sql_table_ref(CAPSTONE_SCHEMA, "data_quality_events")
 
@@ -415,6 +618,25 @@ def log_pipeline_artifact(
 ) -> None:
     """
     Insert an artifact record into capstone.pipeline_artifacts.
+
+    Parameters
+    ----------
+    layer_name, stage_name:
+        Layer and stage connected to the artifact.
+    artifact_name, artifact_type:
+        Artifact identity values stored in metadata.
+    artifact_path:
+        Optional path to an artifact created elsewhere by the notebook.
+    truth_hash, parent_truth_hash:
+        Optional lineage hashes associated with the artifact.
+    metadata_json:
+        Optional structured artifact metadata serialized to JSONB.
+
+    Side Effects
+    ------------
+    Inserts one metadata row into ``CAPSTONE_SCHEMA.pipeline_artifacts`` using
+    the module-level ``DATASET_ID`` and ``RUN_ID``. This function does not create
+    or move artifact files and does not write ledger entries.
     """
     table_reference = sql_table_ref(CAPSTONE_SCHEMA, "pipeline_artifacts")
 
@@ -470,6 +692,23 @@ def log_pipeline_artifact(
 def preview_sql_table(schema: str, table: str, limit: int = 5) -> pd.DataFrame:
     """
     Preview rows from a SQL table.
+
+    Parameters
+    ----------
+    schema, table:
+        SQL table to preview.
+    limit:
+        Maximum number of rows returned.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Query result from the requested table.
+
+    Raises
+    ------
+    ValueError
+        If schema or table identifiers are unsafe.
     """
     table_reference = sql_table_ref(schema, table)
 

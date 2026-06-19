@@ -23,6 +23,7 @@ from utils.database.chunk_stage_util import (
 # -----------------------------------------------------------------------------
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing Postgres columns for a rebuild-stage table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -40,6 +41,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres type for an added rebuild column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -55,6 +57,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are not present in the rebuild target table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -83,6 +86,7 @@ def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataF
 # -----------------------------------------------------------------------------
 
 def _validate_consumed_columns(dataframe: pd.DataFrame) -> None:
+    """Validate consumed long-message columns required for observation rebuild."""
     required_columns = [
         "dataset_id",
         "run_id",
@@ -114,6 +118,7 @@ def _validate_consumed_columns(dataframe: pd.DataFrame) -> None:
 
 
 def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
+    """Return the expected wide sensor column names for rebuilt observations."""
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
@@ -127,6 +132,7 @@ def ensure_rebuilt_stage_table_exists(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_observations_rebuilt_stage",
 ) -> str:
+    """Create the rebuilt wide-observation table and core rebuild indexes."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -184,6 +190,7 @@ def load_consumed_messages_for_rebuild(
     run_id: Optional[str] = None,
     rebuild_status: Optional[str] = "pending",
 ) -> pd.DataFrame:
+    """Load consumed long sensor messages that are eligible for rebuild."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(source_table)
 
@@ -406,6 +413,7 @@ def _remove_already_rebuilt_observations(
     schema: str,
     target_table: str,
 ) -> pd.DataFrame:
+    """Drop rebuilt rows whose observation keys already exist in the target table."""
     if rebuilt_dataframe.empty:
         return rebuilt_dataframe.copy()
 
@@ -459,6 +467,7 @@ def write_rebuilt_observations_batch(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_observations_rebuilt_stage",
 ) -> str:
+    """Append rebuilt wide observations after removing already-written keys."""
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
     if dataframe.empty:
@@ -513,7 +522,10 @@ def mark_consumed_messages_rebuilt(
     source_table: str = "synthetic_sensor_messages_consumed_stage",
 ) -> int:
     """
-    Mark all consumed long rows for rebuilt observations as rebuilt.
+    Mark consumed long rows for rebuilt observations as rebuilt.
+
+    The input dataframe contains one row per rebuilt observation key, while the
+    source table may contain many sensor-message rows for that observation.
     """
     if observation_keys.empty:
         return 0
@@ -566,6 +578,12 @@ def rebuild_consumed_messages_to_observations(
     mark_source_rebuilt: bool = True,
     observation_window_size: int = 2500,
 ) -> dict:
+    """
+    Rebuild consumed long sensor messages into wide observation rows.
+
+    The function processes bounded observation windows, writes completed wide
+    rows to the rebuilt stage, and optionally marks source consumed rows rebuilt.
+    """
     safe_schema = sanitize_sql_identifier(schema)
     safe_source_table = sanitize_sql_identifier(source_table)
 
@@ -605,6 +623,7 @@ def rebuild_consumed_messages_to_observations(
     }
 
     def transform_chunk_func(df_window: pd.DataFrame, window_number: int, obs_min: int, obs_max: int) -> dict:
+        """Deduplicate one observation window and rebuild complete observations."""
         deduped = deduplicate_consumed_messages(df_window)
 
         rebuilt_dataframe, rebuilt_keys = build_rebuilt_observations_dataframe(
@@ -621,6 +640,7 @@ def rebuild_consumed_messages_to_observations(
         }
 
     def write_chunk_func(payload: dict, window_number: int, obs_min: int, obs_max: int) -> None:
+        """Write rebuilt rows for one window and update source rebuild status."""
         stats["consumed_rows"] += int(payload["consumed_rows"])
         stats["deduped_rows"] += int(payload["deduped_rows"])
 

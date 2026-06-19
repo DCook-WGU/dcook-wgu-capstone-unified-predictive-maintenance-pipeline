@@ -98,6 +98,7 @@ def get_sensor_columns(columns: Iterable[str]) -> list[str]:
     return [column for _, column in sensor_columns]
 
 def _int_or_default(value: Any, default: int = 0) -> int:
+    """Convert a nullable SQL aggregate value to int with a default."""
     if value is None or pd.isna(value):
         return int(default)
     return int(value)
@@ -310,6 +311,7 @@ def ensure_handoff_control_table(
     schema: str = "capstone",
     table_name: str = "synthetic_bronze_handoff_control",
 ) -> None:
+    """Create the append-control table used by the Bronze handoff builder."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -350,6 +352,7 @@ def get_effective_handoff_offsets(
     control_schema: str = "capstone",
     control_table: str = "synthetic_bronze_handoff_control",
 ) -> dict[str, Any]:
+    """Resolve next append offsets from control table or target table scan."""
     control_record = get_handoff_control_record(
         engine,
         dataset_name=dataset_name,
@@ -405,6 +408,7 @@ def upsert_handoff_control_record(
     control_schema: str = "capstone",
     control_table: str = "synthetic_bronze_handoff_control",
 ) -> None:
+    """Persist append-control offsets after a Bronze handoff append."""
     ensure_handoff_control_table(
         engine,
         schema=control_schema,
@@ -532,6 +536,7 @@ def get_handoff_control_record(
     control_schema: str = "capstone",
     control_table: str = "synthetic_bronze_handoff_control",
 ) -> Optional[dict[str, Any]]:
+    """Read the active append-control record for a Bronze target table."""
     ensure_handoff_control_table(
         engine,
         schema=control_schema,
@@ -1024,6 +1029,7 @@ def prepare_synthetic_postgres_for_bronze_handoff(
     """
     validate_synthetic_stream_dataframe(raw_dataframe)
 
+    # Build a stable Bronze-like sequence before assigning ids and timestamps.
     dataframe = raw_dataframe.copy()
     dataframe = sort_synthetic_stream_dataframe(dataframe)
     dataframe = add_unified_row_id(
@@ -1121,6 +1127,7 @@ def build_append_aware_bronze_handoff_from_postgres(
     2. Read target offsets from the append table
     3. Build only the new rows with continued ids and time fields
     """
+    # Plan batches first so already-loaded synthetic batches are not repeated.
     batch_plan = get_unloaded_source_batch_ids(
         engine,
         source_schema=source_schema,

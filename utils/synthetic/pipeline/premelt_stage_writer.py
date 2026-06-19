@@ -27,6 +27,7 @@ CREATE TABLE AS / INSERT INTO ... SELECT.
 
 
 def _get_table_columns(engine, *, schema: str, table_name: str) -> list[str]:
+    """Return source table columns in database ordinal order."""
     sql = """
     SELECT column_name
     FROM information_schema.columns
@@ -47,6 +48,7 @@ def _get_table_columns(engine, *, schema: str, table_name: str) -> list[str]:
 
 
 def _validate_source_columns(columns: Sequence[str], required_columns: Sequence[str]) -> None:
+    """Validate that the synthetic stream table has required premelt inputs."""
     missing = [column for column in required_columns if column not in columns]
     if missing:
         raise ValueError(
@@ -56,6 +58,7 @@ def _validate_source_columns(columns: Sequence[str], required_columns: Sequence[
 
 
 def _build_select_sql(*, safe_schema: str, safe_source_table: str, remaining_source_columns: Sequence[str]) -> str:
+    """Build the SQL SELECT that assigns observation identity and metadata."""
     remaining_sql = ",\n        ".join([f'"{column}"' for column in remaining_source_columns])
     remaining_clause = f",\n        {remaining_sql}" if remaining_sql else ""
 
@@ -99,6 +102,7 @@ def _write_stage_sql_native(
     params: dict,
     if_exists: str,
 ) -> str:
+    """Create, append to, or fail on the premelt target table in Postgres."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_target_table = sanitize_sql_identifier(target_table)
     write_mode = str(if_exists).strip().lower()
@@ -147,6 +151,7 @@ def _write_stage_sql_native(
 # -----------------------------------------------------------------------------
 
 def scalar_to_int(value: object, name: str = "value") -> int:
+    """Convert a scalar SQL result to int and reject missing values."""
     if value is None:
         raise ValueError(f"{name} cannot be missing.")
 
@@ -164,6 +169,7 @@ def dataframe_row_count_to_int(
     *,
     column: str = "row_count",
 ) -> int:
+    """Return a count value from a one-row dataframe as a plain int."""
     if dataframe.empty:
         return 0
 
@@ -186,7 +192,9 @@ def build_observations_premelt_stage(
     """Build the premelt stage directly inside Postgres.
 
     This preserves the same notebook call signature as the pandas version, but
-    avoids a full wide-table round-trip through pandas.
+    avoids a full wide-table round-trip through pandas. The stage assigns
+    dataset/run/asset identity, generated row IDs, observation indexes, and
+    producer metadata while keeping sensor columns wide for the next stage.
     """
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
@@ -214,6 +222,7 @@ def build_observations_premelt_stage(
         raise ValueError(f"Source table '{safe_schema}.{safe_source_table}' is empty.")
 
 
+    # Validate the wide generator stream before creating derived observation IDs.
     required_columns = [
         "batch_id",
         "row_in_batch",
@@ -305,6 +314,7 @@ def validate_observations_premelt_stage(
     schema: str = "capstone",
     table_name: str = "synthetic_observations_premelt_stage",
 ) -> pd.DataFrame:
+    """Return row-count and identity checks for the premelt stage table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 

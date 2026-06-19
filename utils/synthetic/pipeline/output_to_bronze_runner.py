@@ -17,6 +17,13 @@ def run_synthetic_to_bronze_once(
     n_sensors: int = 52,
     complete_only: bool = True,
 ) -> dict:
+    """
+    Run one rebuild, final-align, and Bronze handoff pass.
+
+    This wrapper keeps the late synthetic pipeline stages in the same order:
+    consumed messages become rebuilt observations, rebuilt observations become
+    final-aligned rows, and final-aligned rows are handed to the Bronze input.
+    """
     rebuild_result = rebuild_consumed_messages_to_observations(
         engine=engine,
         schema=schema,
@@ -79,6 +86,7 @@ def run_synthetic_to_bronze_loop(
     complete_only: bool = True,
     max_iterations: Optional[int] = None,
 ) -> list[dict]:
+    """Repeat synthetic-to-Bronze passes until no stage writes new rows."""
     results: list[dict] = []
     iteration = 0
 

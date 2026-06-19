@@ -15,6 +15,13 @@ def export_synthetic_batch_to_parquet(
     schema: str = "public",
     artifact_name: str = "stream",
 ) -> Path:
+    """Export one generated stream batch from Postgres to a parquet artifact.
+
+    The helper reads the synthetic stream table for a dataset/artifact pair,
+    filters to one batch_id, preserves row_in_batch ordering, and writes the
+    result through the shared file I/O helper. It is used when a generated
+    batch needs a file artifact before later synthetic staging steps.
+    """
     engine = get_engine_from_env()
 
     table = f'{schema}."synthetic_{dataset_name}_{artifact_name}"'

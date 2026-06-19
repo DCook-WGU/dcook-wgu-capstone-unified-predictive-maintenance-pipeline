@@ -1,3 +1,12 @@
+"""Legacy/support melt-stage writer for synthetic sensor message staging.
+
+This module is retained as an original support implementation for building the
+long-format synthetic sensor message stage from the premelt observation table.
+It remains useful as a reference for the chunked melt approach, but current
+copy-back decisions should treat it as legacy/support material rather than the
+primary maintained pipeline path.
+"""
+
 from __future__ import annotations
 
 from typing import Sequence
@@ -23,10 +32,38 @@ from utils.database.chunk_stage_util import (
 # -----------------------------------------------------------------------------
 
 def _build_sensor_columns(n_sensors: int = 52) -> list[str]:
+    """
+    Build the expected wide sensor column names for the premelt source table.
+
+    Parameters
+    ----------
+    n_sensors:
+        Number of sensor columns expected in the source dataframe.
+
+    Returns
+    -------
+    list[str]
+        Sensor column names in ``sensor_00`` through ``sensor_nn`` format.
+    """
     return [f"sensor_{i:02d}" for i in range(n_sensors)]
 
 
 def _validate_source_columns(dataframe: pd.DataFrame, required_columns: Sequence[str]) -> None:
+    """
+    Confirm that the premelt source table exposes all required columns.
+
+    Parameters
+    ----------
+    dataframe:
+        Zero-row preview dataframe read from the source table.
+    required_columns:
+        Columns needed for the legacy/support melt-stage write.
+
+    Raises
+    ------
+    ValueError
+        If one or more required source columns are missing.
+    """
     missing = [column for column in required_columns if column not in dataframe.columns]
     if missing:
         raise ValueError(
@@ -36,6 +73,19 @@ def _validate_source_columns(dataframe: pd.DataFrame, required_columns: Sequence
 
 
 def _extract_sensor_index(sensor_name_series: pd.Series) -> pd.Series:
+    """
+    Extract numeric sensor indexes from names such as ``sensor_00``.
+
+    Parameters
+    ----------
+    sensor_name_series:
+        Series containing long-form sensor names.
+
+    Returns
+    -------
+    pandas.Series
+        Integer sensor indexes parsed from the trailing digits.
+    """
     return (
         sensor_name_series.astype(str)
         .str.extract(r"(\d+)$", expand=False)
@@ -295,6 +345,29 @@ def validate_sensor_messages_stage(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_stage",
 ) -> pd.DataFrame:
+    """
+    Summarize the legacy/support sensor message stage for quick validation.
+
+    Parameters
+    ----------
+    engine:
+        SQLAlchemy engine connected to the capstone PostgreSQL database.
+    schema:
+        Schema containing the sensor message stage table.
+    table_name:
+        Long-format sensor message stage table to summarize.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One-row summary with row count, observation count, sensor count, and
+        min/max sensor and message-sequence indexes.
+
+    Side Effects
+    ------------
+    Reads from PostgreSQL only. No source tables, artifact files, logger state,
+    or ledger entries are modified.
+    """
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 

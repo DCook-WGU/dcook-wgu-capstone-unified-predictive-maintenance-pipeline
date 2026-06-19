@@ -21,6 +21,7 @@ from utils.database.layer_postgres import write_layer_dataframe
 # -----------------------------------------------------------------------------
 
 def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
+    """Return existing columns for a Bronze handoff table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -38,6 +39,7 @@ def _get_existing_columns(engine, *, schema: str, table: str) -> set[str]:
 
 
 def _infer_alter_column_type(series: pd.Series) -> str:
+    """Infer a conservative Postgres type for an added Bronze handoff column."""
     if pd.api.types.is_bool_dtype(series):
         return "BOOLEAN"
     if pd.api.types.is_integer_dtype(series):
@@ -53,6 +55,7 @@ def _infer_alter_column_type(series: pd.Series) -> str:
 
 
 def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataFrame) -> None:
+    """Add dataframe columns that are missing from the Bronze handoff target."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table)
 
@@ -77,6 +80,7 @@ def _add_missing_columns(engine, *, schema: str, table: str, dataframe: pd.DataF
 
 
 def _validate_handoff_mode(mode: str) -> str:
+    """Validate and normalize the Bronze handoff batching mode."""
     resolved = str(mode).strip().lower()
     allowed = {"row", "row_batch", "full_batch"}
     if resolved not in allowed:
@@ -84,6 +88,7 @@ def _validate_handoff_mode(mode: str) -> str:
     return resolved
 
 def dataframe_row_count_to_int(dataframe: pd.DataFrame, *, column: str = "row_count") -> int:
+    """Read a one-row count dataframe into a Python int."""
     if dataframe.empty:
         return 0
 
@@ -101,6 +106,7 @@ def _resolve_effective_batch_size(
     run_id: Optional[str],
     complete_only: bool,
 ) -> int:
+    """Resolve row, row-batch, or full-batch size for a Bronze handoff claim."""
     resolved_mode = _validate_handoff_mode(mode)
 
     if resolved_mode == "row":
@@ -142,6 +148,7 @@ def ensure_final_aligned_runtime_columns(
     schema: str = "capstone",
     source_table: str = "synthetic_sensor_observations_final_aligned_stage",
 ) -> None:
+    """Add Bronze handoff claim/status columns to final-aligned observations."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(source_table)
 
@@ -226,6 +233,7 @@ def ensure_bronze_handoff_target_table_exists(
     schema: str = "capstone",
     target_table: str = "bronze_observations_input_stage",
 ) -> str:
+    """Create the Bronze handoff target table and handoff lookup indexes."""
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_table = sanitize_sql_identifier(target_table)
 
@@ -269,6 +277,7 @@ def _remove_existing_target_rows(
     schema: str,
     target_table: str,
 ) -> tuple[pd.DataFrame, int]:
+    """Remove claimed rows that already exist in the Bronze handoff target."""
     if dataframe.empty:
         return dataframe.copy(), 0
 
@@ -327,6 +336,7 @@ def claim_final_aligned_rows_for_bronze(
     complete_only: bool = True,
     handoff_token: Optional[str] = None,
 ) -> pd.DataFrame:
+    """Claim final-aligned observations for transfer into the Bronze input table."""
     ensure_final_aligned_runtime_columns(
         engine,
         schema=schema,
@@ -404,6 +414,7 @@ def write_claimed_rows_to_bronze_target(
     schema: str = "capstone",
     target_table: str = "bronze_observations_input_stage",
 ) -> dict:
+    """Append claimed final-aligned rows to the Bronze handoff target table."""
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("dataframe must be a pandas DataFrame.")
 
@@ -469,6 +480,7 @@ def mark_claimed_handoff_completed(
     schema: str = "capstone",
     source_table: str = "synthetic_sensor_observations_final_aligned_stage",
 ) -> None:
+    """Mark claimed final-aligned rows as completed after Bronze target write."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_source = sanitize_sql_identifier(source_table)
 
@@ -496,6 +508,7 @@ def mark_claimed_handoff_failed(
     schema: str = "capstone",
     source_table: str = "synthetic_sensor_observations_final_aligned_stage",
 ) -> None:
+    """Mark claimed final-aligned rows as failed and store the handoff error."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_source = sanitize_sql_identifier(source_table)
 
@@ -523,6 +536,7 @@ def requeue_failed_bronze_handoffs(
     schema: str = "capstone",
     source_table: str = "synthetic_sensor_observations_final_aligned_stage",
 ) -> int:
+    """Return failed Bronze handoff claims to pending status."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_source = sanitize_sql_identifier(source_table)
 
@@ -567,6 +581,7 @@ def handoff_final_aligned_observations_to_bronze(
     run_id: Optional[str] = None,
     complete_only: bool = True,
 ) -> dict:
+    """Claim, write, and mark one final-aligned-to-Bronze handoff batch."""
     claimed = claim_final_aligned_rows_for_bronze(
         engine=engine,
         mode=mode,
@@ -591,6 +606,7 @@ def handoff_final_aligned_observations_to_bronze(
     handoff_token = str(claimed["bronze_handoff_token"].iloc[0])
 
     try:
+        # Write first, then mark the source claim completed.
         write_result = write_claimed_rows_to_bronze_target(
             engine=engine,
             dataframe=claimed,
@@ -647,6 +663,7 @@ def run_bronze_handoff_loop(
     max_iterations: Optional[int] = None,
     stop_on_failure: bool = True,
 ) -> list[dict]:
+    """Run Bronze handoff batches until empty, capped, full-batch, or failed."""
     results: list[dict] = []
     iteration = 0
 

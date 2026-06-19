@@ -26,6 +26,7 @@ from utils.database.chunk_stage_util import (
 # -----------------------------------------------------------------------------
 
 def log_step_timing(step_name: str, start_time: float) -> float:
+    """Print elapsed time for a send-queue build step and return a fresh timer."""
     elapsed_seconds = perf_counter() - start_time
     print(f"[timing] {step_name}: {elapsed_seconds:,.2f} seconds")
     return perf_counter()
@@ -35,6 +36,7 @@ def log_step_timing(step_name: str, start_time: float) -> float:
 # -----------------------------------------------------------------------------
 
 def _validate_source_columns(dataframe: pd.DataFrame, required_columns: Sequence[str]) -> None:
+    """Raise a clear error when the staged sensor table is missing queue inputs."""
     missing = [column for column in required_columns if column not in dataframe.columns]
     if missing:
         raise ValueError(
@@ -53,6 +55,7 @@ def _ensure_send_queue_runtime_columns(
     schema: str,
     table_name: str,
 ) -> None:
+    """Add runtime queue columns used by producer claiming and acknowledgements."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -93,6 +96,7 @@ def _ensure_send_queue_indexes(
     schema: str,
     table_name: str,
 ) -> None:
+    """Create indexes used by status checks, claim ordering, and message lookup."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
@@ -139,6 +143,7 @@ def _apply_send_queue_owner_and_grants(
     table_name: str,
     owner_role: str,
 ) -> None:
+    """Grant the producer role ownership and DML access to the send queue table."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
     safe_owner_role = sanitize_sql_identifier(owner_role)
@@ -183,6 +188,13 @@ def build_sensor_messages_send_queue(
     queue_owner_role: str = "kafka_producer",
     apply_owner_and_grants: bool = False,
 ) -> str:
+    """
+    Build the send queue from staged sensor messages using chunked pandas writes.
+
+    Each output row represents one sensor message ready to be claimed by the
+    Kafka producer. The function adds queue status fields, message keys, and
+    producer delivery placeholders while preserving the staged sensor columns.
+    """
     safe_schema = create_schema_if_not_exists(engine, schema)
     safe_source_table = sanitize_sql_identifier(source_table)
     safe_target_table = sanitize_sql_identifier(target_table)
@@ -274,8 +286,10 @@ def build_sensor_messages_send_queue(
         start_row: int,
         end_row: int,
     ) -> pd.DataFrame:
+        """Attach queue metadata to one ordered source chunk."""
         dataframe = df_chunk.copy()
 
+        # Preserve deterministic producer order inside each processed chunk.
         dataframe = dataframe.sort_values(
             by=["observation_index", "message_sequence_index", "sensor_index"],
             kind="stable",
@@ -321,6 +335,7 @@ def build_sensor_messages_send_queue(
         start_row: int,
         end_row: int,
     ) -> None:
+        """Write the first chunk with the requested mode, then append later chunks."""
         nonlocal has_written_first_chunk
 
         write_layer_dataframe(
@@ -454,6 +469,7 @@ def build_sensor_messages_send_queue_sql_native(
     if enable_timing_logging:
         timer = log_step_timing("source validation complete", timer)
 
+    # Choose whether to rebuild, append to, or protect an existing queue table.
     write_mode = str(if_exists).strip().lower()
     target_exists = table_exists(
         engine,
@@ -613,6 +629,7 @@ def validate_sensor_messages_send_queue(
     schema: str = "capstone",
     table_name: str = "synthetic_sensor_messages_send_queue",
 ) -> pd.DataFrame:
+    """Return row, timestamp, sensor, and pending-message checks for the send queue."""
     safe_schema = sanitize_sql_identifier(schema)
     safe_table = sanitize_sql_identifier(table_name)
 
