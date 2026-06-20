@@ -1,8 +1,0 @@
-selected_run_key,plot_run_label,target_flag_column,row_count,first_alert_plot_order_index,first_broken_plot_order_index,lead_rows_to_failure,lead_time_minutes_to_failure,total_final_alert_rows,total_failure_rows,alerts_before_failure,alerts_at_or_after_failure
-baseline,Baseline IsolationForest,baseline__baseline_flag,83889,0,4700,4700,4700,31200,2,797,30403
-cascade_defaults,Cascade Default,cascade_default__cascade_final_flag,83889,0,4700,4700,4700,24896,2,689,24207
-cascade_tuned,Cascade Tuned,cascade_tuned__cascade_final_flag,83889,0,4700,4700,4700,15153,2,672,14481
-stage3_improved,Stage 3 Improved,stage3_improved__cascade_final_flag,83889,0,4700,4700,4700,6594,2,461,6133
-stage3_relaxed,Stage 3 Relaxed,stage3_improved__cascade_stage3_relaxed_flag,83889,0,4700,4700,4700,13713,2,652,13061
-stage3_medium,Stage 3 Medium,stage3_improved__cascade_stage3_medium_flag,83889,0,4700,4700,4700,7287,2,491,6796
-stage3_strict,Stage 3 Strict,stage3_improved__cascade_stage3_strict_flag,83889,18581,4700,-13881,-13881,61,2,0,61

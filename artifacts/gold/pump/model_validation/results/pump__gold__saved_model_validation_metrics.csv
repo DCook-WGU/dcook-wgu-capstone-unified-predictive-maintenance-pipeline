@@ -1,8 +1,0 @@
-model_id,variant_family,stage_gate,test_rows,alerts,tp,fp,fn,tn,precision,recall,f1,threshold,roc_auc,average_precision,feature_count,model_label
-baseline,baseline,baseline,83889,0,0,0,118,83771,0.0,0.0,0.0,0.5040984526829705,0.9406852498811833,0.12201014363272505,50,baseline
-cascade_default_stage1,cascade_default,stage1,83889,0,0,0,118,83771,0.0,0.0,0.0,0.4886482835351958,0.9406852498811833,0.12201014363272505,50,cascade_default_stage1
-cascade_default_stage2,cascade_default,stage2,83889,0,0,0,118,83771,0.0,0.0,0.0,0.4886482835351958,0.6505850594710478,0.0037470961167639137,12,cascade_default_stage2
-cascade_tuned_stage1,cascade_tuned,stage1,83889,0,0,0,118,83771,0.0,0.0,0.0,0.4886482835351958,0.9406852498811833,0.12201014363272505,50,cascade_tuned_stage1
-cascade_tuned_stage2,cascade_tuned,stage2,83889,0,0,0,118,83771,0.0,0.0,0.0,0.4886482835351958,0.7251135005055145,0.005453192019561953,12,cascade_tuned_stage2
-stage3_improved_stage1,cascade_stage3_improved,stage1,83889,0,0,0,118,83771,0.0,0.0,0.0,0.4886482835351958,0.9406852498811833,0.12201014363272505,50,stage3_improved_stage1
-stage3_improved_stage2,cascade_stage3_improved,stage2,83889,0,0,0,118,83771,0.0,0.0,0.0,0.4886482835351958,0.7251135005055145,0.005453192019561953,12,stage3_improved_stage2

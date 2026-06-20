@@ -79,7 +79,14 @@ dataset:
   - running
 bronze:
   layer_name: bronze
+  stage_name: ingestion
   process_run_id_prefix: bronze_process
+  versions:
+    silver: bronze__ingestion__v001
+    truth: truth_v001
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
   artifact_layout:
     stage: bronze
     family: null
@@ -279,4 +286,4 @@ config_meta:
   - /workspace/configs/modes/train.yaml
   - /workspace/configs/stages/bronze.yaml
   project_root: /workspace
-  config_hash: a29317e2e3b1d9b1db72c98cf674d6a4e9c0cdb3cceccfc1e2974cbd9fc0bb69
+  config_hash: 8e4f7541ed41f9e7168a0daba4651147635f683b16ffff36f3338fb43ca88728
