@@ -73,9 +73,10 @@ def _infer_sqlalchemy_dtype_for_series(series: pd.Series):
         return BIGINT()
 
     if pd.api.types.is_float_dtype(series):
-        return FLOAT(precision=53)
+        return FLOAT(precision=53)  # 53-bit mantissa matches IEEE 754 double (Python's native float)
 
     #if pd.api.types.is_datetime64tz_dtype(series):
+    # isinstance check replaces the deprecated is_datetime64tz_dtype for pandas 2.x compatibility.
     if isinstance(series.dtype, pd.DatetimeTZDtype):
         return TIMESTAMP(timezone=True)
 
@@ -177,7 +178,7 @@ def write_layer_dataframe(
     if_exists: str = "append",
     index: bool = False,
     chunksize: int = 5000,
-    method: str = "multi",
+    method: str = "multi",  # "multi" sends multiple rows per INSERT; much faster than the pandas one-row default for Postgres
     allow_empty: bool = False,
     dtype_overrides: Optional[Dict[str, Any]] = None,
     logger: Optional[Any] = None,

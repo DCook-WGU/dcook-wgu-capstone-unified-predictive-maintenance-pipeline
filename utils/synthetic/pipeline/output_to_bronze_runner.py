@@ -110,6 +110,7 @@ def run_synthetic_to_bronze_loop(
         final_written = sum(int(x.get("written_count", 0)) for x in result["final_align"])
         bronze_written = sum(int(x.get("written_count", 0)) for x in result["bronze"])
 
+        # All three stages returned zero writes: the pipeline is fully drained.
         if rebuild_rows == 0 and final_written == 0 and bronze_written == 0:
             break
 

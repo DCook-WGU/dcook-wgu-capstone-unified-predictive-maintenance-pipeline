@@ -108,6 +108,8 @@ def get_episode_status_state_stats(
     if state_map is not None:
         state_series = state_series.map(state_map).fillna(state_series)
 
+    # Restore original nulls that astype("string") converted to "<NA>" strings;
+    # without this, null rows would appear as a distinct "<NA>" state category.
     state_series = state_series.where(~null_mask, pd.NA)
 
     normalized_status_column = f"{status_column}_normalized"
@@ -244,6 +246,8 @@ def build_episode_status_payload_and_tables(
     episode_totals_df = pd.DataFrame(payload["episode_totals"])
     global_status_stats_df = pd.DataFrame(payload["global_status_stats"])
 
+    # episode_status_counts is a dataframe written to its own artifact file;
+    # exclude it here to keep the JSON-ready payload fully serializable.
     payload_no_df = {key: value for key, value in payload.items() if key != "episode_status_counts"}
 
     return {

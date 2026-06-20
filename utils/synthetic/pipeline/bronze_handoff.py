@@ -691,6 +691,7 @@ def run_bronze_handoff_loop(
         if result["status"] == "failed" and stop_on_failure:
             break
 
+        # full_batch mode claims all pending rows in one call, so one iteration is enough.
         if _validate_handoff_mode(mode) == "full_batch":
             break
 

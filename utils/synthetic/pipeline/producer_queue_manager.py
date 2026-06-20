@@ -453,6 +453,8 @@ def claim_pending_sensor_messages_batch(
     resolved_claim_token = str(claim_token).strip() if claim_token else str(uuid.uuid4())
 
     # Claim rows and return the exact claimed payload in one transaction.
+    # FOR UPDATE SKIP LOCKED lets concurrent producers claim different rows
+    # without blocking each other when multiple workers share the same queue.
     sql = f"""
     WITH rows_to_claim AS (
         SELECT message_key

@@ -613,6 +613,7 @@ def build_synthetic_final_aligned_output_stage(
     if bounds["row_count"] == 0:
         return stats
 
+    # First window uses the requested if_exists mode; subsequent windows always append.
     has_written_first_chunk = False
     min_observation_index = int(bounds["min_observation_index"])
     max_observation_index = int(bounds["max_observation_index"])

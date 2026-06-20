@@ -71,6 +71,8 @@ def build_postgres_url(
     if not all([host, port, database, user, password]):
         raise ValueError("host, port, database, user, and password are required.")
 
+    # URL-encode credentials because values may contain '@', ':', or '!' which
+    # would break the RFC-3986 authority section of the connection URL.
     user_q = quote_plus(str(user))
     pass_q = quote_plus(str(password))
     db_q = quote_plus(str(database))
@@ -106,6 +108,8 @@ def get_engine(
             driver=driver,
         )
 
+    # pool_pre_ping=True tests each connection with a cheap SELECT before use,
+    # preventing errors from stale connections that timed out on the server side.
     return create_engine(postgres_url, future=True, echo=echo, pool_pre_ping=True)
 
 
@@ -131,6 +135,8 @@ def get_engine_from_env(
     Default resolution order supports both your Docker-style DB_* variables and
     a more standard POSTGRES_* naming convention.
     """
+    # Resolve each credential from the first matching env var in priority order;
+    # DB_* names take precedence over POSTGRES_* so Docker Compose overrides win.
     host = _get_first_env_value(host_env_names)
     port_raw = _get_first_env_value(port_env_names) or "5432"
     database = _get_first_env_value(database_env_names)
@@ -222,6 +228,8 @@ def table_exists(engine: Engine, *, schema: str, table_name: str) -> bool:
           AND table_name = :table_name
     ) AS table_exists
     """
+    # information_schema.tables is used instead of pg_class so the query works
+    # correctly across all schemas without requiring superuser access.
     result = read_sql_dataframe(
         engine,
         sql,

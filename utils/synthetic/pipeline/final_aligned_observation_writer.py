@@ -501,6 +501,7 @@ def build_final_aligned_observations_stage(
         table_name=safe_rebuilt_table,
     )
 
+    # First window uses the requested if_exists mode; subsequent windows always append.
     has_written_first_chunk = False
 
     stats = {

@@ -67,6 +67,8 @@ def reserve_cycle_range(engine, *, schema: str, sequence_name: str, n_rows: int)
     safe_schema = sanitize_sql_identifier(schema)
     safe_sequence = sanitize_sql_identifier(sequence_name)
 
+    # One nextval reserves the first ID; setval advances the sequence by n_rows-1
+    # so the entire range is claimed without firing additional nextval calls.
     start_dataframe = read_sql_dataframe(
         engine,
         f'SELECT nextval(\'"{safe_schema}"."{safe_sequence}"\') AS v',
@@ -240,6 +242,8 @@ def _copy_dataframe_to_table(
     out = _prepare_dataframe_for_copy(dataframe)
 
     column_list_sql = ", ".join(f'"{column}"' for column in out.columns)
+    # NULL '\\N' in the COPY command must match na_rep="\\N" in to_csv below
+    # so that NaN values arrive as SQL NULL rather than the literal string "\N".
     copy_sql = (
         f'COPY "{safe_schema}"."{safe_table}" ({column_list_sql}) '
         "FROM STDIN WITH (FORMAT CSV, NULL '\\N')"

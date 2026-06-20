@@ -43,6 +43,8 @@ def find_anomaly_onsets(dataframe: pd.DataFrame) -> pd.DataFrame:
         working = working.sort_values(["event_step"]).reset_index(drop=True)
         shifted = working["anomaly_flag"].shift(1)
 
+    # fillna(0) on shifted treats "no previous row" as flag=0, so a run that
+    # begins at row 0 is correctly identified as an onset start.
     onset_mask = (working["anomaly_flag"] == 1) & (shifted.fillna(0) == 0)
     onsets = working.loc[onset_mask, grouping_columns + ["time_index", "event_step"]].copy()
     return onsets.reset_index(drop=True)
@@ -57,6 +59,8 @@ def sample_onsets_evenly(onsets: pd.DataFrame, max_count: int) -> pd.DataFrame:
     if len(onsets) <= max_count:
         return onsets.reset_index(drop=True)
 
+    # set() removes rounding collisions: linspace over a short range can map two
+    # floats to the same integer after rounding, so dedup keeps count <= max_count.
     indices = np.linspace(0, len(onsets) - 1, num=max_count)
     indices = [int(round(value)) for value in indices]
     indices = sorted(list(set(indices)))

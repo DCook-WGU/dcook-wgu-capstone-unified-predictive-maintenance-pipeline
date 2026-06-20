@@ -525,6 +525,8 @@ def run_cascade_pipeline(
             & (pd.to_numeric(working["stage3_confirmed_flag"], errors="coerce").fillna(0).astype(int) == 1)
         ).astype(int)
 
+        # Store Stage 3 rule metadata in attrs to pass it out of _run_full_scoring
+        # without adding extra columns to the scored dataframe.
         working.attrs["stage3_debug"] = {
             "primary_info": primary_info,
             "secondary_info": secondary_info,

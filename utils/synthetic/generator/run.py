@@ -269,7 +269,7 @@ def main() -> None:
     truth_record = build_truth_record(
         truth_base=synthetic_truth,
         row_count=int(len(synthetic_df)),
-        column_count=int(synthetic_df.shape[1] + 3),
+        column_count=int(synthetic_df.shape[1] + 3),  # +3 for meta__truth_hash / meta__parent_truth_hash / meta__pipeline_mode added by stamp_truth_columns
         meta_columns=meta_columns,
         feature_columns=feature_columns,
     )

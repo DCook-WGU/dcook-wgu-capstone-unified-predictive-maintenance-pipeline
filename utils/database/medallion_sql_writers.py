@@ -1125,6 +1125,8 @@ def write_silver_eda_sql_outputs(
 
     rows_written: dict[str, int] = {}
 
+    # All EDA tables are written in a single transaction so a failure on one table
+    # rolls back all inserts rather than leaving the database in a partially updated state.
     with engine.begin() as conn:
         for table_name, dataframe in frames.items():
             if dataframe is None:

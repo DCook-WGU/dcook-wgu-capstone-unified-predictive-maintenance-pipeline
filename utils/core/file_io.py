@@ -163,6 +163,8 @@ def _generate_deterministic_dataset_name_from_file_details(path_value: Optional[
         ]
     )
 
+    # SHA-1 is used here for brevity, not for security; the 8-char hex suffix gives
+    # enough entropy (32 bits) to distinguish files that share the same stem and size
     identity_hash = hashlib.sha1(identity_text.encode("utf-8")).hexdigest()[:8]
 
     generated_dataset_name = (
@@ -200,7 +202,8 @@ def _create_record_id(
     normalize to a stable identifier (e.g., basename or a source file ID) before hashing.
     """
 
-    dataframe = dataframe.copy() 
+    # Copy before mutation so callers are not surprised by in-place changes to their dataframe
+    dataframe = dataframe.copy()
 
     dataframe[source_file_column] = dataframe[source_file_column].astype("string").fillna("")
 
@@ -489,6 +492,8 @@ def load_data(
 
         if suffix in {".parquet", ".pq"}:
             logger.info("Loading Parquet: %s", path)
+            # pyarrow is the default engine for cross-tool compatibility; fastparquet
+            # may silently drop timezone info or unsupported encodings from Spark-written files
             return pd.read_parquet(path, engine=engine, **read_options)
 
         raise ValueError(f"Unsupported file type: {suffix}")
@@ -532,6 +537,8 @@ def save_data(
 
         elif suffix in {".parquet", ".pq"}:
             logger.info("Saving DataFrame to Parquet: %s", path)
+            # snappy is the default because it offers a good balance of compression
+            # ratio and decompression speed; gzip compresses better but is slower to read
             compression: Any = write_options.pop("compression", "snappy")
             parquet_engine: Any = write_options.pop("engine", "pyarrow")
 

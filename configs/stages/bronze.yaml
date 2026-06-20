@@ -1,7 +1,16 @@
 bronze:
   layer_name: bronze
+  stage_name: ingestion
 
   process_run_id_prefix: bronze_process
+
+  versions:
+    silver: bronze__ingestion__v001
+    truth: truth_v001
+
+  default_fallbacks:
+    asset_id: asset__001
+    run_id: run__001
 
   artifact_layout:
     stage: bronze

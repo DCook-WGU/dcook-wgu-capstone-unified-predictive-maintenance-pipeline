@@ -30,6 +30,8 @@ def _copy_artifact_mapping(value: Mapping[Any, Any] | None = None) -> dict[str, 
     if value is None:
         return {}
 
+    # str(key) coercion guards against YAML loaders that return integer or
+    # bytes keys for certain anchor-aliased config nodes.
     return {
         str(key): item
         for key, item in value.items()

@@ -15,6 +15,8 @@ class MissingnessSpec:
     missingness_pct_all: dict[sensor] -> percent missing (0..100)
     missingness_pct_by_state: dict[state] -> dict[sensor] -> percent missing (0..100)
     missingness_state_dependent_flag: dict[sensor] -> bool
+    state_col_synth: dataframe column used to identify row state when "phase" is absent
+    state_list: ordered list of valid state names (e.g. ["normal", "abnormal", "recovery"])
     """
     missingness_pct_all: Dict[str, float]
     missingness_pct_by_state: Dict[str, Dict[str, float]]

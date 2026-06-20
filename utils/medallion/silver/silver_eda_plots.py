@@ -120,6 +120,8 @@ def build_flag_spans(
         if flag_value == 1 and start_value is None:
             start_value = x_value
 
+        # Treat the row after the final row as flag=0 so a span ending on the
+        # last row is still closed rather than left open.
         is_last_row = idx == len(working) - 1
         next_flag = 0 if is_last_row else int(working.loc[idx + 1, flag_column])
 

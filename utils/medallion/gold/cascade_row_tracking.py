@@ -372,6 +372,8 @@ def get_stage_detected_rows_dataframe(
     )
 
 
+# Example usage patterns for get_stage_detected_rows_dataframe and get_detected_rows_dataframe.
+# Copy into a notebook cell and replace variable names as needed.
 '''
 # Baseline
 

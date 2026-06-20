@@ -361,6 +361,8 @@ def build_sensor_messages_send_queue(
         chunk_size=chunk_size,
     )
 
+    # Add claim/producer columns after the table is created; they are not part
+    # of the chunked data schema and must exist before the producer can claim rows.
     _ensure_send_queue_runtime_columns(
         engine,
         schema=safe_schema,
@@ -598,6 +600,8 @@ def build_sensor_messages_send_queue_sql_native(
         table_name=safe_target_table,
     )
 
+    # ANALYZE updates the planner statistics so queries on the new queue table
+    # use accurate row estimates for the claim-order indexes.
     execute_sql(
         engine,
         f'ANALYZE "{safe_schema}"."{safe_target_table}";',

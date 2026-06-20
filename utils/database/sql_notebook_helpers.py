@@ -36,6 +36,8 @@ from utils.database.postgres import get_engine_from_env, read_sql_dataframe
 # Connection and environment context
 # -----------------------------------------------------------------------------
 
+# Engine is created at import time; Postgres environment variables (DB_HOST, DB_USER, etc.)
+# must be set before this module is imported, otherwise the import will raise RuntimeError.
 engine = get_engine_from_env()
 
 CAPSTONE_SCHEMA = os.getenv("CAPSTONE_SCHEMA", "capstone")
@@ -49,6 +51,8 @@ CAPSTONE_SCHEMA = os.getenv("CAPSTONE_SCHEMA", "capstone")
 #    globals().get("RUN_ID", "synthetic_run_001"),
 #)
 
+# globals().get("DATASET_NAME") reads the notebook-level DATASET_NAME variable when
+# the DATASET_ID env var is not set, letting notebooks configure context before import.
 DATASET_ID = os.getenv(
     "DATASET_ID",
     globals().get("DATASET_NAME", "pump"),
@@ -177,6 +181,8 @@ def to_builtin(value: Any) -> Any:
     if isinstance(value, np.bool_):
         return bool(value)
 
+    # pd.isna() raises TypeError for arrays and some custom types; the bare except
+    # is intentional to keep to_builtin safe for any value type found in a row.
     try:
         if pd.isna(value):
             return None
@@ -224,6 +230,7 @@ def to_scalar(value: Any) -> Any:
     if isinstance(value, np.bool_):
         return bool(value)
 
+    # Same bare except as to_builtin: pd.isna() may raise for non-scalar types.
     try:
         if pd.isna(value):
             return None

@@ -202,6 +202,8 @@ def read_table_chunk_by_row_number(
     quoted_columns = ", ".join([f'"{column}"' for column in select_columns])
     end_row = int(start_row) + int(chunk_size)
 
+    # ROW_NUMBER assigns 1-based sequential positions. Using > :start_row (exclusive)
+    # and <= :end_row (inclusive) makes chunks contiguous and non-overlapping.
     sql = f'''
     WITH ordered_source AS (
         SELECT
@@ -315,6 +317,8 @@ def process_postgres_table_in_chunks(
         if enable_memory_logging:
             log_memory(f"chunk {chunk_number} - after write")
 
+        # Explicitly delete chunk objects and force GC to keep memory bounded across
+        # many iterations; without this, large tables accumulate all chunks in memory.
         del dataframe_chunk
         del transformed
         gc.collect()
@@ -506,6 +510,7 @@ def process_observation_index_windows(
             observation_index_max,
         )
 
+        # Explicit delete + gc.collect() keeps memory bounded across observation windows.
         del dataframe_window
         del transformed
         gc.collect()

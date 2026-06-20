@@ -62,6 +62,7 @@ def _build_select_sql(*, safe_schema: str, safe_source_table: str, remaining_sou
     remaining_sql = ",\n        ".join([f'"{column}"' for column in remaining_source_columns])
     remaining_clause = f",\n        {remaining_sql}" if remaining_sql else ""
 
+    # Keep observation_index stable so post-melt rows can join back to wide rows.
     return f"""
     WITH ordered_source AS (
         SELECT
@@ -109,6 +110,8 @@ def _write_stage_sql_native(
     target_exists = table_exists(engine, schema=safe_schema, table_name=safe_target_table)
 
     if write_mode == "replace":
+        # DROP before CREATE TABLE AS so reruns are idempotent even when the
+        # column set changes between notebook iterations.
         execute_sql(engine, f'DROP TABLE IF EXISTS "{safe_schema}"."{safe_target_table}"')
         execute_sql(
             engine,
@@ -237,6 +240,8 @@ def build_observations_premelt_stage(
     required_columns.extend([f"sensor_{i:02d}" for i in range(52)])
     _validate_source_columns(source_columns, required_columns)
 
+    # Metadata columns must lead the SELECT so the melt stage can reliably
+    # identify id_vars vs value_vars without inspecting column types.
     ordered_source_front_columns = [
         "batch_id",
         "row_in_batch",
@@ -248,6 +253,8 @@ def build_observations_premelt_stage(
         "meta_primary_fault_type",
         "meta_magnitude",
     ]
+    # Any source columns not in the front list (sensor_00..sensor_51 etc.)
+    # are appended last so new generator columns survive without code changes.
     remaining_source_columns = [
         column for column in source_columns if column not in ordered_source_front_columns
     ]

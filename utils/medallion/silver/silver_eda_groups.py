@@ -70,6 +70,7 @@ def build_normal_only_correlation_pairs(
     pair_rows = []
     for sensor_a in correlation_matrix.columns:
         for sensor_b in correlation_matrix.columns:
+            # >= skips self-pairs (A,A) and avoids double-counting (A,B) + (B,A).
             if sensor_a >= sensor_b:
                 continue
             corr_value = correlation_matrix.loc[sensor_a, sensor_b]

@@ -249,7 +249,7 @@ def publish_claimed_batch_to_kafka(
         else:
             delivered_count += 1
 
-    POLL_EVERY_MESSAGES = 1000
+    POLL_EVERY_MESSAGES = 1000  # poll periodically to drain broker delivery callbacks
 
     for row_number, row in enumerate(working.to_dict("records"), start=1):
         payload = build_sensor_message_payload(row)

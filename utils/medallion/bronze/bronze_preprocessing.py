@@ -29,16 +29,22 @@ def _normalize_dataset_name(dataset_name: str) -> str:
         ValueError: If normalization removes all usable characters.
     """
     normalized_value = str(dataset_name).strip().lower()
+    # Collapse common word separators to underscores for a uniform key space
     normalized_value = normalized_value.replace(" ", "_")
     normalized_value = normalized_value.replace("-", "_")
 
     cleaned_characters: List[str] = []
     for character in normalized_value:
+        # Strip every character that is not alphanumeric or underscore so the
+        # resulting name is safe for use as a filesystem path segment and SQL
+        # identifier without further escaping
         if character.isalnum() or character == "_":
             cleaned_characters.append(character)
 
     normalized_value = "".join(cleaned_characters)
 
+    # Multiple consecutive underscores arise when adjacent special characters
+    # were replaced; collapse them so the name is human-readable
     while "__" in normalized_value:
         normalized_value = normalized_value.replace("__", "_")
 
@@ -90,21 +96,31 @@ def _generate_deterministic_dataset_name_from_file_details(
             sample_hasher = hashlib.sha1()
 
             with open(path_object, "rb") as file_handle:
+                # Read the first 64 KB — enough to capture CSV headers and early
+                # data rows which are the most distinctive part of the file
                 first_chunk = file_handle.read(65536)
                 sample_hasher.update(first_chunk)
 
                 if stat_result.st_size > 65536:
+                    # Also sample the tail of large files so that appended rows
+                    # produce a different fingerprint than the original file
                     seek_position = max(stat_result.st_size - 65536, 0)
                     file_handle.seek(seek_position)
                     last_chunk = file_handle.read(65536)
                     sample_hasher.update(last_chunk)
 
+            # Mix size and mtime into the hash so that a file replaced with
+            # identical content but at a different path still produces a unique name
             sample_hasher.update(file_size_bytes.encode("utf-8"))
             sample_hasher.update(modified_timestamp.encode("utf-8"))
 
+            # Truncate to 8 hex digits — collision risk is acceptable for a
+            # human-readable fallback dataset name
             content_fingerprint = sample_hasher.hexdigest()[:8]
 
         except Exception:
+            # Any I/O or permission error during file sampling sets "readfail";
+            # name generation stays non-fatal for inaccessible source files.
             content_fingerprint = "readfail"
 
     generated_dataset_name = (

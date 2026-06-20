@@ -181,6 +181,7 @@ def build_sensor_messages_stage(
         )
 
     rng = np.random.default_rng(random_seed)
+    # First chunk uses the requested if_exists mode; subsequent chunks always append.
     has_written_first_chunk = False
 
     ordered_columns = [

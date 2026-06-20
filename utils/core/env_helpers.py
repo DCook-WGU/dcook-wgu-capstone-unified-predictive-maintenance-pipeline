@@ -6,6 +6,8 @@ from typing import Any, Dict, Optional, Sequence
 
 TRUE_VALUES = {"1", "true", "t", "yes", "y", "on"}
 FALSE_VALUES = {"0", "false", "f", "no", "n", "off"}
+# Strings that represent "nothing configured" in an env var. "all" is included
+# because some tools set it as a "no specific selection / apply globally" sentinel.
 NONE_VALUES = {"", "none", "null", "nil", "na", "n/a", "all"}
 
 
@@ -197,6 +199,8 @@ def env_bool(name: str, default: bool, *, aliases: Sequence[str] = ()) -> bool:
     if normalized in FALSE_VALUES:
         return False
 
+    # Raising is intentional: bool(value) would silently coerce any non-empty string to
+    # True (e.g., bool("maybe") == True), masking misconfigured environment variables.
     raise ValueError(
         f"Invalid boolean value for {name}: {value!r}. "
         f"Use one of {sorted(TRUE_VALUES | FALSE_VALUES)}."

@@ -106,6 +106,8 @@ def log_layer_paths(
         raise ValueError(f"current_layer must be one of {valid_layers}, got '{current_layer}'")
 
     current_index = valid_layers.index(layer)
+    # Guard against index 0: without it, valid_layers[-1] would wrap to "synthetic",
+    # giving Bronze a wrong previous-layer value due to Python's negative index behavior.
     previous_layer = valid_layers[current_index - 1] if current_index > 0 else None
 
     common_paths = [

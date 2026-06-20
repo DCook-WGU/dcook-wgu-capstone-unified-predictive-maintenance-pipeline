@@ -353,6 +353,8 @@ def ensure_consumed_stage_runtime_schema(
         '''
     )
 
+    # ANALYZE after schema expansion so the planner has accurate statistics
+    # before the consumer loop begins inserting messages.
     execute_sql(
         engine,
         f'''

@@ -75,6 +75,8 @@ def _pair_key(left: str, right: str) -> Tuple[str, str]:
     return (left, right) if left <= right else (right, left)
 
 
+# Sensors in BRIDGE_PAIRS need stronger point-to-point coupling than the
+# group or cluster overlays provide; they are handled by a dedicated pass.
 BRIDGE_PAIRS = [("sensor_25", "sensor_26")]
 
 @dataclass(frozen=True)
@@ -1763,6 +1765,8 @@ class SyntheticGenerator:
 
         observable_onset_row: Optional[int] = None
         if is_fault_episode:
+            # Only search for observable onset after buildup begins; exceedances
+            # before buildup_start_idx are treated as normal variation.
             search_mask = row_idx >= int(buildup_start_idx)
             observable_onset_row = self._first_consecutive_true_index(
                 primary_threshold_crossed & search_mask,
@@ -2035,6 +2039,8 @@ class SyntheticGenerator:
                 values[i] = values[i] + direction * magnitude * std * 8.0
 
         elif fault_type == "stuck_constant":
+            # nanmedian of the current local values, not the profile median, so the
+            # stuck level reflects where the sensor was operating at fault time.
             stuck = float(np.nanmedian(values))
             values[:] = stuck
 
@@ -2157,7 +2163,7 @@ class SyntheticGenerator:
 
         phase_map = {
             "normal": "normal",
-            "buildup": "buildup" if "buildup" in self.state_calibration_targets else "normal",
+            "buildup": "buildup" if "buildup" in self.state_calibration_targets else "normal",  # falls back to normal when no buildup targets configured
             "abnormal": "abnormal",
             "recovery": "recovery",
         }
@@ -2393,6 +2399,8 @@ class SyntheticGenerator:
                 trigger_std_mult=0.25,
             )
 
+            # Copy the phase window, apply correlation structure in-place, then
+            # write the modified rows back so the full dataframe stays consistent.
             df_window = dataframe.loc[normal_idx].copy()
 
             normal_top_pair_cfg = self._get_corr_tuning_block(

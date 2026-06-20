@@ -117,6 +117,11 @@ def load_notebook_context(
 
     stage_config = _require_mapping(config_map.get(stage, {}), stage)
 
+    # recipe_id resolution order:
+    # 1. explicit caller value (notebook override)
+    # 2. stage config "recipe_id" key (normal YAML location)
+    # 3. stage config "cleaning_recipe_id" (Bronze/Silver legacy name)
+    # 4. deterministic default so recipe_id is never None or empty
     resolved_recipe_id = str(
         recipe_id
         or stage_config.get("recipe_id")
@@ -141,11 +146,15 @@ def load_notebook_context(
 
     pipeline = _optional_mapping(config_map.get("pipeline"), "pipeline")
     if not pipeline:
+        # Older config files do not include a pipeline block; default to batch/notebook so
+        # the context is always usable without requiring a config update for each stage.
         pipeline = {
             "execution_mode": "batch",
             "orchestration_mode": "notebook",
         }
 
+    # default_fallbacks is read from stage_config (not top-level config) so each stage
+    # can define its own column/value fallbacks without sharing a global fallback namespace.
     default_fallbacks = _optional_mapping(
         stage_config.get("default_fallbacks"),
         f"{stage}.default_fallbacks",

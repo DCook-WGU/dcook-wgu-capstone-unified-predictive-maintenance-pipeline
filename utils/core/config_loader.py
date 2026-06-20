@@ -861,6 +861,8 @@ def load_pipeline_config(
 
     merged = _normalize_mode_overrides(merged)
 
+    # First pass: resolve templates that reference plain config values (dataset name,
+    # version strings, mode, etc.) before filenames and resolved_paths exist.
     flat_before = _flatten_for_templates(merged)
     merged = _render_templates(merged, flat_before)
 
@@ -870,6 +872,8 @@ def load_pipeline_config(
     path_map = _build_path_map(project_root, merged, filenames)
     merged["resolved_paths"] = path_map
 
+    # Second pass: filenames and resolved_paths are now part of the config, so any
+    # template that references {filenames.foo} or {resolved_paths.bar} is resolved here.
     flat_after = _flatten_for_templates(merged)
     merged = _render_templates(merged, flat_after)
 

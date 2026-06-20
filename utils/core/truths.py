@@ -27,6 +27,7 @@ def make_process_run_id(prefix: str = "process") -> str:
 def _normalize_for_json(value: Any) -> Any:
     """Convert common project values into deterministic JSON-safe objects."""
     if isinstance(value, dict):
+        # Sort dict keys so that hash output is independent of insertion order.
         return {str(k): _normalize_for_json(v) for k, v in sorted(value.items(), key=lambda x: str(x[0]))}
     if isinstance(value, list):
         return [_normalize_for_json(v) for v in value]
@@ -41,6 +42,8 @@ def _normalize_for_json(value: Any) -> Any:
 
 def compute_sha256(payload: Dict[str, Any]) -> str:
     """Return a SHA-256 hash for a normalized JSON representation of a payload."""
+    # sort_keys=True here and sorted() inside _normalize_for_json together
+    # guarantee that key ordering never affects the hash across Python versions.
     payload_str = json.dumps(_normalize_for_json(payload), sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
 
@@ -170,6 +173,8 @@ def build_truth_record(
         "artifact_paths": truth_base.get("artifact_paths", {}),
     }
 
+    # Hash is computed from payload before truth_hash and created_at_utc are
+    # added — those two fields must not feed into their own hash computation.
     truth_hash = compute_sha256(payload)
 
     truth_record = {
@@ -194,6 +199,8 @@ def save_truth_record(
     layer_name: str,
 ) -> Path:
     """Write a truth record JSON file under the layer truth directory."""
+    # Scope to the layer subfolder so truths for each Medallion layer remain
+    # isolated — the caller supplies the shared truths root, not a stage path.
     truth_dir = Path(truth_dir) / layer_name
     truth_dir.mkdir(parents=True, exist_ok=True)
 

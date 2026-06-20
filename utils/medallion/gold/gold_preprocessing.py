@@ -55,12 +55,15 @@ def build_episode_based_split_mask(
         If train_fraction is outside (0, 1) or the fallback order column is
         unavailable when row-order splitting is needed.
     """
+    # Copy before adding temp columns to avoid mutating the caller's dataframe.
     working_dataframe = dataframe.copy()
 
     if not 0.0 < float(train_fraction) < 1.0:
         raise ValueError("train_fraction must be between 0 and 1.")
 
     if episode_column in working_dataframe.columns and working_dataframe[episode_column].notna().any():
+        # Use the minimum time_index within each episode to establish episode order;
+        # this preserves temporal ordering and prevents future data leaking into train.
         episode_frame = (
             working_dataframe[list(group_columns) + [episode_column, fallback_order_column]]
             .dropna(subset=[episode_column])
@@ -88,6 +91,8 @@ def build_episode_based_split_mask(
         )
 
         merge_columns = list(group_columns) + [episode_column]
+        # Left join keeps all rows in the working dataframe; episodes with no
+        # episode_column value will receive NaN and be treated as test below.
         working_dataframe = working_dataframe.merge(
             episode_frame[merge_columns + ["__is_train"]],
             on=merge_columns,

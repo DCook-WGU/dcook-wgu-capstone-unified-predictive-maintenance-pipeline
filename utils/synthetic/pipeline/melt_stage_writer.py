@@ -195,6 +195,9 @@ def build_sensor_messages_stage(
 
     sensor_columns = _build_sensor_columns(n_sensors=n_sensors)
 
+    # id_columns are the metadata columns that stay constant across all sensor
+    # rows for a single observation; they become pd.melt id_vars so each long
+    # row retains full observation context without a post-melt join.
     id_columns = [
         "dataset_id",
         "run_id",
@@ -241,6 +244,7 @@ def build_sensor_messages_stage(
         )
 
     rng = np.random.default_rng(random_seed)
+    # First chunk uses the requested if_exists mode; subsequent chunks always append.
     has_written_first_chunk = False
 
     ordered_columns = [
@@ -467,6 +471,8 @@ def build_sensor_messages_stage_sql_native(
     source_fq = fq_table(schema, source_table)
     target_fq = fq_table(schema, target_table)
 
+    # CROSS JOIN LATERAL expands each wide source row into N long rows (one per
+    # sensor) entirely inside Postgres without loading the table into Python.
     create_sql = f"""
     CREATE TABLE {target_fq} AS
     SELECT

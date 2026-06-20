@@ -23,7 +23,7 @@ class Ledger:
 
     def add(
         self,
-        kind: str,  # This is my step or decision
+        kind: str,  # entry type: "step", "decision", "config", etc.
         step: str,
         message: str,
         why: Optional[str] = None,

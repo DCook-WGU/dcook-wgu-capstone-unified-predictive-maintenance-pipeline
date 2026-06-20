@@ -542,6 +542,8 @@ def build_canonical_identity_and_order_master(
         + working_dataframe["meta__source_row_id"].astype("string").fillna("0")
     )
 
+    # SHA-1 truncated to 16 hex chars produces a compact, notebook-friendly
+    # event identifier; not a security hash — collision risk is acceptable for row IDs.
     working_dataframe["event_id"] = event_id_inputs.map(
         lambda value: hashlib.sha1(str(value).encode("utf-8")).hexdigest()[:16]
     )

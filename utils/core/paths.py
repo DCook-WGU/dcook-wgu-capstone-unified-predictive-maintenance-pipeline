@@ -53,9 +53,13 @@ def find_project_root(start_path: str | Path | None = None) -> Path:
     markers such as configs/base.yaml plus utils/, docker-compose.yaml,
     environment.yml, or notebooks/.
     """
+    # CAPSTONE_PROJECT_ROOT is preferred; PROJECT_ROOT is a generic fallback for
+    # environments that set only the shorter name (e.g. devcontainer presets).
     env_root = os.getenv("CAPSTONE_PROJECT_ROOT") or os.getenv("PROJECT_ROOT")
 
     if env_root:
+        # expanduser + resolve makes the path absolute regardless of the shell's
+        # working directory at import time, preventing CWD-relative surprises.
         root = Path(env_root).expanduser().resolve()
 
         if not root.exists():
@@ -63,9 +67,13 @@ def find_project_root(start_path: str | Path | None = None) -> Path:
 
         return root
 
+    # resolve() here ensures that symlinks and ".." segments in the cwd or
+    # start_path are fully expanded before we begin the upward walk.
     current = Path(start_path or Path.cwd()).expanduser().resolve()
 
     if current.is_file():
+        # If a notebook passes __file__, step up to its containing directory
+        # so that the parent-walk starts from a directory, not a file node.
         current = current.parent
 
     for candidate in [current, *current.parents]:
@@ -75,12 +83,18 @@ def find_project_root(start_path: str | Path | None = None) -> Path:
         has_environment = (candidate / "environment.yml").exists()
         has_notebooks = (candidate / "notebooks").exists()
 
+        # configs/base.yaml + utils/ is the strongest signal — both must be
+        # present to avoid false positives in nested virtual-environment trees.
         if has_configs and has_utils:
             return candidate
 
+        # Accept docker-compose.yaml, environment.yml, or notebooks/ as weaker
+        # corroborating signals when utils/ is absent (e.g. stripped containers).
         if has_configs and (has_compose or has_environment or has_notebooks):
             return candidate
 
+    # No markers found anywhere in the ancestry; treat the current working
+    # directory as the root so callers always receive a valid Path.
     return Path.cwd().resolve()
 
 
@@ -119,6 +133,8 @@ class ProjectPaths:
     pipelines: Path
 
 
+# maxsize=8 allows a small number of distinct root overrides (e.g. in tests)
+# without unbounded growth; typical notebooks only ever call get_paths() once.
 @lru_cache(maxsize=8)
 def get_paths(project_root: str | Path | None = None) -> ProjectPaths:
     """
@@ -166,6 +182,9 @@ def get_paths(project_root: str | Path | None = None) -> ProjectPaths:
         utils=root / "utils",
         logs=root / "logs",
         configs=root / "configs",
+        # truths/ lives under artifacts/ so truth records and their parent
+        # artifact outputs share the same root and can be cross-referenced by
+        # relative path without hard-coding a second top-level directory.
         truths=root / "artifacts" / "truths",
         pipelines=root / "pipelines",
     )
