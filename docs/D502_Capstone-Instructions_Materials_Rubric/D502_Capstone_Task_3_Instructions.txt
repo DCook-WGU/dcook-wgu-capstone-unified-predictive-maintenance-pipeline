@@ -1,0 +1,261 @@
+BHN1 — BHN1 Task 3: Project Report
+Data Analytics Capstone — D502
+
+PRFA — BHN1
+
+Task Overview
+
+Competencies
+    4123.1.1 : Capstone
+        The learner integrates and synthesizes competencies from across the degree program, thereby demonstrating the ability to participate in and contribute value to the chosen professional field.
+
+Introduction:
+
+    Before starting this task, ensure that Tasks 1 and 2 have a passing score. If Task 1 or 2 has not yet passed, your Task 3 submission will be returned without evaluation.
+
+    In this task, you will complete your capstone by writing a report that summarizes your data analytics project, including an overview of the project, a discussion of how the execution of your project differed from your plan, a discussion of your project methodology, and an evaluation of your project results. You will also submit a recorded summary of your project.
+    
+
+Requirements:
+
+    Your submission must represent your original work and understanding of the course material. Most performance assessment submissions are automatically scanned through the WGU similarity checker. Students are strongly encouraged to wait for the similarity report to generate after uploading their work and then review it to ensure Academic Authenticity guidelines are met before submitting the file for evaluation. See Understanding Similarity Reports for more information.  
+
+    Grammarly Note: 
+    Professional Communication will be automatically assessed through Grammarly for Education in most performance assessments before a student submits work for evaluation. Students are strongly encouraged to review the Grammarly for Education feedback prior to submitting work for evaluation, as the overall submission will not pass without this aspect passing. See Use Grammarly for Education Effectively for more information.  
+
+    Microsoft Files Note: 
+    Write your paper in Microsoft Word (.doc or .docx) unless another Microsoft product, or pdf, is specified in the task directions. Tasks may not be submitted as cloud links, such as links to Google Docs, Google Slides, OneDrive, etc.  All supporting documentation, such as screenshots and proof of experience, should be collected in a pdf file and submitted separately from the main file. For more information, please see Computer System and Technology Requirements.  
+
+    You must use the rubric to direct the creation of your submission because it provides detailed criteria that will be used to evaluate your work. Each requirement below may be evaluated by more than one rubric aspect. The rubric aspect titles may contain hyperlinks to relevant portions of the course. 
+
+
+
+    Write a report summarizing your completed data analytics capstone project by doing the following:
+
+
+
+    Project Overview
+
+    A.  Summarize the following elements of your capstone project:
+        •  the research question or organizational need that your capstone addressed
+        •  the scope of your project
+        •  an overview of your solution, including any tools and methodologies used
+        
+
+    Project Execution
+
+    B.  Summarize the execution of your project, including how the execution of the following elements differed from the plan developed in part B of Task 2:
+        •  project plan
+        •  project planning methodology
+        •  project timeline and milestones
+        
+
+    Methodology
+
+    C.  Discuss your data selection and collection process in detail, including each of the following elements:
+        •  how your actual data selection and collection process differed from your plan
+        •  how you handled any obstacles you encountered while collecting your data
+        •  how you handled any unplanned data governance issues
+
+        1.  Discuss the advantages and limitations of the dataset you used.
+    
+    D.  Explain your data extraction and data preparation processes, including the tools and techniques you used, and why these processes were appropriate for your data.
+
+
+
+    E.  Report on your data analysis process by doing the following:
+        1.  Describe the methods you used to analyze the data.
+        2.  Discuss the advantages and limitations of the tools and techniques you used to analyze the data.
+        3.  Provide a step-by-step explanation of how you applied the analytical methods in part E1 to the data, including how you verified that the data satisfied the assumptions or requirements for any analytical methods you used.
+    
+
+    Results
+
+    F.  Evaluate the success of your data analytics project by doing the following:
+        1.  Evaluate the output of your data analytics solution or model, including calculations or metrics for accuracy.
+        2.  Evaluate the practical significance of your data analytics solution, including specific examples.
+        3.  Evaluate the overall success and effectiveness of the project.
+    
+
+    G.  Summarize the key takeaways of your analysis by doing the following:
+        1.  Summarize the conclusions drawn from your analysis. 
+        2.  Explain why your chosen tools and graphical representations for visually communicating findings support effective storytelling.
+        3.  Recommend two courses of action based on your findings.
+    
+
+    H.  Provide a link to a Panopto recording in which you present a summary of your capstone project and findings from the analysis for an audience of data analytics peers. Your summary should include the following elements:
+        •  a summary of your research question or organizational need
+        •  a demonstration of the functionality of any code you used for your data analytics solution
+        •  an outline of the findings and implications of your analysis
+    
+
+        Note: Please submit a single recording that covers all elements. The suggested length of your video should be approximately 15–20 minutes. 
+
+        Note: For instructions on how to access and use Panopto, use the "Panopto How-To Videos" web link. To access Panopto's website, navigate to the web link titled "Panopto Access," and then choose to log in using the "WGU" option. If prompted, log in using your WGU student portal credentials, which should forward you to Panopto’s website.
+
+        Note: To submit your recording, upload it to the Panopto drop box titled "BSDA Capstone – BHN1 | D502." Once the recording has been uploaded and processed in Panopto's system, retrieve the URL of the recording from Panopto and copy and paste it into the "Links" option. Upload the remaining task requirements using the "Attachments" option.
+    
+
+    Appendices
+
+        I.  Provide evidence of project completion by submitting any of the following elements that are relevant to your project:
+            •  the code you used to support your project
+            •  a copy of or link to all data you used for the data analytics solution
+            •  web sources that were used to acquire the data or segments of third-party code to support the application
+            •  other relevant project deliverables
+        
+        J.  Acknowledge sources, using in-text citations and references, for content that is quoted, paraphrased, or summarized.
+        K.  Demonstrate professional communication in the content and presentation of your submission.
+        
+
+File Restrictions:
+    File name may contain only letters, numbers, spaces, and these symbols: ! - _ . * ' ( )
+    File size limit: 200 MB
+    File types allowed: doc, docx, rtf, xls, xlsx, ppt, pptx, odt, pdf, csv, txt, qt, mov, mpg, avi, mp3, wav, mp4, wma, flv, asf, mpeg, wmv, m4v, svg, tif, tiff, jpeg, jpg, gif, png, zip, rar, tar, 7z
+
+Rubric:
+
+    A:PROJECT OVERVIEW
+        Not Evident:
+            A summary of the given elements of the capstone project is not provided.
+        Approaching Competence:
+            The summary is missing 1 or more of the given elements or is not detailed or includes inaccurate information.
+        Competent:
+            The summary includes each of the given elements, and the summary of each element is detailed. All the information in the summary is accurate.
+
+    B:PROJECT EXECUTION
+        Not Evident:
+            A summary of the execution of the project is not provided.
+        Approaching Competence:
+            The summary of the execution of the project is missing 1 or more of the given elements. Or the summary of 1 or more of the elements does not accurately address how the execution of each element differed from the plan developed in part B of Task 2.
+        Competent:
+            The summary accurately addresses how the execution of each element differed from the plan developed in part B of Task 2.
+
+    C:DATA COLLECTION PROCESS
+        Not Evident:
+            A discussion of the data selection and data collection process is not provided.
+        Approaching Competence:
+            The discussion of the data selection and collection process is missing 1 or more of the given elements. Or the discussion does not include specific details for each of the given elements.
+        Competent:
+            The discussion of the data selection and collection process includes specific details for each of the given elements.
+
+    C1:ADVANTAGES AND LIMITATIONS OF THE DATASET
+        Not Evident:
+            A discussion of the advantages and limitations of the dataset is not provided.
+        Approaching Competence:
+            The discussion addresses either the advantages or the limitations of the dataset but not both. Or specific examples are not included for the discussed advantages and limitations. Or 1 or more of the discussed advantages or limitations does not apply to the dataset that was used.
+        Competent:
+            The discussion addresses both the advantages and limitations of the dataset, including specific examples for both. All discussed advantages and limitations apply to the dataset that was used.
+
+    D:DATA EXTRACTION AND PREPARATION
+        Not Evident:
+            An explanation of the data extraction and data preparation processes is not provided.
+        Approaching Competence:
+            The explanation describes either the data extraction or the data preparation processes but not both. Or the explanation does not include details on why the processes were appropriate for the data. Or the explanation is missing either the tools or the techniques for 1 or both processes.
+        Competent:
+            The explanation describes both the data extraction and data preparation processes, including details on why the processes were appropriate for the data. The explanation includes the tools and techniques that were used for both processes.
+
+    E1:DATA ANALYSIS METHODS
+        Not Evident:
+            A description of the data analysis methods used is not provided.
+        Approaching Competence:
+            The description of data analysis methods is provided, but the description is either superficial or the information is inaccurate, or the methods are inappropriate for the intended goals of the project.
+        Competent:
+            The submission includes a thorough and accurate description of data analysis methods that are appropriate for the intended goals of the project.
+
+    E2:ADVANTAGES AND LIMITATIONS OF TOOLS AND TECHNIQUES
+        Not Evident:
+            A discussion of the advantages and limitations of the data analysis tools and techniques used is not provided.
+        Approaching Competence:
+            The discussion describes either the advantages or the limitations of the tools and techniques used to analyze the data but not both. Or the discussion contains inaccuracies.
+        Competent:
+            The discussion accurately describes the advantages and the limitations of the tools and techniques used to analyze the data.
+
+    E3:APPLICATION OF ANALYTICAL METHODS
+        Not Evident:
+            An explanation of how analytical methods were applied to the data is not provided.
+        Approaching Competence:
+            The explanation describes how analytical methods were applied to the data, but the explanation is either superficial or does not include each step of the process. Or the explanation does not describe how all assumptions or requirements for the data were verified.
+        Competent:
+            The explanation includes a thorough step-by-step description of how the analytical methods were applied to the data and how all assumptions or requirements were verified.
+
+    F1:EVALUATION OF OUTPUT
+        Not Evident:
+            An evaluation of the output of the data analytics solution or model is not provided.
+        Approaching Competence:
+            A superficial evaluation of the output of the data analytics solution or model is provided, or the evaluation does not use calculations or metrics for accuracy.
+        Competent:
+            A thorough evaluation of the output of the data analytics solution or model is provided, and the evaluation uses calculations or metrics for accuracy.
+
+    F2:PRACTICAL SIGNIFICANCE
+        Not Evident:
+            An evaluation of the practical significance of the data analytics solution is not provided.
+        Approaching Competence:
+            A superficial or inaccurate evaluation of the practical significance of the data analytics solution is provided. Or the evaluation is not supported by specific examples.
+        Competent:
+            A thorough and accurate evaluation of the practical significance of the data analytics solution is provided, and the evaluation is supported by specific examples.
+
+    F3:OVERALL SUCCESS
+        Not Evident:
+            An evaluation of the overall success and effectiveness of the project is not provided.
+        Approaching Competence:
+            A superficial or inaccurate evaluation of the overall success and effectiveness of the project is provided.
+        Competent:
+            A thorough and accurate evaluation of the overall success and effectiveness of the project is provided.:
+
+
+    G1:SUMMARY OF CONCLUSIONS
+        Not Evident:
+            A summary of conclusions drawn from the analysis is not provided.
+        Approaching Competence:
+            The summary of conclusions drawn from the analysis is inappropriate or is logically inconsistent with the dataset, chosen analytic methods, or stated goals of the project.
+        Competent:
+            The summary of conclusions drawn from the analysis is appropriate and logically consistent with the dataset, chosen analytic methods, and stated goals of the project.
+
+    G2:EFFECTIVE STORYTELLING
+        Not Evident:
+            An explanation of why the chosen tools and graphical representations for visually communicating the findings support effective storytelling is not provided.
+        Approaching Competence:
+            The explanation does not include logical reasons why the chosen tools and graphical representations for visually communicating the findings support effective storytelling.
+        Competent:
+            The explanation includes logical reasons why the chosen tools and graphical representations for visually communicating the findings support effective storytelling.
+
+    G3:RECOMMENED COURSES OF ACTION
+        Not Evident:
+            A submission that recommends 2 courses of action based on the findings is not provided.
+        Approaching Competence:
+            The submission recommends 2 courses of action, but 1 or both recommendations are illogical, do not appear to be based on the findings, do not follow logically from the analysis, or do not directly address the research question or organizational need of the project.
+        Competent:
+            The submission recommends 2 courses of action, and both are logical, based on the findings, follow logically from the analysis, and directly address the research question or organizational need of the project.
+
+    H:PANOPTO PRESENTATION
+        Not Evident:
+            A link to a Panopto recording is not provided.
+        Approaching Competence:
+            The link to a Panopto recording is provided, but the summary is missing 1 or more of the given elements. Or the summary is not appropriate for an audience of data analytics peers.
+        Competent:
+            A link to a Panopto recording is provided, and the summary includes each of the given elements. The summary is appropriate for an audience of data analytics peers.
+
+    I:EVIDENCE OF COMPLETION
+        Not Evident:
+            A submission that provides evidence of project completion is not provided.
+        Approaching Competence:
+            The submission attempts to provide evidence of project completion, but the element or elements submitted do not fully represent the project.
+        Competent:
+            The submission provides evidence of project completion, and the element or elements submitted fully represent the project.
+
+    J:SOURCES
+        Not Evident:
+            The submission does not include both in-text citations and a reference list for sources that are quoted, paraphrased, or summarized.
+        Approaching Competence:
+            The submission includes in-text citations for sources that are quoted, paraphrased, or summarized and a reference list; however, the citations or reference list is incomplete or inaccurate.
+        Competent:
+            The submission includes in-text citations for sources that are properly quoted, paraphrased, or summarized and a reference list that accurately identifies the author, date, title, and source location as available.
+
+    K:PROFESSIONAL COMMUNICATION
+        Not Evident:
+            This submission includes pervasive errors in professional communication related to grammar, sentence fluency, contextual spelling, or punctuation, negatively impacting the professional quality and clarity of the writing. Specific errors have been identified by Grammarly for Education under the Correctness category.   
+        Approaching Competence:
+            This submission includes substantial errors in professional communication related to grammar, sentence fluency, contextual spelling, or punctuation. Specific errors have been identified by Grammarly for Education under the Correctness category.   
+        Competent:
+            This submission includes satisfactory use of grammar, sentence fluency, contextual spelling, and punctuation, which promote accurate interpretation and understanding.  

@@ -1,0 +1,8 @@
+Rebuild container	make rebuild
+Start container	make run
+Stop container	make stop
+Rebuild & auto-commit lockfiles	make rc
+Exec into container	make exec
+Tail logs	make logs
+Prune old Docker data	make prune
+GPU check (GTX 1070)	make gpu-check

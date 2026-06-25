@@ -1,0 +1,73 @@
+BHN1 — BHN1 Task 1: Capstone Topic Approval
+
+Data Analytics Capstone — D502
+PRFA — BHN1
+
+Task Overview
+
+Competencies
+    4123.1.1 : Capstone
+        The learner integrates and synthesizes competencies from across the degree program, thereby demonstrating the ability to participate in and contribute value to the chosen professional field.
+
+Introduction:
+    In this task, you will organize ideas for your capstone project so that you can create your project more efficiently. To start your work on the capstone project, you are encouraged to discuss your ideas for the project with an instructor, using one of the analytical or research designs used in your BSDA program. After you agree on the topic, you must fill out the top portion of the attached “Data Analytics Capstone Topic Approval Form” and send it to the instructor, who must digitally sign it and lock it to prevent further changes to the document. The completed form, signed by the instructor, must be uploaded with the other documents required for this task.
+
+    It is the policy of Western Governors University (WGU) that student capstone projects should not be based on or include any proprietary or classified information or material belonging to your employer or any other organization. Such material belongs to this third party and is referred to as “restricted information,” which requires you to obtain the party’s permission to include the work. If your capstone project is based upon and/or includes restricted information, you must submit two additional documents with your Task 1 submission. You must attach the “IT Capstone Release Form" and a signed letter from the owner stating you have permission to use the restricted information.
+    
+Requirements:
+    Your submission must represent your original work and understanding of the course material. Most performance assessment submissions are automatically scanned through the WGU similarity checker. Students are strongly encouraged to wait for the similarity report to generate after uploading their work and then review it to ensure Academic Authenticity guidelines are met before submitting the file for evaluation. See Understanding Similarity Reports for more information.  
+
+    Grammarly Note: 
+    Professional Communication will be automatically assessed through Grammarly for Education in most performance assessments before a student submits work for evaluation. Students are strongly encouraged to review the Grammarly for Education feedback prior to submitting work for evaluation, as the overall submission will not pass without this aspect passing. See Use Grammarly for Education Effectively for more information.  
+
+    Microsoft Files Note: 
+    Write your paper in Microsoft Word (.doc or .docx) unless another Microsoft product, or pdf, is specified in the task directions. Tasks may not be submitted as cloud links, such as links to Google Docs, Google Slides, OneDrive, etc.  All supporting documentation, such as screenshots and proof of experience, should be collected in a pdf file and submitted separately from the main file. For more information, please see Computer System and Technology Requirements.  
+
+    You must use the rubric to direct the creation of your submission because it provides detailed criteria that will be used to evaluate your work. Each requirement below may be evaluated by more than one rubric aspect. The rubric aspect titles may contain hyperlinks to relevant portions of the course. 
+
+    A.  Complete the attached “Data Analytics Capstone Topic Approval Form.”
+    B.  Complete the attached “Data Analytics Capstone Release Form” with all required signatures. Choose the option that applies to your capstone project, and digitally sign the form where applicable.
+        Note: More than one signature may be required on the release form.
+    C.  Acknowledge sources, using in-text citations and references, for content that is quoted, paraphrased, or summarized.
+    D.  Demonstrate professional communication in the content and presentation of your submission.
+
+File Restrictions:
+    File name may contain only letters, numbers, spaces, and these symbols: ! - _ . * ' ( )
+    File size limit: 200 MB
+    File types allowed: doc, docx, rtf, xls, xlsx, ppt, pptx, odt, pdf, csv, txt, qt, mov, mpg, avi, mp3, wav, mp4, wma, flv, asf, mpeg, wmv, m4v, svg, tif, tiff, jpeg, jpg, gif, png, zip, rar, tar, 7z
+
+
+Rubric:
+
+    A:CAPSTONE TOPIC APPROVAL FORM
+        Not Evident: 
+            The “Data Analytics Capstone Topic Approval Form” is not submitted.
+        Approaching Competence: 
+            The “Data Analytics Capstone Topic Approval Form” is incomplete or does not include the signature or date from the instructor. Or the proposed solution is not original.
+        Competent: 
+            The “Data Analytics Capstone Topic Approval Form” is complete and includes the signature and date from the instructor. The proposed solution is original.
+
+    B:CAPSTONE RELEASE FORM
+        Not Evident:
+            The “Data Analytics Capstone Release Form” is not submitted.
+        Approaching Competence:
+            The submitted “Data Analytics Capstone Release Form” is incomplete or missing 1 or more needed signatures.
+        Competent:
+            The submitted “Data Analytics Capstone Release Form” is complete and includes all needed signatures.
+
+    C:SOURCES
+        Not Evident:
+            The submission does not include both in-text citations and a reference list for sources that are quoted, paraphrased, or summarized.
+        Approaching Competence:
+            The submission includes in-text citations for sources that are quoted, paraphrased, or summarized and a reference list; however, the citations or reference list is incomplete or inaccurate.
+        Competent:
+            The submission includes in-text citations for sources that are properly quoted, paraphrased, or summarized and a reference list that accurately identifies the author, date, title, and source location as available.
+
+    D:PROFESSIONAL COMMUNICATION
+        Not Evident:
+            This submission includes pervasive errors in professional communication related to grammar, sentence fluency, contextual spelling, or punctuation, negatively impacting the professional quality and clarity of the writing. Specific errors have been identified by Grammarly for Education under the Correctness category.   
+        Approaching Competence:
+            This submission includes substantial errors in professional communication related to grammar, sentence fluency, contextual spelling, or punctuation. Specific errors have been identified by Grammarly for Education under the Correctness category.   
+        Competent:
+            This submission includes satisfactory use of grammar, sentence fluency, contextual spelling, and punctuation, which promote accurate interpretation and understanding.  
+
